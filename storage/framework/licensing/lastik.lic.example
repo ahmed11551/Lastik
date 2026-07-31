@@ -1,0 +1,7 @@
+{
+  "payload": "BASE64_PAYLOAD",
+  "signature": "BASE64_SIGNATURE",
+  "expires_at": 1767225600,
+  "allowed_domains": ["localhost", "127.0.0.1"],
+  "hardware_hash": "DEV_HARDWARE_HASH"
+}

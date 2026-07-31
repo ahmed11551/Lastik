@@ -16,3 +16,6 @@
 .DS_Store
 **/.DS_Store
 /dist
+storage/framework/licensing/*
+!storage/framework/licensing/public.pem
+!storage/framework/licensing/lastik.lic.example
