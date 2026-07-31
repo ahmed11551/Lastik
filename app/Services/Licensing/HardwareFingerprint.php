@@ -65,9 +65,9 @@ final class HardwareFingerprint
         }
 
         if (PHP_OS_FAMILY === 'Darwin') {
-            $ioreg = @shell_exec('ioreg -rd1 -c IOPlatformExpertDevice | awk -F"\"" /IOPlatformUUID/{print $4}');
-            if ($ioreg) {
-                return hash('crc32', $ioreg);
+            $ioreg = @shell_exec("ioreg -rd1 -c IOPlatformExpertDevice | awk -F'\"' '/IOPlatformUUID/{print \$4}'");
+            if (is_string($ioreg) && trim($ioreg) !== '') {
+                return hash('crc32', trim($ioreg));
             }
         }
 
@@ -91,9 +91,9 @@ final class HardwareFingerprint
         }
 
         if (PHP_OS_FAMILY === 'Darwin') {
-            $ioreg = @shell_exec('ioreg -rd1 -c IOPlatformExpertDevice | awk -F"\"" /board-id/{print $4}');
-            if ($ioreg) {
-                return hash('crc32', $ioreg);
+            $ioreg = @shell_exec("ioreg -rd1 -c IOPlatformExpertDevice | awk -F'\"' '/board-id/{print \$4}'");
+            if (is_string($ioreg) && trim($ioreg) !== '') {
+                return hash('crc32', trim($ioreg));
             }
         }
 
@@ -117,9 +117,9 @@ final class HardwareFingerprint
         }
 
         if (PHP_OS_FAMILY === 'Darwin') {
-            $id = @shell_exec('ioreg -rd1 -c IOPlatformExpertDevice | awk -F"\"" /IOPlatformUUID/{print $4}');
-            if ($id) {
-                return hash('sha256', $id);
+            $id = @shell_exec("ioreg -rd1 -c IOPlatformExpertDevice | awk -F'\"' '/IOPlatformUUID/{print \$4}'");
+            if (is_string($id) && trim($id) !== '') {
+                return hash('sha256', trim($id));
             }
         }
 
