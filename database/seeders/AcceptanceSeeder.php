@@ -1,25 +1,32 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\CashShift;
-use App\Models\Customer;
-use App\Models\KpiRule;
-use App\Models\Location;
-use App\Models\Module;
-use App\Models\Order;
-use App\Models\Permission;
-use App\Models\Price;
-use App\Models\ProductService;
-use App\Models\Role;
-use App\Models\Stock;
-use App\Models\Tenant;
-use App\Models\User;
-use App\Models\Vehicle;
-use App\Models\Warehouse;
-use App\Services\DictionaryService;
+use Autometria\Models\CashShift;
+use Autometria\Models\Customer;
+use Autometria\Models\KpiRule;
+use Autometria\Models\Location;
+use Autometria\Models\Module;
+use Autometria\Models\Order;
+use Autometria\Models\Permission;
+use Autometria\Models\Price;
+use Autometria\Models\ProductService;
+use Autometria\Models\Role;
+use Autometria\Models\Stock;
+use Autometria\Models\Tenant;
+use Autometria\Models\User;
+use Autometria\Models\Vehicle;
+use Autometria\Models\Warehouse;
+use Autometria\Services\DictionaryService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;

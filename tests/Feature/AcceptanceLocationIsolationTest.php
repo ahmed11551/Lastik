@@ -1,15 +1,22 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
-use App\Models\CashShift;
-use App\Models\Location;
-use App\Models\Order;
-use App\Models\Role;
-use App\Models\User;
-use App\Policies\OrderPolicy;
-use App\Services\OrderService;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Models\CashShift;
+use Autometria\Models\Location;
+use Autometria\Models\Order;
+use Autometria\Models\Role;
+use Autometria\Models\User;
+use Autometria\Policies\OrderPolicy;
+use Autometria\Services\OrderService;
 use Illuminate\Support\Facades\Hash;
 use Tests\Support\AcceptanceFixture;
 

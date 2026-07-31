@@ -1,11 +1,18 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Customer;
-use App\Models\Tenant;
+use Autometria\Models\Customer;
+use Autometria\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CustomerFactory extends Factory

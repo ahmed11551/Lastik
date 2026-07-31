@@ -1,9 +1,16 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\Exceptions\Domain\ShiftAlreadyClosedException;
-use App\Services\Cash\CashShiftService;
+use Autometria\Exceptions\Domain\ShiftAlreadyClosedException;
+use Autometria\Services\Cash\CashShiftService;
 use Tests\Support\AcceptanceFixture;
 
 it('returns the existing open shift and closes it with totals', function (): void {

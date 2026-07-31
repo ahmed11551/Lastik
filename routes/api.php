@@ -1,28 +1,35 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CashShiftController;
-use App\Http\Controllers\CommerceMLImportController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\CustomerImportController;
-use App\Http\Controllers\CustomerMergeController;
-use App\Http\Controllers\DictionaryController;
-use App\Http\Controllers\IssuanceController;
-use App\Http\Controllers\ModuleController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\SearchController;
-use App\Http\Controllers\SettingController;
-use App\Http\Controllers\StockTransferController;
-use App\Http\Controllers\TaskController;
-use App\Http\Controllers\TvBoardController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\VehicleController;
-use App\Http\Controllers\WarehouseController;
-use App\Http\Middleware\EnforceLocationAccess;
-use App\Http\Middleware\EnsureTenant;
-use App\Http\Middleware\RateLimitAuth;
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
+use Autometria\Http\Controllers\AuthController;
+use Autometria\Http\Controllers\CashShiftController;
+use Autometria\Http\Controllers\CommerceMLImportController;
+use Autometria\Http\Controllers\CustomerController;
+use Autometria\Http\Controllers\CustomerImportController;
+use Autometria\Http\Controllers\CustomerMergeController;
+use Autometria\Http\Controllers\DictionaryController;
+use Autometria\Http\Controllers\IssuanceController;
+use Autometria\Http\Controllers\ModuleController;
+use Autometria\Http\Controllers\OrderController;
+use Autometria\Http\Controllers\PaymentController;
+use Autometria\Http\Controllers\ProductController;
+use Autometria\Http\Controllers\SearchController;
+use Autometria\Http\Controllers\SettingController;
+use Autometria\Http\Controllers\StockTransferController;
+use Autometria\Http\Controllers\TaskController;
+use Autometria\Http\Controllers\TvBoardController;
+use Autometria\Http\Controllers\UserController;
+use Autometria\Http\Controllers\VehicleController;
+use Autometria\Http\Controllers\WarehouseController;
+use Autometria\Http\Middleware\EnforceLocationAccess;
+use Autometria\Http\Middleware\EnsureTenant;
+use Autometria\Http\Middleware\RateLimitAuth;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {

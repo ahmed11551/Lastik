@@ -1,10 +1,14 @@
-# LASTIK Platform — Sprint 1 Backend Skeleton
+# AUTOMETRIA ERP Engine Core
 
 [![CI](https://github.com/ahmed11551/Lastik/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmed11551/Lastik/actions/workflows/ci.yml)
 
-Стек: Laravel 13, PHP 8.3+, PostgreSQL + React/Vite shell (гибрид с Express mock).
+Стек: Laravel 13, PHP 8.3+, PostgreSQL + React/Vite shell. Namespace: `Autometria\`.
 
-> **Приёмка / smoke:** см. пошаговый гайд [docs/acceptance-run.md](docs/acceptance-run.md).
+> **Приёмка / smoke:** см. пошаговый гайд [docs/acceptance-run.md](docs/acceptance-run.md).  
+> **Release Notes v1.0.0 + API:** [docs/release-notes-v1.0.0.md](docs/release-notes-v1.0.0.md).  
+> **CommerceML batch:** [docs/commerceml-batch-architecture.md](docs/commerceml-batch-architecture.md).  
+> **Licensing ops (PEM / lic):** [docs/licensing-ops.md](docs/licensing-ops.md).  
+> **Encoded client build:** [docs/client-build-encoding.md](docs/client-build-encoding.md).
 
 ## Установка
 

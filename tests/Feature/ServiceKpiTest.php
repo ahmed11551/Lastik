@@ -1,11 +1,18 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
-use App\Models\KpiRule;
-use App\Services\OrderService;
-use App\Services\ServicesService;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Models\KpiRule;
+use Autometria\Services\OrderService;
+use Autometria\Services\ServicesService;
 use Tests\Support\AcceptanceFixture;
 
 it('calculates service prices with radius modifiers', function (): void {

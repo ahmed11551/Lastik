@@ -1,16 +1,23 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
-use App\Exceptions\Domain\ShiftAlreadyClosedException;
-use App\Models\AuditLog;
-use App\Models\CashMovement;
-use App\Models\MoneyRecipient;
-use App\Models\PaymentCorrection;
-use App\Services\Cash\CashShiftService;
-use App\Services\OrderService;
-use App\Services\PaymentService;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Exceptions\Domain\ShiftAlreadyClosedException;
+use Autometria\Models\AuditLog;
+use Autometria\Models\CashMovement;
+use Autometria\Models\MoneyRecipient;
+use Autometria\Models\PaymentCorrection;
+use Autometria\Services\Cash\CashShiftService;
+use Autometria\Services\OrderService;
+use Autometria\Services\PaymentService;
 use Tests\Support\AcceptanceFixture;
 
 use function Pest\Laravel\actingAs;

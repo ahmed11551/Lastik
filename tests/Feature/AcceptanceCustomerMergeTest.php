@@ -1,15 +1,22 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
-use App\Models\AuditLog;
-use App\Models\Customer;
-use App\Models\CustomerMerge;
-use App\Models\Order;
-use App\Models\Vehicle;
-use App\Services\CustomerMergeService;
-use App\Services\OrderService;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Models\AuditLog;
+use Autometria\Models\Customer;
+use Autometria\Models\CustomerMerge;
+use Autometria\Models\Order;
+use Autometria\Models\Vehicle;
+use Autometria\Services\CustomerMergeService;
+use Autometria\Services\OrderService;
 use Tests\Support\AcceptanceFixture;
 
 /**

@@ -1,10 +1,17 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CommerceML\CatalogItemDTO;
-use App\Models\Stock;
-use App\Services\CommerceML\CommerceMLUpsertService;
+use Autometria\DTOs\CommerceML\CatalogItemDTO;
+use Autometria\Models\Stock;
+use Autometria\Services\CommerceML\CommerceMLUpsertService;
 use Tests\Support\AcceptanceFixture;
 
 it('creates stock from catalog batch', function (): void {

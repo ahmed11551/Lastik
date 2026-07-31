@@ -1,65 +1,166 @@
 <?php
 
+/**
+ * AUTOMETRIA ERP Engine Core
+ *
+ * @package    Autometria\Core
+ * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
+ * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
+ * @license    Proprietary & Confidential. Unauthorized copying, distribution,
+ *             modification, or reverse engineering of this file, via any medium,
+ *             is strictly prohibited.
+ *
+ * NOTICE: All information contained herein is, and remains the property of
+ * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
+ * herein are proprietary and protected by trade secret and copyright law.
+ */
+/**
+ * LASTIK B2B SaaS Engine Core
+ *
+ * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
+ * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
+ * @license    Proprietary & Confidential. Unauthorized copying, distribution,
+ *             modification, or reverse engineering of this file, via any medium,
+ *             is strictly prohibited.
+ *
+ * NOTICE: All information contained herein is, and remains the property of
+ * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
+ * herein are proprietary and protected by trade secret and copyright law.
+ */
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-namespace App\Services\CommerceML;
+namespace Autometria\Services\CommerceML;
 
-use App\DTOs\CommerceML\CatalogItemDTO;
-use App\Exceptions\Domain\CommerceMLImportException;
+use Autometria\DTOs\CommerceML\CatalogItemDTO;
+use Autometria\DTOs\CommerceML\CommerceMLProductDTO;
+use Autometria\DTOs\CommerceML\StockBalanceDTO;
+use Autometria\Exceptions\Domain\CommerceMLImportException;
+use Generator;
+use SimpleXMLElement;
 use XMLReader;
 
+/**
+ * Потоковый парсер CommerceML 2.08 (XMLReader) — без DOM на больших файлах.
+ */
 class CommerceMLStreamParser
 {
-    public function __construct(private int $batchSize = 500) {}
+    public function __construct(private int $batchSize = 1000) {}
 
     /**
-     * @return list<array<int, CatalogItemDTO>>
+     * @return Generator<int, CommerceMLProductDTO>
+     */
+    public function parseProducts(string $filePath): Generator
+    {
+        yield from $this->streamElements($filePath, ['Товар', 'Товары'], function (SimpleXMLElement $node): ?CommerceMLProductDTO {
+            if (! isset($node->Ид) && ! isset($node->Наименование)) {
+                return null;
+            }
+
+            return CommerceMLProductDTO::fromXMLNode($node);
+        });
+    }
+
+    /**
+     * Остатки / предложения CommerceML.
+     *
+     * @return Generator<int, StockBalanceDTO>
+     */
+    public function parseOffers(string $filePath): Generator
+    {
+        yield from $this->streamElements(
+            $filePath,
+            ['Предложение', 'Остаток', 'Offer'],
+            function (SimpleXMLElement $node): array {
+                $dtos = [];
+
+                $productId = (string) (
+                    $node->ИдТовара
+                    ?? $node->Ид
+                    ?? $node->Товар
+                    ?? $node->Id
+                    ?? $node->SKU
+                    ?? ''
+                );
+
+                if ($productId === '' && isset($node->Товар->Ид)) {
+                    $productId = (string) $node->Товар->Ид;
+                }
+
+                if ($productId === '') {
+                    return [];
+                }
+
+                // Nested warehouses: <Остаток><Склад><ИдСклада/><Количество/></Склад></Остаток>
+                if (isset($node->Склад)) {
+                    foreach ($node->Склад as $wh) {
+                        $warehouseId = (string) ($wh->ИдСклада ?? $wh->Ид ?? $wh->Наименование ?? '');
+                        $qty = (float) ($wh->Количество ?? $wh->Остаток ?? 0);
+                        $dtos[] = new StockBalanceDTO(
+                            productExternalId: $productId,
+                            warehouseExternalId: $warehouseId !== '' ? $warehouseId : 'default',
+                            quantity: $qty,
+                            price: $this->extractPrice($node),
+                        );
+                    }
+
+                    return $dtos;
+                }
+
+                $warehouseId = (string) (
+                    $node->{'ИдСклада'} ?? $node->WarehouseId ?? $node->Warehouse ?? ''
+                );
+                $qty = (float) (
+                    $node->Количество ?? $node->Остаток ?? $node->Quantity ?? $node->Rest ?? 0
+                );
+
+                $dtos[] = new StockBalanceDTO(
+                    productExternalId: $productId,
+                    warehouseExternalId: $warehouseId !== '' ? $warehouseId : 'default',
+                    quantity: $qty,
+                    price: $this->extractPrice($node),
+                );
+
+                return $dtos;
+            }
+        );
+    }
+
+    /**
+     * Legacy batch API (CatalogItemDTO chunks) — совместимость с CommerceMLUpsertService.
+     *
+     * @return list<list<CatalogItemDTO>>
      */
     public function parseCatalog(string $xmlPath, int $tenantId, int $warehouseId): array
     {
-        if (! file_exists($xmlPath)) {
-            throw CommerceMLImportException::invalidXml('File not found: '.$xmlPath);
-        }
-
-        $reader = new XMLReader;
-        if (! $reader->open($xmlPath) && ! $reader->open('php://temp')) {
-            throw CommerceMLImportException::invalidXml('Cannot open XML stream: '.$xmlPath);
-        }
-
-        $reader->setParserProperty(XMLReader::VALIDATE, false);
-        $reader->setParserProperty(XMLReader::SUBST_ENTITIES, false);
-
-        $batch = [];
         $batches = [];
+        $batch = [];
         $count = 0;
 
-        while ($reader->read()) {
-            if ($reader->nodeType === XMLReader::ELEMENT && $reader->name === 'Offer') {
-                $srcXml = $reader->readInnerXML();
-                $offer = $this->readOfferFragment($srcXml);
+        foreach ($this->parseOffers($xmlPath) as $offer) {
+            $batch[] = new CatalogItemDTO(
+                tenantId: $tenantId,
+                warehouseId: $warehouseId,
+                sku: $offer->productExternalId,
+                actual: $offer->quantity,
+                reserved: 0.0,
+                price: $offer->price,
+                externalId: $offer->productExternalId,
+            );
+            $count++;
 
-                if ($offer !== null) {
-                    $batch[] = new CatalogItemDTO(
-                        tenantId: $tenantId,
-                        warehouseId: $warehouseId,
-                        sku: (string) ($offer['sku'] ?? ''),
-                        actual: (float) ($offer['actual'] ?? 0.0),
-                        reserved: (float) ($offer['reserved'] ?? 0.0),
-                        price: isset($offer['price']) ? (float) $offer['price'] : null,
-                    );
-
-                    $count++;
-
-                    if ($count >= $this->batchSize) {
-                        $batches[] = $batch;
-                        $batch = [];
-                        $count = 0;
-                    }
-                }
+            if ($count >= $this->batchSize) {
+                $batches[] = $batch;
+                $batch = [];
+                $count = 0;
             }
         }
-
-        $reader->close();
 
         if ($batch !== []) {
             $batches[] = $batch;
@@ -69,40 +170,77 @@ class CommerceMLStreamParser
     }
 
     /**
-     * @return array<string, mixed>
+     * @param  list<string>  $localNames
+     * @param  callable(SimpleXMLElement): (object|list<object>|null)  $map
+     * @return Generator<int, object>
      */
-    private function readOfferFragment(string $xml): ?array
+    private function streamElements(string $filePath, array $localNames, callable $map): Generator
     {
-        $data = ['sku' => '', 'actual' => 0.0, 'reserved' => 0.0];
+        if (! is_file($filePath)) {
+            throw CommerceMLImportException::invalidXml('File not found: '.$filePath);
+        }
 
-        $walk = new XMLReader;
+        $reader = new XMLReader;
+        if (! $reader->open($filePath)) {
+            throw CommerceMLImportException::invalidXml('Cannot open XML stream: '.$filePath);
+        }
+
+        $reader->setParserProperty(XMLReader::VALIDATE, false);
+        $reader->setParserProperty(XMLReader::SUBST_ENTITIES, false);
+
         try {
-            if (! $walk->open('data://text/plain,'.rawurlencode($xml))) {
-                return $data;
-            }
-
-            while ($walk->read()) {
-                if ($walk->nodeType !== XMLReader::ELEMENT) {
+            while ($reader->read()) {
+                if ($reader->nodeType !== XMLReader::ELEMENT) {
                     continue;
                 }
 
-                $name = $walk->name;
-                $value = $walk->readString();
-
-                if ($name === 'Id' || $name === 'SKU') {
-                    $data['sku'] = (string) $value;
-                } elseif ($name === 'Quantity' || $name === 'Rest') {
-                    $data['actual'] = (float) $value;
-                } elseif ($name === 'Reserved') {
-                    $data['reserved'] = (float) $value;
-                } elseif ($name === 'Price') {
-                    $data['price'] = (float) $value;
+                $name = $reader->localName ?: $reader->name;
+                if (! in_array($name, $localNames, true)) {
+                    continue;
                 }
+
+                $outer = $reader->readOuterXml();
+                if ($outer === '' || $outer === false) {
+                    continue;
+                }
+
+                $node = @simplexml_load_string($outer);
+                if (! $node instanceof SimpleXMLElement) {
+                    continue;
+                }
+
+                $mapped = $map($node);
+                if ($mapped === null) {
+                    continue;
+                }
+
+                if (is_array($mapped)) {
+                    foreach ($mapped as $dto) {
+                        if ($dto !== null) {
+                            yield $dto;
+                        }
+                    }
+
+                    continue;
+                }
+
+                yield $mapped;
             }
         } finally {
-            $walk->close();
+            $reader->close();
+        }
+    }
+
+    private function extractPrice(SimpleXMLElement $node): ?float
+    {
+        if (isset($node->Цены->Цена->ЦенаЗаЕдиницу)) {
+            return (float) $node->Цены->Цена->ЦенаЗаЕдиницу;
         }
 
-        return $data;
+        if (isset($node->Price)) {
+            return (float) $node->Price;
+        }
+
+        return null;
     }
 }

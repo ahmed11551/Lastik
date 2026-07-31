@@ -1,9 +1,16 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
-use App\Services\OrderService;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Services\OrderService;
 use Tests\Support\AcceptanceFixture;
 
 it('creates an order through the implemented order service', function (): void {

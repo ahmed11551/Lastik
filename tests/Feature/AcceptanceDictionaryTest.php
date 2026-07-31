@@ -1,10 +1,17 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\Models\AuditLog;
-use App\Models\Dictionary;
-use App\Services\DictionaryService;
+use Autometria\Models\AuditLog;
+use Autometria\Models\Dictionary;
+use Autometria\Services\DictionaryService;
 use Tests\Support\AcceptanceFixture;
 
 /**

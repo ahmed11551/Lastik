@@ -1,169 +1,148 @@
 <?php
 
+/**
+ * AUTOMETRIA ERP Engine Core
+ *
+ * @package    Autometria\Core
+ * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
+ * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
+ * @license    Proprietary & Confidential. Unauthorized copying, distribution,
+ *             modification, or reverse engineering of this file, via any medium,
+ *             is strictly prohibited.
+ *
+ * NOTICE: All information contained herein is, and remains the property of
+ * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
+ * herein are proprietary and protected by trade secret and copyright law.
+ */
+/**
+ * LASTIK B2B SaaS Engine Core
+ *
+ * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
+ * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
+ * @license    Proprietary & Confidential. Unauthorized copying, distribution,
+ *             modification, or reverse engineering of this file, via any medium,
+ *             is strictly prohibited.
+ *
+ * NOTICE: All information contained herein is, and remains the property of
+ * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
+ * herein are proprietary and protected by trade secret and copyright law.
+ */
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-namespace App\Services\Import;
+namespace Autometria\Services\Import;
 
-use App\Models\ImportJob;
-use App\Models\ProductService;
-use App\Models\Stock;
-use App\Models\StockConflict;
-use App\Models\Warehouse;
-use App\Support\AuditLog;
-use Illuminate\Support\Facades\DB;
+use Autometria\DTOs\CommerceML\StockBalanceDTO;
+use Autometria\Models\ImportJob;
+use Autometria\Services\CommerceML\CommerceMLBatchUpsertService;
+use Autometria\Services\CommerceML\CommerceMLStreamParser;
 
 class CommerceMLImportService
 {
+    public function __construct(
+        private readonly CommerceMLBatchUpsertService $batchUpsert,
+        private readonly CommerceMLStreamParser $streamParser,
+    ) {}
+
     public function import(string $filePath, int $tenantId, ?int $userId = null): ImportJob
     {
         set_current_tenant_id($tenantId);
 
-        $job = ImportJob::query()->withoutGlobalScopes()->create([
+        $job = ImportJob::query()->withoutGlobalScopes()->forceCreate([
             'tenant_id' => $tenantId,
             'source' => 'commerceml2',
             'status' => 'processing',
             'created_by' => $userId,
         ]);
 
-        $errors = [];
-        $summary = [
-            'processed' => 0,
-            'updated' => 0,
-            'created' => 0,
-            'skipped' => 0,
-            'conflicts' => 0,
-        ];
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
-        $rows = CmlParser::parseRemains($filePath);
+        if ($ext === 'xml' || $this->looksLikeXml($filePath)) {
+            return $this->importXmlStream($filePath, $tenantId, $job, $userId);
+        }
 
-        DB::transaction(function () use ($rows, $job, $tenantId, $userId, &$errors, &$summary): void {
-            foreach ($rows as $row) {
-                $product = ProductService::query()->withoutGlobalScopes()
-                    ->where('tenant_id', $tenantId)
-                    ->where('external_id', $row['external_id'])
-                    ->first();
+        return $this->importJsonRemains($filePath, $tenantId, $job, $userId);
+    }
 
-                if (! $product) {
-                    $errors[] = ['external_id' => $row['external_id'], 'message' => 'product not found'];
-                    $summary['skipped']++;
+    private function importXmlStream(string $filePath, int $tenantId, ImportJob $job, ?int $userId): ImportJob
+    {
+        $balances = collect();
+        foreach ($this->streamParser->parseOffers($filePath) as $dto) {
+            $balances->push($dto);
+        }
 
-                    continue;
-                }
+        $batchSummary = $this->batchUpsert->upsertStockBalances(
+            $tenantId,
+            $balances,
+            (int) $job->id,
+            $userId,
+        );
 
-                foreach ($row['warehouses'] as $whRow) {
-                    $warehouse = Warehouse::query()->withoutGlobalScopes()
-                        ->where('tenant_id', $tenantId)
-                        ->where('name', $whRow['warehouse'])
-                        ->first();
-
-                    if (! $warehouse) {
-                        $errors[] = ['warehouse' => $whRow['warehouse'], 'message' => 'warehouse not found'];
-                        $summary['skipped']++;
-
-                        continue;
-                    }
-
-                    $stock = Stock::query()->withoutGlobalScopes()
-                        ->where('tenant_id', $tenantId)
-                        ->where('warehouse_id', $warehouse->id)
-                        ->where('product_id', $product->id)
-                        ->lockForUpdate()
-                        ->first();
-
-                    $newQty = (float) $whRow['qty'];
-
-                    if ($stock) {
-                        $before = (float) $stock->actual;
-                        $reserved = (float) $stock->reserved;
-
-                        // Импорт не трогает резервы; конфликт если actual < reserved
-                        if ($newQty + 0.0001 < $reserved) {
-                            $this->recordConflict($stock, $job, $newQty, 'actual_less_than_reserved_after_import');
-                            $summary['conflicts']++;
-                            // Обновляем actual, но фиксируем конфликт
-                            $stock->actual = $newQty;
-                            $stock->available = max(0, round($newQty - $reserved, 2));
-                            $stock->save();
-
-                            AuditLog::write(
-                                $tenantId,
-                                $userId,
-                                'commerceml2.import.conflict',
-                                StockConflict::class,
-                                (int) $stock->id,
-                                ['actual' => $before, 'reserved' => $reserved],
-                                ['actual' => $newQty, 'reserved' => $reserved],
-                            );
-                            $summary['processed']++;
-
-                            continue;
-                        }
-
-                        $stock->actual = $newQty;
-                        $stock->available = round($newQty - $reserved, 2);
-                        $stock->save();
-                        $summary['updated']++;
-
-                        AuditLog::write(
-                            $tenantId,
-                            $userId,
-                            'commerceml2.import.update',
-                            Stock::class,
-                            (int) $stock->id,
-                            ['actual' => $before],
-                            ['actual' => $stock->actual, 'available' => $stock->available, 'reserved' => $reserved],
-                        );
-                    } else {
-                        $stock = Stock::query()->withoutGlobalScopes()->create([
-                            'tenant_id' => $tenantId,
-                            'warehouse_id' => $warehouse->id,
-                            'product_id' => $product->id,
-                            'actual' => $newQty,
-                            'reserved' => 0,
-                            'available' => $newQty,
-                        ]);
-                        $summary['created']++;
-
-                        AuditLog::write(
-                            $tenantId,
-                            $userId,
-                            'commerceml2.import.create',
-                            Stock::class,
-                            (int) $stock->id,
-                            [],
-                            ['actual' => $newQty],
-                        );
-                    }
-
-                    $summary['processed']++;
-                }
-            }
-
-            $job->update([
-                'status' => 'finished',
-                'summary' => array_merge($summary, ['errors' => $errors]),
-                'errors' => $errors,
-            ]);
-        }, 5);
+        $job->update([
+            'status' => 'finished',
+            'summary' => $batchSummary,
+            'errors' => [],
+        ]);
 
         return $job->fresh();
     }
 
-    private function recordConflict(Stock $stock, ImportJob $job, float $newActual, string $message): void
+    private function importJsonRemains(string $filePath, int $tenantId, ImportJob $job, ?int $userId): ImportJob
     {
-        StockConflict::query()->withoutGlobalScopes()->create([
-            'tenant_id' => $stock->tenant_id,
-            'stock_id' => $stock->id,
-            'import_job_id' => $job->id,
-            'reason' => $message,
-            'message' => $message,
-            'detail' => json_encode([
-                'actual' => $stock->actual,
-                'new_actual' => $newActual,
-                'reserved' => $stock->reserved,
-                'available' => $stock->available,
-            ]),
-            'resolved' => false,
+        $rows = CmlParser::parseRemains($filePath);
+        $balances = collect();
+
+        foreach ($rows as $row) {
+            foreach ($row['warehouses'] as $whRow) {
+                $balances->push(new StockBalanceDTO(
+                    productExternalId: (string) $row['external_id'],
+                    warehouseExternalId: (string) $whRow['warehouse'],
+                    quantity: (float) $whRow['qty'],
+                ));
+            }
+        }
+
+        $batchSummary = $this->batchUpsert->upsertStockBalances(
+            $tenantId,
+            $balances,
+            (int) $job->id,
+            $userId,
+        );
+
+        $summary = [
+            'processed' => $batchSummary['processed'],
+            'conflicts' => $batchSummary['conflicts'],
+            'skipped' => $batchSummary['skipped'],
+            'updated' => max(0, $batchSummary['processed'] - $batchSummary['conflicts']),
+            'created' => 0,
+            'errors' => [],
+        ];
+
+        $job->update([
+            'status' => 'finished',
+            'summary' => $summary,
+            'errors' => [],
         ]);
+
+        return $job->fresh();
+    }
+
+    private function looksLikeXml(string $filePath): bool
+    {
+        $fh = @fopen($filePath, 'rb');
+        if ($fh === false) {
+            return false;
+        }
+
+        $head = (string) fread($fh, 128);
+        fclose($fh);
+
+        return str_contains($head, '<?xml') || str_contains($head, '<КоммерческаяИнформация');
     }
 }

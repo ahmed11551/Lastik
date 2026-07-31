@@ -1,10 +1,17 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
-use App\Exceptions\Domain\NoActiveShiftException;
-use App\Services\OrderService;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Exceptions\Domain\NoActiveShiftException;
+use Autometria\Services\OrderService;
 use Tests\Support\AcceptanceFixture;
 
 it('binds order to active shift on successful POST /orders', function (): void {

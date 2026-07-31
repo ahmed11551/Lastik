@@ -1,8 +1,15 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\Models\Order;
+use Autometria\Models\Order;
 use Tests\Support\AcceptanceFixture;
 
 it('scopes tenant models to the active tenant', function (): void {

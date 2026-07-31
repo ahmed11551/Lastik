@@ -1,21 +1,55 @@
 <?php
 
+/**
+ * AUTOMETRIA ERP Engine Core
+ *
+ * @package    Autometria\Core
+ * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
+ * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
+ * @license    Proprietary & Confidential. Unauthorized copying, distribution,
+ *             modification, or reverse engineering of this file, via any medium,
+ *             is strictly prohibited.
+ *
+ * NOTICE: All information contained herein is, and remains the property of
+ * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
+ * herein are proprietary and protected by trade secret and copyright law.
+ */
+/**
+ * LASTIK B2B SaaS Engine Core
+ *
+ * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
+ * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
+ * @license    Proprietary & Confidential. Unauthorized copying, distribution,
+ *             modification, or reverse engineering of this file, via any medium,
+ *             is strictly prohibited.
+ *
+ * NOTICE: All information contained herein is, and remains the property of
+ * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
+ * herein are proprietary and protected by trade secret and copyright law.
+ */
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-namespace App\Services;
+namespace Autometria\Services;
 
-use App\DTOs\CreateOrderDTO;
-use App\Exceptions\Domain\InsufficientStockException;
-use App\Exceptions\Domain\NoActiveShiftException;
-use App\Exceptions\Domain\PriceNotFoundException;
-use App\Models\CashShift;
-use App\Models\KpiRule;
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Price;
-use App\Models\ProductService;
-use App\Models\Stock;
-use App\Support\AuditLog;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Exceptions\Domain\InsufficientStockException;
+use Autometria\Exceptions\Domain\NoActiveShiftException;
+use Autometria\Exceptions\Domain\PriceNotFoundException;
+use Autometria\Models\CashShift;
+use Autometria\Models\KpiRule;
+use Autometria\Models\Order;
+use Autometria\Models\OrderItem;
+use Autometria\Models\Price;
+use Autometria\Models\ProductService;
+use Autometria\Models\Stock;
+use Autometria\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 
 final class OrderService

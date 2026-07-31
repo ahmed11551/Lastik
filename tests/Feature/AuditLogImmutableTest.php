@@ -1,8 +1,15 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\Models\AuditLog;
+use Autometria\Models\AuditLog;
 use Tests\Support\AcceptanceFixture;
 
 // 49.8: журнал аудита append-only — попытка изменить/удалить AuditLog падает.

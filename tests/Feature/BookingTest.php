@@ -1,12 +1,19 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\Booking\CreateBookingDTO;
-use App\Exceptions\Domain\SlotAlreadyBookedException;
-use App\Models\Booking;
-use App\Models\Post;
-use App\Services\BookingService;
+use Autometria\DTOs\Booking\CreateBookingDTO;
+use Autometria\Exceptions\Domain\SlotAlreadyBookedException;
+use Autometria\Models\Booking;
+use Autometria\Models\Post;
+use Autometria\Services\BookingService;
 use Tests\Support\AcceptanceFixture;
 
 it('creates booking and prevents overlap within same tenant', function (): void {

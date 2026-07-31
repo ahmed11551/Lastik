@@ -1,12 +1,20 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\Http\Middleware\CheckDeviceLimit;
-use App\Http\Middleware\EnforceLocationAccess;
-use App\Http\Middleware\EnsurePermission;
-use App\Http\Middleware\EnsureTenant;
-use App\Http\Middleware\SupportAccess;
+use Autometria\Http\Middleware\CheckDeviceLimit;
+use Autometria\Http\Middleware\EnforceAutometriaLicense;
+use Autometria\Http\Middleware\EnforceLocationAccess;
+use Autometria\Http\Middleware\EnsurePermission;
+use Autometria\Http\Middleware\EnsureTenant;
+use Autometria\Http\Middleware\SupportAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,12 +27,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up'
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(EnforceAutometriaLicense::class);
         $middleware->alias([
             'ensure.tenant' => EnsureTenant::class,
             'ensure.permission' => EnsurePermission::class,
             'ensure.location' => EnforceLocationAccess::class,
             'check.device' => CheckDeviceLimit::class,
             'support.access' => SupportAccess::class,
+            'auth.license' => EnforceAutometriaLicense::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {})

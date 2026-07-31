@@ -1,8 +1,15 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
+use Autometria\DTOs\CreateOrderDTO;
 
 it('creates create order dto from auth context, ignoring payload tenant/location', function (): void {
     $payload = [

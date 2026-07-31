@@ -1,12 +1,19 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
-use App\Models\Earning;
-use App\Models\KpiRule;
-use App\Services\Kpi\KpiService;
-use App\Services\OrderService;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Models\Earning;
+use Autometria\Models\KpiRule;
+use Autometria\Services\Kpi\KpiService;
+use Autometria\Services\OrderService;
 use Tests\Support\AcceptanceFixture;
 
 /**

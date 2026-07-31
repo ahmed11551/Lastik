@@ -1,6 +1,6 @@
 {
-    "name": "lastik/laravel-app",
-    "description": "LASTIK Platform - Security Sprint 1",
+    "name": "autometria/erp-engine",
+    "description": "AUTOMETRIA ERP Engine Core",
     "type": "project",
     "require": {
         "php": "^8.3 || ^8.4 || ^8.5",
@@ -16,7 +16,7 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "app/",
+            "Autometria\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         },

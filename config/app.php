@@ -1,6 +1,13 @@
 <?php
 
-use App\Providers\RouteServiceProvider;
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
+use Autometria\Providers\RouteServiceProvider;
 use Illuminate\Auth\AuthServiceProvider;
 use Illuminate\Auth\Passwords\PasswordResetServiceProvider;
 use Illuminate\Broadcasting\BroadcastServiceProvider;
@@ -26,7 +33,7 @@ use Illuminate\View\ViewServiceProvider;
 
 return [
 
-    'name' => env('APP_NAME', 'Lastik'),
+    'name' => env('APP_NAME', 'AUTOMETRIA'),
 
     'env' => env('APP_ENV', 'production'),
 
@@ -70,7 +77,7 @@ return [
         ValidationServiceProvider::class,
         ViewServiceProvider::class,
 
-        App\Providers\AuthServiceProvider::class,
+        Autometria\Providers\AuthServiceProvider::class,
         RouteServiceProvider::class,
     ],
 

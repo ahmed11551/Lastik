@@ -1,7 +1,14 @@
 <?php
 
-use App\Http\Controllers\CashShiftController;
-use App\Http\Controllers\OrderController;
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
+use Autometria\Http\Controllers\CashShiftController;
+use Autometria\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth'])->group(function (): void {

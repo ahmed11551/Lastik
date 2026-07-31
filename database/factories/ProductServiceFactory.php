@@ -1,12 +1,19 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\ProductService;
-use App\Models\Tenant;
-use App\Models\Warehouse;
+use Autometria\Models\ProductService;
+use Autometria\Models\Tenant;
+use Autometria\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ProductServiceFactory extends Factory

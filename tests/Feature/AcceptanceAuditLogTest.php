@@ -1,13 +1,20 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
-use App\Models\AuditLog;
-use App\Models\Reservation;
-use App\Services\OrderService;
-use App\Services\PaymentService;
-use App\Support\AuditLog as AuditWriter;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Models\AuditLog;
+use Autometria\Models\Reservation;
+use Autometria\Services\OrderService;
+use Autometria\Services\PaymentService;
+use Autometria\Support\AuditLog as AuditWriter;
 use Tests\Support\AcceptanceFixture;
 
 /**

@@ -1,11 +1,18 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
-use App\Services\Cash\CashShiftService;
-use App\Services\OrderService;
-use App\Services\PaymentService;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Services\Cash\CashShiftService;
+use Autometria\Services\OrderService;
+use Autometria\Services\PaymentService;
 use Tests\Support\AcceptanceFixture;
 
 test('shift totals match aggregated payments on close', function (): void {

@@ -1,12 +1,19 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\DTOs\CreateOrderDTO;
-use App\Models\AuditLog;
-use App\Models\Task;
-use App\Services\OrderService;
-use App\Services\TaskService;
+use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Models\AuditLog;
+use Autometria\Models\Task;
+use Autometria\Services\OrderService;
+use Autometria\Services\TaskService;
 use Tests\Support\AcceptanceFixture;
 
 /**

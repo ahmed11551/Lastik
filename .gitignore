@@ -16,6 +16,11 @@
 .DS_Store
 **/.DS_Store
 /dist
+/dist-encoded
+
+# Licensing: только public.pem и example попадают в клиентский репозиторий.
+# private.pem и *.lic НИКОГДА не коммитятся.
 storage/framework/licensing/*
 !storage/framework/licensing/public.pem
-!storage/framework/licensing/lastik.lic.example
+!storage/framework/licensing/autometria.lic.example
+!storage/framework/licensing/.gitkeep

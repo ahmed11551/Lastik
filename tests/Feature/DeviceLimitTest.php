@@ -1,9 +1,16 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\Http\Middleware\CheckDeviceLimit;
-use App\Models\Device;
+use Autometria\Http\Middleware\CheckDeviceLimit;
+use Autometria\Models\Device;
 use Illuminate\Support\Facades\Route;
 use Tests\Support\AcceptanceFixture;
 

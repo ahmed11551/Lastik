@@ -1,9 +1,16 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\Models\StockConflict;
-use App\Services\Import\CommerceMLImportService;
+use Autometria\Models\StockConflict;
+use Autometria\Services\Import\CommerceMLImportService;
 use Tests\Support\AcceptanceFixture;
 
 test('CommerceML2 import does not overwrite reserved quantity', function (): void {

@@ -1,10 +1,17 @@
 <?php
 
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
+
 declare(strict_types=1);
 
-use App\Models\AuditLog;
-use App\Models\Customer;
-use App\Services\Import\ImportCustomersService;
+use Autometria\Models\AuditLog;
+use Autometria\Models\Customer;
+use Autometria\Services\Import\ImportCustomersService;
 use Tests\Support\AcceptanceFixture;
 
 /**
