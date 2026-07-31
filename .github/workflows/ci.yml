@@ -60,10 +60,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PHP 8.3
+      - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.3"
+          php-version: "8.4"
           extensions: mbstring, pdo_pgsql, pgsql, redis, bcmath, ctype, fileinfo, json, openssl, tokenizer, xml, curl
           coverage: none
           tools: composer:v2
@@ -71,7 +71,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
 
       - name: Install NPM dependencies
