@@ -1,9 +1,9 @@
 <?php
 
 /**
- * LASTIK B2B SaaS Engine Core
+ * AUTOMETRIA ERP Engine Core
  *
- * @package    Lastik\Core
+ * @package    Autometria\Core
  * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
  * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
  * @license    Proprietary & Confidential. Unauthorized copying, distribution,
@@ -14,14 +14,30 @@
  * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
  * herein are proprietary and protected by trade secret and copyright law.
  */
-<?php
+/**
+ * LASTIK B2B SaaS Engine Core
+ *
+ * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
+ * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
+ * @license    Proprietary & Confidential. Unauthorized copying, distribution,
+ *             modification, or reverse engineering of this file, via any medium,
+ *             is strictly prohibited.
+ *
+ * NOTICE: All information contained herein is, and remains the property of
+ * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
+ * herein are proprietary and protected by trade secret and copyright law.
+ */
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
 
 declare(strict_types=1);
 
-namespace App\Exceptions;
+namespace Autometria\Exceptions;
 
 use RuntimeException;
 
-class LicenseViolationException extends RuntimeException
-{
-}
+class LicenseViolationException extends RuntimeException {}

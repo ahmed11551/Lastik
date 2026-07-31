@@ -1,9 +1,9 @@
 <?php
 
 /**
- * LASTIK B2B SaaS Engine Core
+ * AUTOMETRIA ERP Engine Core
  *
- * @package    Lastik\Core
+ * @package    Autometria\Core
  * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
  * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
  * @license    Proprietary & Confidential. Unauthorized copying, distribution,
@@ -14,28 +14,29 @@
  * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
  * herein are proprietary and protected by trade secret and copyright law.
  */
-<?php
+/*
+ * AUTOMETRIA ERP Engine Core
+ * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+ * @author Себиев Ахмед Сулейманович
+ * @license Proprietary & Confidential.
+ */
 
-namespace App\Http;
+namespace Autometria\Http;
 
-use App\Http\Middleware\Authenticate;
-use App\Http\Middleware\EncryptCookies;
-use App\Http\Middleware\HandleInertiaRequests;
-use App\Http\Middleware\RedirectIfAuthenticated;
-use App\Http\Middleware\TrimStrings;
+use Autometria\Http\Middleware\EnforceAutometriaLicense;
+use Autometria\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
+use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Http\Middleware\ValidatePostSize;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
-use Illuminate\Routing\Middleware\ValidateSignature;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-
-use App\Http\Middleware\EnforceSystemLicense;
 
 class Kernel extends HttpKernel
 {
@@ -44,7 +45,7 @@ class Kernel extends HttpKernel
         PreventRequestsDuringMaintenance::class,
         TrimStrings::class,
         ConvertEmptyStringsToNull::class,
-        EnforceSystemLicense::class,
+        EnforceAutometriaLicense::class,
     ];
 
     protected $middlewareGroups = [
@@ -57,18 +58,14 @@ class Kernel extends HttpKernel
             SubstituteBindings::class,
             HandleInertiaRequests::class,
         ],
-
         'api' => [
-            'throttle:api',
+            ThrottleRequests::class.':api',
             SubstituteBindings::class,
+            EnforceAutometriaLicense::class,
         ],
     ];
 
-    protected $routeMiddleware = [
-        'auth' => Authenticate::class,
-        'guest' => RedirectIfAuthenticated::class,
-        'signed' => ValidateSignature::class,
-        'throttle' => ThrottleRequests::class,
-        'bindings' => SubstituteBindings::class,
+    protected $middlewareAliases = [
+        'auth.license' => EnforceAutometriaLicense::class,
     ];
 }

@@ -74,11 +74,8 @@ HEADER;
         continue;
     }
 
-    // Remove existing shebang if present
     $content = preg_replace('/^#!.*\R/', '', $content);
-    // Remove existing declare if present at top
     $content = preg_replace('/^(declare\s*\([^)]*\);\s*)/', '', $content);
-    // Remove opening PHP tag if present after header area
     $content = preg_replace('/^\s*<\?php\s*\R/', '', $content);
 
     $newContent = $header . ltrim($content);
