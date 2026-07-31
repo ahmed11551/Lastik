@@ -1,0 +1,8 @@
+export { default as DsButton } from './components/Button.vue'
+export { default as DsInput } from './components/Input.vue'
+export { default as DsTable } from './components/Table.vue'
+export { default as DsSidebar } from './components/Sidebar.vue'
+export { default as DsModal } from './components/Modal.vue'
+export { default as DsCommandPalette } from './components/CommandPalette.vue'
+export { useTheme } from './composables/useTheme'
+export { useCommandPalette } from './composables/useCommandPalette'

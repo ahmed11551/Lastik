@@ -1,0 +1,61 @@
+/* Industrial Precision — Design Tokens */
+:root {
+  --color-bg: #0B0D10;
+  --color-surface: #11151A;
+  --color-surface-elevated: #1A1F26;
+  --color-primary: #F59E0B;
+  --color-primary-hover: #D97706;
+  --color-text-primary: #E5E7EB;
+  --color-text-secondary: #9CA3AF;
+  --color-success: #10B981;
+  --color-danger: #EF4444;
+  --color-border: #1F2937;
+  --color-focus: #F59E0B;
+  --font-ui: 'Inter', ui-sans-serif, system-ui;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code';
+  --radius: 4px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg: #F8FAFC;
+    --color-surface: #FFFFFF;
+    --color-surface-elevated: #F1F5F9;
+    --color-primary: #D97706;
+    --color-primary-hover: #B45309;
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #475569;
+    --color-success: #059669;
+    --color-danger: #DC2626;
+    --color-border: #E2E8F0;
+    --color-focus: #D97706;
+  }
+}
+
+[data-theme='light'] {
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #F1F5F9;
+  --color-primary: #D97706;
+  --color-primary-hover: #B45309;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-success: #059669;
+  --color-danger: #DC2626;
+  --color-border: #E2E8F0;
+  --color-focus: #D97706;
+}
+
+[data-theme='dark'] {
+  --color-bg: #0B0D10;
+  --color-surface: #11151A;
+  --color-surface-elevated: #1A1F26;
+  --color-primary: #F59E0B;
+  --color-primary-hover: #D97706;
+  --color-text-primary: #E5E7EB;
+  --color-text-secondary: #9CA3AF;
+  --color-success: #10B981;
+  --color-danger: #EF4444;
+  --color-border: #1F2937;
+  --color-focus: #F59E0B;
+}
