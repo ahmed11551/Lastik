@@ -1,6 +1,6 @@
 # LASTIK Platform — Sprint 1 Backend Skeleton
 
-[![CI](https://github.com/OWNER/Lastik-main/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/Lastik-main/actions/workflows/ci.yml)
+[![CI](https://github.com/ahmed11551/Lastik/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmed11551/Lastik/actions/workflows/ci.yml)
 
 Стек: Laravel 13, PHP 8.3+, PostgreSQL + React/Vite shell (гибрид с Express mock).
 
