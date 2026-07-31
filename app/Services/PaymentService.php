@@ -32,7 +32,7 @@ final class PaymentService
         ?int $shiftId = null,
     ): array {
         return DB::transaction(function () use ($tenantId, $orderId, $parts, $createdBy, $shiftId): array {
-            app()->instance('current_tenant_id', $tenantId);
+            set_current_tenant_id($tenantId);
 
             $order = Order::query()->withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)
@@ -67,7 +67,7 @@ final class PaymentService
                     $this->dictionaries->assertActiveCode($tenantId, Dictionary::TYPE_PAYMENT_FORM, $method);
                 }
 
-                $payment = Payment::query()->withoutGlobalScopes()->create([
+                $payment = Payment::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
                     'order_id' => $order->id,
                     'shift_id' => $shift->id,
@@ -128,7 +128,7 @@ final class PaymentService
 
             $oldAmount = (float) $payment->amount;
 
-            $correction = PaymentCorrection::query()->withoutGlobalScopes()->create([
+            $correction = PaymentCorrection::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $payment->tenant_id,
                 'payment_id' => $payment->id,
                 'amount' => round($newAmount - $oldAmount, 2),

@@ -11,7 +11,6 @@ class StockConflict extends TenantModel
     protected $table = 'stock_conflicts';
 
     protected $fillable = [
-        'tenant_id',
         'stock_id',
         'import_job_id',
         'reason',

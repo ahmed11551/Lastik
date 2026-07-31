@@ -24,7 +24,7 @@ final class TaskService
      */
     public function create(int $tenantId, int $createdBy, array $payload): Task
     {
-        $task = Task::query()->withoutGlobalScopes()->create([
+        $task = Task::query()->withoutGlobalScopes()->forceCreate([
             'tenant_id' => $tenantId,
             'location_id' => $payload['location_id'] ?? null,
             'created_by' => $createdBy,

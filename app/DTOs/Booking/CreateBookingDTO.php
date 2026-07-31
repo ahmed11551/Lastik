@@ -15,10 +15,13 @@ readonly class CreateBookingDTO
         public string $endTime,
     ) {}
 
-    public static function fromRequest(array $payload): self
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public static function fromRequest(array $payload, int $authTenantId): self
     {
         return new self(
-            tenantId: (int) ($payload['tenant_id'] ?? 0),
+            tenantId: $authTenantId,
             postId: (int) ($payload['post_id'] ?? 0),
             customerName: (string) ($payload['customer_name'] ?? ''),
             customerPhone: (string) ($payload['customer_phone'] ?? ''),

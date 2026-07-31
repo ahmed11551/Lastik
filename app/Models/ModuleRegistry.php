@@ -7,7 +7,6 @@ namespace App\Models;
 class ModuleRegistry extends TenantModel
 {
     protected $fillable = [
-        'tenant_id',
         'slug',
         'status',
         'enabled_at',

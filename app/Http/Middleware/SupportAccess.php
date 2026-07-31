@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\Tenant;
+use App\Support\AuditLog;
 use Closure;
 use Illuminate\Http\Request;
-use Lastik\Models\Tenant;
-use Lastik\Support\AuditLog;
 use Symfony\Component\HttpFoundation\Response;
 
 class SupportAccess
@@ -17,20 +17,20 @@ class SupportAccess
         if ($request->user()?->role !== 'platform_owner') {
             $tenantId = tenant_id();
 
-            $tenant = Tenant::withoutGlobalScope('tenant')->find($tenantId);
+            $tenant = Tenant::query()->find($tenantId);
 
-            if ($tenant === null || ! (bool) $tenant->supportAccessEnabled) {
+            if ($tenant === null || ! (bool) $tenant->support_access_enabled) {
                 abort(Response::HTTP_FORBIDDEN, 'Support access is not enabled for this tenant');
             }
 
             AuditLog::write(
-                $tenantId,
+                (int) $tenantId,
                 $request->user()?->id,
                 'support_access_view',
                 'tenant',
-                $tenantId,
-                null,
-                null,
+                (int) $tenantId,
+                [],
+                [],
                 [
                     'path' => $request->path(),
                     'method' => $request->method(),

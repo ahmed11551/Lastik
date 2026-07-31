@@ -11,7 +11,6 @@ class OrderItemWorker extends TenantModel
     protected $table = 'order_item_workers';
 
     protected $fillable = [
-        'tenant_id',
         'order_item_id',
         'worker_id',
         'commission_rate',

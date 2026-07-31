@@ -9,7 +9,6 @@ class ImportJob extends TenantModel
     protected $table = 'import_jobs';
 
     protected $fillable = [
-        'tenant_id',
         'source',
         'status',
         'summary',

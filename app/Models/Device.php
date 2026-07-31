@@ -11,7 +11,6 @@ class Device extends TenantModel
     protected $table = 'devices';
 
     protected $fillable = [
-        'tenant_id',
         'user_id',
         'device_name',
         'device_type',

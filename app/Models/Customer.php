@@ -16,7 +16,6 @@ class Customer extends TenantModel
     protected $table = 'customers';
 
     protected $fillable = [
-        'tenant_id',
         'type',
         'name',
         'phone',

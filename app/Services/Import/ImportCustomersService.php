@@ -22,7 +22,7 @@ class ImportCustomersService
 
     public function import(string $filePath, int $tenantId, ?int $userId = null): ImportJob
     {
-        app()->instance('current_tenant_id', $tenantId);
+        set_current_tenant_id($tenantId);
 
         $job = ImportJob::query()->withoutGlobalScopes()->create([
             'tenant_id' => $tenantId,

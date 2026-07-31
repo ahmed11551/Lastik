@@ -17,7 +17,6 @@ class Module extends TenantModel
     protected $table = 'modules';
 
     protected $fillable = [
-        'tenant_id',
         'slug',
         'status',
         'enabled_at',

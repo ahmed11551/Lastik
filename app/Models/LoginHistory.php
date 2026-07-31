@@ -9,7 +9,6 @@ class LoginHistory extends TenantModel
     protected $table = 'login_histories';
 
     protected $fillable = [
-        'tenant_id',
         'user_id',
         'ip_address',
         'user_agent',

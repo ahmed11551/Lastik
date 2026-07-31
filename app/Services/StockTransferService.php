@@ -44,7 +44,7 @@ final class StockTransferService
             $reason,
             $createdBy
         ): StockTransfer {
-            app()->instance('current_tenant_id', $tenantId);
+            set_current_tenant_id($tenantId);
 
             $from = Stock::query()->withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)
@@ -70,7 +70,7 @@ final class StockTransferService
                 ->first();
 
             if ($to === null) {
-                $to = Stock::query()->withoutGlobalScopes()->create([
+                $to = Stock::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
                     'warehouse_id' => $toWarehouseId,
                     'product_id' => $productId,
@@ -86,7 +86,7 @@ final class StockTransferService
             $to->save();
 
             if ((float) $to->actual + 0.0001 < (float) $to->reserved) {
-                StockConflict::query()->withoutGlobalScopes()->create([
+                StockConflict::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
                     'stock_id' => $to->id,
                     'reason' => 'transfer_reserved_exceeds_actual',
@@ -98,7 +98,7 @@ final class StockTransferService
                 ]);
             }
 
-            $transfer = StockTransfer::query()->withoutGlobalScopes()->create([
+            $transfer = StockTransfer::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $tenantId,
                 'product_id' => $productId,
                 'from_warehouse_id' => $fromWarehouseId,

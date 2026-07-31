@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DTO\CommerceML;
+namespace App\DTOs\CommerceML;
 
 readonly class StockOfferDTO
 {

@@ -12,7 +12,6 @@ class OrderItem extends TenantModel
     protected $table = 'order_items';
 
     protected $fillable = [
-        'tenant_id',
         'order_id',
         'type',
         'product_id',

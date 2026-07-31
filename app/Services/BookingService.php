@@ -61,13 +61,15 @@ class BookingService
     public function createBooking(CreateBookingDTO $dto): Booking
     {
         return DB::transaction(function () use ($dto): Booking {
-            $post = Post::query()
+            set_current_tenant_id($dto->tenantId);
+
+            $post = Post::query()->withoutGlobalScopes()
                 ->where('tenant_id', $dto->tenantId)
                 ->where('id', $dto->postId)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $overlap = Booking::query()
+            $overlap = Booking::query()->withoutGlobalScopes()
                 ->where('tenant_id', $dto->tenantId)
                 ->where('post_id', $post->id)
                 ->where('status', 'booked')
@@ -85,7 +87,7 @@ class BookingService
                 throw SlotAlreadyBookedException::default();
             }
 
-            return Booking::create([
+            return Booking::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $dto->tenantId,
                 'post_id' => $post->id,
                 'customer_name' => $dto->customerName,

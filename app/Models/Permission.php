@@ -11,7 +11,6 @@ class Permission extends TenantModel
     protected $table = 'permissions';
 
     protected $fillable = [
-        'tenant_id',
         'slug',
         'section',
         'action',

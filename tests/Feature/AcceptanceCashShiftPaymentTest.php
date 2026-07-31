@@ -160,7 +160,7 @@ it('writes audit on shift open via service', function (): void {
     $fx->shift->update(['closed_at' => now(), 'status' => 'closed']);
 
     actingAs($fx->user);
-    app()->instance('current_tenant_id', $fx->tenant->id);
+    set_current_tenant_id($fx->tenant->id);
 
     $opened = app(CashShiftService::class)->open(
         $fx->tenant->id,

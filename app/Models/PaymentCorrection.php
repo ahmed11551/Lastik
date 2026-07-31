@@ -11,7 +11,6 @@ class PaymentCorrection extends TenantModel
     protected $table = 'payment_corrections';
 
     protected $fillable = [
-        'tenant_id',
         'payment_id',
         'old_amount',
         'new_amount',

@@ -11,7 +11,6 @@ class CustomerMerge extends TenantModel
     protected $table = 'customer_merges';
 
     protected $fillable = [
-        'tenant_id',
         'primary_customer_id',
         'merged_customer_id',
         'merged_by',

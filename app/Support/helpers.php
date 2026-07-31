@@ -3,6 +3,26 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+if (! function_exists('set_current_tenant_id')) {
+    /**
+     * Биндит tenant в контейнер и (для pgsql) в session GUC для RLS.
+     */
+    function set_current_tenant_id(?int $tenantId): void
+    {
+        app()->instance('current_tenant_id', $tenantId);
+
+        if ($tenantId === null || DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        DB::statement('SELECT set_config(?, ?, true)', [
+            'app.current_tenant_id',
+            (string) $tenantId,
+        ]);
+    }
+}
 
 if (! function_exists('tenant_id')) {
     /**

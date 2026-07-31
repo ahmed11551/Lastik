@@ -14,7 +14,6 @@ class Role extends TenantModel
     protected $table = 'roles';
 
     protected $fillable = [
-        'tenant_id',
         'slug',
         'name',
         'permissions',

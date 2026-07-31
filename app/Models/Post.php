@@ -11,7 +11,6 @@ class Post extends TenantModel
     protected $table = 'posts';
 
     protected $fillable = [
-        'tenant_id',
         'name',
         'is_active',
     ];

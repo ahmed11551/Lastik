@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Exceptions\Domain\TenantAccessDeniedException;
 use App\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
@@ -14,30 +15,24 @@ class EnsureTenant
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $tenantIdHeader = $request->header('X-Tenant-ID');
-        $slug = $request->header('X-Tenant-Slug')
-            ?? $request->input('tenant_slug')
-            ?? env('DEFAULT_TENANT_SLUG', 'acceptance');
+        $user = $request->user();
+        $userTenantId = $user?->tenant_id !== null ? (int) $user->tenant_id : null;
 
-        $tenant = null;
-
-        if ($request->user()?->tenant_id) {
-            $tenant = Tenant::query()->find($request->user()->tenant_id);
+        if ($userTenantId === null) {
+            throw new TenantAccessDeniedException('Tenant context is missing: authenticated user required.');
         }
 
-        if ($tenant === null && is_numeric($tenantIdHeader)) {
-            $tenant = Tenant::query()->find((int) $tenantIdHeader);
+        $headerTenantId = $request->header('X-Tenant-ID');
+        if ($headerTenantId !== null && $headerTenantId !== '' && (int) $headerTenantId !== $userTenantId) {
+            throw new TenantAccessDeniedException('X-Tenant-ID does not match authenticated tenant.');
         }
 
-        if ($tenant === null && is_string($slug) && $slug !== '') {
-            $tenant = Tenant::query()->where('slug', $slug)->first();
+        $tenant = Tenant::query()->find($userTenantId);
+        if ($tenant === null || ! (bool) $tenant->is_active) {
+            throw new TenantAccessDeniedException('Tenant not found or inactive.');
         }
 
-        if ($tenant === null) {
-            abort(406, 'Tenant not resolved');
-        }
-
-        app()->instance('current_tenant_id', (int) $tenant->id);
+        set_current_tenant_id((int) $tenant->id);
         $request->attributes->set('tenant', $tenant);
 
         if (DB::getDriverName() === 'pgsql') {

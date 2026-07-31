@@ -22,9 +22,11 @@ readonly class CreateOrderDTO
     ) {}
 
     /**
+     * Tenant/location берутся строго из auth-контекста, никогда из HTTP payload.
+     *
      * @param  array<string, mixed>  $payload
      */
-    public static function fromRequest(array $payload): self
+    public static function fromRequest(array $payload, int $authTenantId, int $authLocationId): self
     {
         $scenario = (string) ($payload['scenario'] ?? 'without_installation');
         if ($scenario === 'standard') {
@@ -32,9 +34,9 @@ readonly class CreateOrderDTO
         }
 
         return new self(
-            tenantId: (int) ($payload['tenant_id'] ?? 0),
+            tenantId: $authTenantId,
             customerId: isset($payload['customer_id']) ? (int) $payload['customer_id'] : null,
-            locationId: (int) ($payload['location_id'] ?? 0),
+            locationId: $authLocationId,
             assignedSellerId: (int) ($payload['assigned_seller_id'] ?? 0),
             masterId: (int) ($payload['master_id'] ?? 0),
             items: $payload['items'] ?? [],

@@ -12,7 +12,7 @@ it('scopes tenant models to the active tenant', function (): void {
         'tenant_id' => $b->tenant->id, 'location_id' => $b->location->id, 'number' => 'SEC-1',
         'status' => 'created', 'payment_status' => 'unpaid', 'total' => 0, 'created_by' => $b->user->id,
     ]);
-    app()->instance('current_tenant_id', $a->tenant->id);
+    set_current_tenant_id($a->tenant->id);
 
     expect(Order::query()->count())->toBe(0);
     expect(Order::query()->withoutGlobalScopes()->where('tenant_id', $b->tenant->id)->count())->toBe(1);

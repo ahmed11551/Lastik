@@ -11,7 +11,6 @@ class Booking extends TenantModel
     protected $table = 'bookings';
 
     protected $fillable = [
-        'tenant_id',
         'post_id',
         'customer_name',
         'customer_phone',

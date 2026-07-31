@@ -43,7 +43,7 @@ final class AcceptanceSeeder extends Seeder
                 ]
             );
 
-            app()->instance('current_tenant_id', $tenant->id);
+            set_current_tenant_id($tenant->id);
 
             foreach (PermissionSeeder::PERMISSIONS as $permission) {
                 Permission::query()->withoutGlobalScopes()->updateOrCreate(

@@ -13,13 +13,27 @@ class EnforceTenantScope
 {
     public function handle(Request $request, Closure $next)
     {
-        $tenantId = $request->user()?->tenant_id ?? $request->header('X-Tenant-ID');
+        $userTenantId = $request->user()?->tenant_id !== null
+            ? (int) $request->user()->tenant_id
+            : null;
 
-        if (! $tenantId) {
+        if ($userTenantId === null) {
             throw new TenantAccessDeniedException('Tenant context is missing.');
         }
 
-        DB::statement('SET LOCAL app.current_tenant_id = ?', [(int) $tenantId]);
+        $headerTenantId = $request->header('X-Tenant-ID');
+        if ($headerTenantId !== null && $headerTenantId !== '' && (int) $headerTenantId !== $userTenantId) {
+            throw new TenantAccessDeniedException('X-Tenant-ID does not match authenticated tenant.');
+        }
+
+        set_current_tenant_id($userTenantId);
+
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('SELECT set_config(?, ?, true)', [
+                'app.current_tenant_id',
+                (string) $userTenantId,
+            ]);
+        }
 
         return $next($request);
     }

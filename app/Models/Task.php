@@ -17,7 +17,6 @@ class Task extends TenantModel
     protected $table = 'tasks';
 
     protected $fillable = [
-        'tenant_id',
         'location_id',
         'created_by',
         'assigned_to',

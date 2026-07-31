@@ -21,7 +21,6 @@ class MoneyRecipient extends TenantModel
     protected $table = 'money_recipients';
 
     protected $fillable = [
-        'tenant_id',
         'type',
         'name',
         'details',

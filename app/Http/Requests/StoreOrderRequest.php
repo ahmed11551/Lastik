@@ -19,9 +19,12 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tenant_id' => ['required', 'integer', 'exists:tenants,id'],
+            // Запрет подмены контекста из HTTP body
+            'tenant_id' => ['prohibited'],
+            'location_id' => ['prohibited'],
+            'created_by' => ['prohibited'],
+            'updated_by' => ['prohibited'],
             'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
-            'location_id' => ['required', 'integer', 'exists:locations,id'],
             'vehicle_id' => ['nullable', 'integer', 'exists:vehicles,id'],
             'scenario' => ['nullable', 'string', 'in:with_installation,without_installation,standard'],
             'assigned_seller_id' => ['required', 'integer', 'exists:users,id'],
@@ -42,17 +45,22 @@ class StoreOrderRequest extends FormRequest
 
     public function createOrderDTO(): CreateOrderDTO
     {
-        return CreateOrderDTO::fromRequest([
-            'tenant_id' => (int) $this->input('tenant_id'),
-            'customer_id' => $this->filled('customer_id') ? (int) $this->input('customer_id') : null,
-            'location_id' => (int) $this->input('location_id'),
-            'vehicle_id' => $this->filled('vehicle_id') ? (int) $this->input('vehicle_id') : null,
-            'scenario' => $this->input('scenario', 'without_installation'),
-            'assigned_seller_id' => (int) $this->input('assigned_seller_id'),
-            'master_id' => (int) ($this->input('master_id') ?? 0),
-            'items' => $this->input('items', []),
-            'note' => $this->input('note'),
-        ]);
+        $tenantId = (int) ($this->user()?->tenant_id ?? tenant_id() ?? 0);
+        $locationId = (int) (location_id() ?? $this->user()?->location_id ?? 0);
+
+        return CreateOrderDTO::fromRequest(
+            [
+                'customer_id' => $this->filled('customer_id') ? (int) $this->input('customer_id') : null,
+                'vehicle_id' => $this->filled('vehicle_id') ? (int) $this->input('vehicle_id') : null,
+                'scenario' => $this->input('scenario', 'without_installation'),
+                'assigned_seller_id' => (int) $this->input('assigned_seller_id'),
+                'master_id' => (int) ($this->input('master_id') ?? 0),
+                'items' => $this->input('items', []),
+                'note' => $this->input('note'),
+            ],
+            $tenantId,
+            $locationId,
+        );
     }
 
     protected function failedValidation(Validator $validator): void

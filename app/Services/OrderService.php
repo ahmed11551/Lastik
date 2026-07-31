@@ -25,7 +25,7 @@ final class OrderService
     public function create(CreateOrderDTO $dto, int $createdBy): Order
     {
         return DB::transaction(function () use ($dto, $createdBy): Order {
-            app()->instance('current_tenant_id', $dto->tenantId);
+            set_current_tenant_id($dto->tenantId);
 
             $shift = CashShift::query()
                 ->withoutGlobalScopes()
@@ -53,7 +53,7 @@ final class OrderService
                 throw NoActiveShiftException::default();
             }
 
-            $order = Order::query()->withoutGlobalScopes()->create([
+            $order = Order::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $dto->tenantId,
                 'location_id' => $dto->locationId,
                 'customer_id' => $dto->customerId,
@@ -119,7 +119,7 @@ final class OrderService
                     'added_at' => now()->toIso8601String(),
                 ];
 
-                $orderItem = OrderItem::query()->withoutGlobalScopes()->create([
+                $orderItem = OrderItem::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $dto->tenantId,
                     'order_id' => $order->id,
                     'product_id' => $product->id,

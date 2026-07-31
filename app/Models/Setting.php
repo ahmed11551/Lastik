@@ -9,7 +9,6 @@ class Setting extends TenantModel
     protected $table = 'settings';
 
     protected $fillable = [
-        'tenant_id',
         'group',
         'key',
         'value',

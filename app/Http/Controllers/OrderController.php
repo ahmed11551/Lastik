@@ -113,7 +113,7 @@ class OrderController extends Controller
 
     public function destroyItem(Request $request, OrderItem $item): JsonResponse
     {
-        $order = Order::query()->withoutGlobalScopes()->findOrFail($item->order_id);
+        $order = Order::query()->findOrFail($item->order_id);
         $this->authorize('update', $order);
 
         $validated = $request->validate([

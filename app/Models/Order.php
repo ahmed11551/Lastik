@@ -24,7 +24,6 @@ class Order extends TenantModel
     protected $table = 'orders';
 
     protected $fillable = [
-        'tenant_id',
         'location_id',
         'customer_id',
         'vehicle_id',

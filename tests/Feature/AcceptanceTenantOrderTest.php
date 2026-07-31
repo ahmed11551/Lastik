@@ -30,7 +30,7 @@ it('hides foreign tenant order from scoped queries', function (): void {
         scenario: 'without_installation',
     ), $tenantB->user->id);
 
-    app()->instance('current_tenant_id', $tenantA->tenant->id);
+    set_current_tenant_id($tenantA->tenant->id);
 
     expect(Order::query()->whereKey($orderB->id)->first())->toBeNull();
     expect(Order::query()->get())->toHaveCount(0);
@@ -77,7 +77,7 @@ it('lists only current tenant orders', function (): void {
         scenario: 'without_installation',
     ), $tenantB->user->id);
 
-    app()->instance('current_tenant_id', $tenantA->tenant->id);
+    set_current_tenant_id($tenantA->tenant->id);
 
     $list = Order::query()->get();
     expect($list)->toHaveCount(1);

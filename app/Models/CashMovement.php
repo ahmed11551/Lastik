@@ -17,7 +17,6 @@ class CashMovement extends TenantModel
     protected $table = 'cash_movements';
 
     protected $fillable = [
-        'tenant_id',
         'shift_id',
         'type',
         'amount',

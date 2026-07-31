@@ -16,6 +16,7 @@ class StockReservationService
     public function reserve(int $stockId, int $tenantId, float|int $qty, ?int $orderItemId = null): Reservation
     {
         return DB::transaction(function () use ($stockId, $tenantId, $qty, $orderItemId) {
+            // Pessimistic lock MUST be on a fresh Builder query (not $stock->lockForUpdate()).
             $stock = Stock::query()->withoutGlobalScopes()
                 ->whereKey($stockId)
                 ->where('tenant_id', $tenantId)
@@ -33,7 +34,7 @@ class StockReservationService
             $stock->available = $newAvailable;
             $stock->save();
 
-            $reservation = Reservation::query()->withoutGlobalScopes()->create([
+            $reservation = Reservation::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $tenantId,
                 'stock_id' => $stock->id,
                 'order_item_id' => $orderItemId,
@@ -95,7 +96,7 @@ class StockReservationService
                 $active->update(['status' => Reservation::STATUS_RELEASED]);
                 $reservation = $active->fresh();
             } else {
-                $reservation = Reservation::query()->withoutGlobalScopes()->create([
+                $reservation = Reservation::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
                     'stock_id' => $stock->id,
                     'order_item_id' => $orderItemId,

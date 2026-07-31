@@ -28,6 +28,9 @@ class PaymentController extends Controller
         $this->authorize('create', Payment::class);
 
         $validated = $request->validate([
+            'tenant_id' => ['prohibited'],
+            'location_id' => ['prohibited'],
+            'created_by' => ['prohibited'],
             'order_id' => ['required', 'integer', 'exists:orders,id'],
             'parts' => ['required', 'array', 'min:1'],
             'parts.*.method' => ['required', 'string', 'in:cash,card,transfer,sbp,terminal'],
@@ -38,7 +41,7 @@ class PaymentController extends Controller
 
         try {
             $created = $this->payments->accept(
-                (int) ($request->user()?->tenant_id ?? $request->input('tenant_id')),
+                (int) ($request->user()->tenant_id ?? tenant_id() ?? 0),
                 (int) $validated['order_id'],
                 $validated['parts'],
                 (int) $request->user()->id,

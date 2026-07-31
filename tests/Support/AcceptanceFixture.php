@@ -60,7 +60,7 @@ final class AcceptanceFixture
             'is_active' => true,
         ]);
 
-        app()->instance('current_tenant_id', $fx->tenant->id);
+        set_current_tenant_id($fx->tenant->id);
 
         $fx->location = Location::query()->withoutGlobalScopes()->create([
             'tenant_id' => $fx->tenant->id,

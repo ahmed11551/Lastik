@@ -14,6 +14,7 @@ return new class extends Migration
             return;
         }
 
+        // tenants — системная таблица каталога, RLS на неё не вешаем.
         $tables = [
             'locations',
             'users',
@@ -50,8 +51,12 @@ return new class extends Migration
             }
 
             DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
+            DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
             DB::statement("DROP POLICY IF EXISTS tenant_isolation_{$table} ON {$table}");
-            DB::statement("CREATE POLICY tenant_isolation_{$table} ON {$table} USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint)");
+            DB::statement(
+                "CREATE POLICY tenant_isolation_{$table} ON {$table}
+                 USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint)"
+            );
         }
     }
 
@@ -97,6 +102,8 @@ return new class extends Migration
             }
 
             DB::statement("DROP POLICY IF EXISTS tenant_isolation_{$table} ON {$table}");
+            DB::statement("ALTER TABLE {$table} NO FORCE ROW LEVEL SECURITY");
+            DB::statement("ALTER TABLE {$table} DISABLE ROW LEVEL SECURITY");
         }
     }
 };

@@ -28,14 +28,20 @@ class TaskController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'tenant_id' => ['prohibited'],
+            'created_by' => ['prohibited'],
+            'updated_by' => ['prohibited'],
             'title' => ['required', 'string', 'max:255'],
             'body' => ['nullable', 'string'],
             'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
             'order_id' => ['nullable', 'integer', 'exists:orders,id'],
             'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
             'vehicle_id' => ['nullable', 'integer', 'exists:vehicles,id'],
-            'location_id' => ['nullable', 'integer', 'exists:locations,id'],
+            // location только из контекста сессии
+            'location_id' => ['prohibited'],
         ]);
+
+        $validated['location_id'] = location_id() ?? $request->user()->location_id;
 
         $task = $this->tasks->create(
             (int) $request->user()->tenant_id,

@@ -22,7 +22,7 @@ class AuditLog
     ): AuditLogModel {
         $request = request();
 
-        return AuditLogModel::query()->create([
+        return AuditLogModel::query()->forceCreate([
             'tenant_id' => $tenantId,
             'user_id' => $userId,
             'action' => $action,

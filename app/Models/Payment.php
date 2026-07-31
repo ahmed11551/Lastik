@@ -12,7 +12,6 @@ class Payment extends TenantModel
     protected $table = 'payments';
 
     protected $fillable = [
-        'tenant_id',
         'order_id',
         'shift_id',
         'method',

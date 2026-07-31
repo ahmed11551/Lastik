@@ -6,13 +6,18 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\Domain\ShiftAlreadyOpenedException;
 use App\Models\CashShift;
-use App\Support\AuditLog;
+use App\Services\Cash\CashShiftService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 class CashShiftController extends Controller
 {
+    public function __construct(
+        private readonly CashShiftService $shifts,
+    ) {}
+
     public function index(): array
     {
         return ['data' => CashShift::all()];
@@ -20,54 +25,41 @@ class CashShiftController extends Controller
 
     public function store(Request $request): JsonResponse|RedirectResponse
     {
+        $request->validate([
+            'tenant_id' => ['prohibited'],
+            'location_id' => ['prohibited'],
+            'created_by' => ['prohibited'],
+            'updated_by' => ['prohibited'],
+            'opening_amount' => ['nullable', 'numeric', 'min:0'],
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
+
         $user = $request->user();
-        $tenantId = (int) ($request->input('tenant_id') ?? $user?->tenant_id);
-        $locationId = (int) ($request->input('location_id') ?? $user?->location_id);
+        abort_unless($user !== null, 401);
 
-        $existing = CashShift::query()
-            ->withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->whereNull('closed_at')
-            ->where(function ($q): void {
-                $q->where('status', 'opened')->orWhereNull('status');
-            })
-            ->first();
+        $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
+        $locationId = (int) (location_id() ?? $user->location_id ?? 0);
+        abort_unless($tenantId > 0 && $locationId > 0, 422, 'Tenant/location context required');
 
-        if ($existing !== null) {
+        try {
+            $shift = $this->shifts->open($tenantId, $locationId, (int) $user->id);
+
+            if ($request->filled('opening_amount') || $request->filled('note')) {
+                $shift->forceFill([
+                    'opening_amount' => (float) $request->input('opening_amount', $shift->opening_amount ?? 0),
+                    'note' => $request->input('note', $shift->note),
+                ])->save();
+            }
+        } catch (RuntimeException $e) {
             if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json([
-                    'message' => 'Смена уже открыта',
-                    'data' => $existing,
-                ], 409);
+                return response()->json(['message' => $e->getMessage()], 409);
             }
 
             throw ShiftAlreadyOpenedException::default();
         }
 
-        $shift = CashShift::query()->withoutGlobalScopes()->create([
-            'tenant_id' => $tenantId,
-            'location_id' => $locationId ?: null,
-            'user_id' => $user?->id,
-            'opened_by' => $user?->id,
-            'status' => 'opened',
-            'opening_amount' => (float) $request->input('opening_amount', 0),
-            'opened_at' => now(),
-            'note' => $request->input('note'),
-        ]);
-
-        AuditLog::write(
-            $tenantId,
-            $user?->id,
-            'cash_shift.open',
-            CashShift::class,
-            (int) $shift->id,
-            [],
-            ['status' => 'opened'],
-            ['location_id' => $locationId],
-        );
-
         if ($request->expectsJson() || $request->is('api/*')) {
-            return response()->json(['data' => $shift], 201);
+            return response()->json(['data' => $shift->fresh()], 201);
         }
 
         return redirect()->back()->with('flash', [
@@ -81,22 +73,8 @@ class CashShiftController extends Controller
     {
         $this->authorize('close', $shift);
 
-        $shift->update([
-            'closed_at' => now(),
-            'status' => 'closed',
-            'closed_by' => auth()->id(),
-        ]);
+        $closed = $this->shifts->close($shift);
 
-        AuditLog::write(
-            (int) $shift->tenant_id,
-            auth()->id(),
-            'cash_shift.close',
-            CashShift::class,
-            (int) $shift->id,
-            ['status' => 'opened'],
-            ['status' => 'closed'],
-        );
-
-        return ['data' => $shift->fresh()];
+        return ['data' => $closed];
     }
 }

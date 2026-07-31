@@ -9,7 +9,6 @@ use App\Models\Issuance;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Reservation;
-use App\Models\Stock;
 use App\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -17,6 +16,10 @@ use RuntimeException;
 
 final class IssuanceService
 {
+    public function __construct(
+        private readonly OrderFulfillmentService $fulfillment,
+    ) {}
+
     public function issue(
         int $tenantId,
         int $orderId,
@@ -31,7 +34,7 @@ final class IssuanceService
         }
 
         return DB::transaction(function () use ($tenantId, $orderId, $orderItemId, $qty, $issuedBy, $basis, $note): Issuance {
-            app()->instance('current_tenant_id', $tenantId);
+            set_current_tenant_id($tenantId);
 
             $order = Order::query()->withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)
@@ -73,15 +76,11 @@ final class IssuanceService
                 throw new InsufficientStockException('Reservation qty less than issuance qty');
             }
 
-            $stock = Stock::query()->withoutGlobalScopes()
-                ->whereKey($reservation->stock_id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $stock->actual = (float) $stock->actual - $qty;
-            $stock->reserved = (float) $stock->reserved - $qty;
-            $stock->available = (float) $stock->actual - (float) $stock->reserved;
-            $stock->save();
+            $stock = $this->fulfillment->deductIssuedQty(
+                (int) $reservation->stock_id,
+                $tenantId,
+                $qty,
+            );
 
             if ((float) $reservation->qty <= $qty + 0.0001) {
                 $reservation->update(['status' => Reservation::STATUS_USED]);
@@ -89,7 +88,7 @@ final class IssuanceService
                 $reservation->update(['qty' => (float) $reservation->qty - $qty]);
             }
 
-            $issuance = Issuance::query()->withoutGlobalScopes()->create([
+            $issuance = Issuance::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $tenantId,
                 'order_id' => $order->id,
                 'order_item_id' => $item->id,

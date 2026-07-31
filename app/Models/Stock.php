@@ -13,7 +13,6 @@ class Stock extends TenantModel
     protected $table = 'stocks';
 
     protected $fillable = [
-        'tenant_id',
         'warehouse_id',
         'product_id',
         'actual',

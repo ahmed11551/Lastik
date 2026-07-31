@@ -15,7 +15,6 @@ class Issuance extends TenantModel
     protected $table = 'issuances';
 
     protected $fillable = [
-        'tenant_id',
         'order_id',
         'order_item_id',
         'warehouse_id',

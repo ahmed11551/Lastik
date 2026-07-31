@@ -15,7 +15,6 @@ class Location extends TenantModel
     protected $table = 'locations';
 
     protected $fillable = [
-        'tenant_id',
         'name',
         'address',
         'timezone',

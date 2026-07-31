@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,12 +12,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
+    use BelongsToTenant;
     use HasFactory;
 
     protected $table = 'users';
 
     protected $fillable = [
-        'tenant_id',
         'location_id',
         'role_id',
         'name',
@@ -41,6 +42,12 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
     ];
+
+    protected static function appliesTenantGlobalScope(): bool
+    {
+        // Auth provider must resolve users before tenant context is bound.
+        return false;
+    }
 
     public function getAuthPassword(): string
     {

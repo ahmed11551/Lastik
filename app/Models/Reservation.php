@@ -21,7 +21,6 @@ class Reservation extends TenantModel
     protected $table = 'reservations';
 
     protected $fillable = [
-        'tenant_id',
         'order_item_id',
         'stock_id',
         'qty',

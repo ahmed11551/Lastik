@@ -14,41 +14,44 @@ class CashShiftService
 {
     public function open(int $tenantId, int $locationId, int $userId): CashShift
     {
-        $now = now();
+        return DB::transaction(function () use ($tenantId, $locationId, $userId): CashShift {
+            $now = now();
 
-        /** @var CashShift|null $opened */
-        $opened = CashShift::query()->withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->where('location_id', $locationId)
-            ->whereNull('closed_at')
-            ->first();
+            /** @var CashShift|null $opened */
+            $opened = CashShift::query()->withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->where('location_id', $locationId)
+                ->whereNull('closed_at')
+                ->lockForUpdate()
+                ->first();
 
-        if ($opened !== null) {
-            return $opened;
-        }
+            if ($opened !== null) {
+                return $opened;
+            }
 
-        $shift = CashShift::query()->withoutGlobalScopes()->create([
-            'tenant_id' => $tenantId,
-            'location_id' => $locationId,
-            'user_id' => $userId,
-            'opened_by' => $userId,
-            'status' => 'opened',
-            'opened_at' => $now,
-            'closed_at' => null,
-            'totals' => [
-                'cash' => 0,
-                'card' => 0,
-                'transfer' => 0,
-                'online' => 0,
-                'inkasso' => 0,
-                'withdrawal' => 0,
-                'correction' => 0,
-            ],
-        ]);
+            $shift = CashShift::query()->withoutGlobalScopes()->forceCreate([
+                'tenant_id' => $tenantId,
+                'location_id' => $locationId,
+                'user_id' => $userId,
+                'opened_by' => $userId,
+                'status' => 'opened',
+                'opened_at' => $now,
+                'closed_at' => null,
+                'totals' => [
+                    'cash' => 0,
+                    'card' => 0,
+                    'transfer' => 0,
+                    'online' => 0,
+                    'inkasso' => 0,
+                    'withdrawal' => 0,
+                    'correction' => 0,
+                ],
+            ]);
 
-        AuditLog::write($tenantId, $userId, 'cash_shift.open', CashShift::class, (int) $shift->id);
+            AuditLog::write($tenantId, $userId, 'cash_shift.open', CashShift::class, (int) $shift->id);
 
-        return $shift;
+            return $shift;
+        });
     }
 
     public function close(CashShift $shift): CashShift
@@ -102,7 +105,7 @@ class CashShiftService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $movement = CashMovement::query()->withoutGlobalScopes()->create([
+            $movement = CashMovement::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $shift->tenant_id,
                 'shift_id' => $shift->id,
                 'type' => CashMovement::TYPE_INKASSO,
@@ -149,7 +152,7 @@ class CashShiftService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $movement = CashMovement::query()->withoutGlobalScopes()->create([
+            $movement = CashMovement::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $shift->tenant_id,
                 'shift_id' => $shift->id,
                 'type' => CashMovement::TYPE_WITHDRAWAL,

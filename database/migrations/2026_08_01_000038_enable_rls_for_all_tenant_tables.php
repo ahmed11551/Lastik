@@ -7,8 +7,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Повторное включение RLS после создания всех доменных таблиц.
+ * Повторное включение RLS (+ FORCE) после создания всех доменных таблиц.
  * Миграция 000004 запускается слишком рано и пропускает поздние таблицы.
+ * Таблица tenants намеренно исключена.
  */
 return new class extends Migration
 {
@@ -66,6 +67,7 @@ return new class extends Migration
             }
 
             DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
+            DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
             DB::statement("DROP POLICY IF EXISTS tenant_isolation_{$table} ON {$table}");
             DB::statement(
                 "CREATE POLICY tenant_isolation_{$table} ON {$table}
@@ -95,6 +97,7 @@ return new class extends Migration
             }
 
             DB::statement("DROP POLICY IF EXISTS tenant_isolation_{$table} ON {$table}");
+            DB::statement("ALTER TABLE {$table} NO FORCE ROW LEVEL SECURITY");
             DB::statement("ALTER TABLE {$table} DISABLE ROW LEVEL SECURITY");
         }
     }

@@ -25,7 +25,11 @@ use App\Http\Middleware\EnsureTenant;
 use App\Http\Middleware\RateLimitAuth;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware([EnsureTenant::class, RateLimitAuth::class, 'auth', EnforceLocationAccess::class])->prefix('v1')->group(function (): void {
+Route::prefix('v1')->group(function (): void {
+    Route::post('auth/login', [AuthController::class, 'login'])->middleware(RateLimitAuth::class);
+});
+
+Route::middleware([RateLimitAuth::class, 'auth', EnsureTenant::class, EnforceLocationAccess::class])->prefix('v1')->group(function (): void {
     Route::get('orders/{order}', [OrderController::class, 'show'])->middleware('ensure.permission:orders.view');
     Route::get('orders', [OrderController::class, 'index'])->middleware('ensure.permission:orders.view');
     Route::post('orders', [OrderController::class, 'store'])->middleware('ensure.permission:orders.create');
@@ -50,8 +54,6 @@ Route::middleware([EnsureTenant::class, RateLimitAuth::class, 'auth', EnforceLoc
 
     Route::get('users/{user}', [UserController::class, 'show'])->middleware('ensure.permission:users.view');
     Route::get('users', [UserController::class, 'index'])->middleware('ensure.permission:users.view');
-
-    Route::post('auth/login', [AuthController::class, 'login']);
 
     Route::get('customers', [CustomerController::class, 'index'])->middleware('ensure.permission:customers.view');
     Route::post('customers/import', [CustomerImportController::class, 'store'])->middleware('ensure.permission:customers.create');

@@ -13,7 +13,6 @@ class AuditLog extends TenantModel
     public $timestamps = false;
 
     protected $fillable = [
-        'tenant_id',
         'user_id',
         'action',
         'object_type',

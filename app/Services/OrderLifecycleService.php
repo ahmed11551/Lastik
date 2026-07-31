@@ -26,7 +26,7 @@ final class OrderLifecycleService
         }
 
         return DB::transaction(function () use ($tenantId, $orderId, $userId, $reason): Order {
-            app()->instance('current_tenant_id', $tenantId);
+            set_current_tenant_id($tenantId);
 
             $order = Order::query()->withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)

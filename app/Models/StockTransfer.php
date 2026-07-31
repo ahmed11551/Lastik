@@ -11,7 +11,6 @@ class StockTransfer extends TenantModel
     protected $table = 'stock_transfers';
 
     protected $fillable = [
-        'tenant_id',
         'product_id',
         'from_warehouse_id',
         'to_warehouse_id',

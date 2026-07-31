@@ -15,7 +15,6 @@ class ProductService extends TenantModel
     protected $table = 'products_services';
 
     protected $fillable = [
-        'tenant_id',
         'type',
         'article',
         'external_id',

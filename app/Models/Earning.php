@@ -11,7 +11,6 @@ class Earning extends TenantModel
     protected $table = 'earnings';
 
     protected $fillable = [
-        'tenant_id',
         'order_id',
         'user_id',
         'order_item_id',

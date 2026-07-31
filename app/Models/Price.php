@@ -12,7 +12,6 @@ class Price extends TenantModel
 
     protected $fillable = [
         'product_id',
-        'tenant_id',
         'type',
         'price',
         'cost_price',

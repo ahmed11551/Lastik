@@ -12,7 +12,6 @@ class Warehouse extends TenantModel
     protected $table = 'warehouses';
 
     protected $fillable = [
-        'tenant_id',
         'location_id',
         'name',
         'location',

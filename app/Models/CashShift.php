@@ -12,7 +12,6 @@ class CashShift extends TenantModel
     protected $table = 'cash_shifts';
 
     protected $fillable = [
-        'tenant_id',
         'location_id',
         'user_id',
         'opened_by',

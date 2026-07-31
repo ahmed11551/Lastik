@@ -27,7 +27,6 @@ class Dictionary extends TenantModel
     protected $table = 'dictionaries';
 
     protected $fillable = [
-        'tenant_id',
         'type',
         'code',
         'label',

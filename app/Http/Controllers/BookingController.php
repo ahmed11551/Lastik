@@ -43,7 +43,10 @@ class BookingController extends Controller
             'end_time' => ['required', 'date', 'after:start_time'],
         ]);
 
-        $dto = CreateBookingDTO::fromRequest($request->all());
+        $dto = CreateBookingDTO::fromRequest(
+            $request->only(['post_id', 'customer_name', 'customer_phone', 'start_time', 'end_time']),
+            (int) ($request->user()?->tenant_id ?? tenant_id() ?? 0),
+        );
 
         try {
             $booking = $bookingService->createBooking($dto);

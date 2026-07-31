@@ -11,7 +11,6 @@ class KpiRule extends TenantModel
     protected $table = 'kpi_rules';
 
     protected $fillable = [
-        'tenant_id',
         'applies_to',
         'target_type',
         'product_id',

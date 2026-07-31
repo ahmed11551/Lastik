@@ -11,7 +11,6 @@ class Vehicle extends TenantModel
     protected $table = 'vehicles';
 
     protected $fillable = [
-        'tenant_id',
         'customer_id',
         'plate',
         'vin',

@@ -58,7 +58,7 @@ it('blocks seller of point A from viewing order of point B', function (): void {
         'opened_at' => now(),
     ]);
 
-    app()->instance('current_tenant_id', $fx->tenant->id);
+    set_current_tenant_id($fx->tenant->id);
 
     $orderB = Order::query()->withoutGlobalScopes()->create([
         'tenant_id' => $fx->tenant->id,
@@ -117,7 +117,7 @@ it('lists orders only for current location when location_id is set', function ()
         'created_by' => $fx->user->id,
     ]);
 
-    app()->instance('current_tenant_id', $fx->tenant->id);
+    set_current_tenant_id($fx->tenant->id);
     app()->instance('current_location_id', $fx->location->id);
 
     $list = Order::query()->where('location_id', location_id())->get();

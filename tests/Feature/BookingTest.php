@@ -24,12 +24,12 @@ it('creates booking and prevents overlap within same tenant', function (): void 
 it('keeps bookings isolated between tenants', function (): void {
     $a = AcceptanceFixture::make('booking-a-'.uniqid());
     $b = AcceptanceFixture::make('booking-b-'.uniqid());
-    $postA = Post::query()->withoutGlobalScopes()->create(['tenant_id' => $a->tenant->id, 'name' => 'A', 'is_active' => true]);
-    $postB = Post::query()->withoutGlobalScopes()->create(['tenant_id' => $b->tenant->id, 'name' => 'B', 'is_active' => true]);
+    $postA = Post::query()->withoutGlobalScopes()->forceCreate(['tenant_id' => $a->tenant->id, 'name' => 'A', 'is_active' => true]);
+    $postB = Post::query()->withoutGlobalScopes()->forceCreate(['tenant_id' => $b->tenant->id, 'name' => 'B', 'is_active' => true]);
     $service = app(BookingService::class);
-    app()->instance('current_tenant_id', $a->tenant->id);
+    set_current_tenant_id($a->tenant->id);
     $service->createBooking(new CreateBookingDTO($a->tenant->id, $postA->id, 'A', '+1', '2026-08-02 11:00:00', '2026-08-02 11:30:00'));
-    app()->instance('current_tenant_id', $b->tenant->id);
+    set_current_tenant_id($b->tenant->id);
     $service->createBooking(new CreateBookingDTO($b->tenant->id, $postB->id, 'B', '+2', '2026-08-02 11:00:00', '2026-08-02 11:30:00'));
 
     expect(Booking::query()->withoutGlobalScopes()->where('tenant_id', $a->tenant->id)->count())->toBe(1);
