@@ -1,0 +1,11 @@
+{
+  "preset": "laravel",
+  "exclude": [
+    "database/migrations.disabled",
+    "vendor",
+    "node_modules",
+    "storage",
+    "bootstrap/cache",
+    "public"
+  ]
+}

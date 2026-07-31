@@ -1,0 +1,6 @@
+{
+  "name": "LASTIK - Платформа шинного центра",
+  "description": "Модульная система управления шинными центрами, складом, заказами, кассой, сменами и KPI",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,127 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lastik
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: lastik
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lastik -d lastik"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lastik_network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - lastik_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lastik_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    environment: &app_env
+      APP_ENV: local
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: lastik
+      DB_USERNAME: lastik
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - lastik_network
+
+  # Laravel queue worker — обрабатывает Jobs (импорт Excel/CommerceML, KPI, уведомления)
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lastik_queue
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: php artisan queue:work redis --sleep=1 --tries=3 --max-time=3600 --timeout=120
+    volumes:
+      - .:/var/www/html
+    environment:
+      <<: *app_env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      app:
+        condition: service_started
+    networks:
+      - lastik_network
+
+  # Laravel scheduler — cron-замена: schedule:run каждую минуту
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lastik_scheduler
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: >
+      sh -c "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
+    volumes:
+      - .:/var/www/html
+    environment:
+      <<: *app_env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      app:
+        condition: service_started
+    networks:
+      - lastik_network
+
+  webserver:
+    image: nginx:alpine
+    container_name: lastik_webserver
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - lastik_network
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  lastik_network:
+    driver: bridge

@@ -1,0 +1,46 @@
+{
+    "name": "lastik/laravel-app",
+    "description": "LASTIK Platform - Security Sprint 1",
+    "type": "project",
+    "require": {
+        "php": "^8.3 || ^8.4 || ^8.5",
+        "laravel/framework": "^13.0",
+        "laravel/sanctum": "^4.2",
+        "guzzlehttp/guzzle": "^7.9"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.18",
+        "mockery/mockery": "^1.6",
+        "pestphp/pest": "^4",
+        "pestphp/pest-plugin-laravel": "^4"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        },
+        "files": [
+            "app/Support/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "lint": "pint"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
