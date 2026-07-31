@@ -1,4 +1,4 @@
-/* Industrial Precision — Design Tokens */
+/* Industrial Precision — Design Tokens (AUTOMETRIA ERP) */
 :root {
   --color-bg: #0B0D10;
   --color-surface: #11151A;
@@ -14,6 +14,7 @@
   --font-ui: 'Inter', ui-sans-serif, system-ui;
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code';
   --radius: 4px;
+  --table-row-height: 32px;
 }
 
 @media (prefers-color-scheme: light) {
