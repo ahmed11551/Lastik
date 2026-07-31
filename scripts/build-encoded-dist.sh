@@ -12,10 +12,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENCODER="${ENCODER:-sourceguardian}"
-OUT_DIR="${OUT_DIR:-$ROOT/dist-encoded}"
+OUT_DIR="${OUT_DIR:-$ROOT/dist}"
 PHP_VERSION="${PHP_VERSION:-8.4}"
 
 echo "==> AUTOMETRIA encoded client build ($ENCODER, PHP $PHP_VERSION)"
+echo "    Output: $OUT_DIR"
 
 # Guard: private key must never enter the dist
 if [[ -f "$ROOT/storage/framework/licensing/private.pem" ]]; then

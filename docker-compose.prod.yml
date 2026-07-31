@@ -1,0 +1,131 @@
+# AUTOMETRIA ERP — Production Deployment Stack
+# @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
+#
+# Usage (on client server):
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+
+services:
+  # === AUTOMETRIA ERP Engine Container ===
+  app:
+    build:
+      context: .
+      dockerfile: docker/production/php/Dockerfile
+    container_name: autometria_app
+    restart: always
+    environment: &app_env
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_NAME: "AUTOMETRIA ERP"
+      APP_KEY: ${APP_KEY}
+      APP_URL: ${APP_URL:-http://localhost}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-autometria_prod}
+      DB_USERNAME: ${DB_USERNAME:-autometria_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+    volumes:
+      # Лицензия монтируется отдельно для ротации без пересборки образа
+      - ./licensing/autometria.lic:/var/www/autometria/storage/framework/licensing/autometria.lic:ro
+      - ./licensing/public.pem:/var/www/autometria/storage/framework/licensing/public.pem:ro
+      - storage_uploads:/var/www/autometria/storage/app/public
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - autometria_net
+
+  # === PostgreSQL 16 (RLS-ready) ===
+  postgres:
+    image: postgres:16-alpine
+    container_name: autometria_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-autometria_prod}
+      POSTGRES_USER: ${DB_USERNAME:-autometria_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - autometria_net
+
+  # === Redis Queue & Cache ===
+  redis:
+    image: redis:7-alpine
+    container_name: autometria_redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - autometria_net
+
+  # === Queue Worker (CommerceML / async) ===
+  queue:
+    build:
+      context: .
+      dockerfile: docker/production/php/Dockerfile
+    container_name: autometria_worker
+    restart: always
+    command: php artisan queue:work redis --queue=high,default,imports --sleep=1 --tries=3 --timeout=90
+    environment:
+      <<: *app_env
+    volumes:
+      - ./licensing/autometria.lic:/var/www/autometria/storage/framework/licensing/autometria.lic:ro
+      - ./licensing/public.pem:/var/www/autometria/storage/framework/licensing/public.pem:ro
+      - storage_uploads:/var/www/autometria/storage/app/public
+    depends_on:
+      app:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - autometria_net
+
+  # === Scheduler ===
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/production/php/Dockerfile
+    container_name: autometria_scheduler
+    restart: always
+    command: php artisan schedule:work
+    environment:
+      <<: *app_env
+    volumes:
+      - ./licensing/autometria.lic:/var/www/autometria/storage/framework/licensing/autometria.lic:ro
+      - ./licensing/public.pem:/var/www/autometria/storage/framework/licensing/public.pem:ro
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - autometria_net
+
+volumes:
+  pgdata:
+  redisdata:
+  storage_uploads:
+
+networks:
+  autometria_net:
+    driver: bridge

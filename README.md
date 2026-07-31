@@ -8,7 +8,8 @@
 > **Release Notes v1.0.0 + API:** [docs/release-notes-v1.0.0.md](docs/release-notes-v1.0.0.md).  
 > **CommerceML batch:** [docs/commerceml-batch-architecture.md](docs/commerceml-batch-architecture.md).  
 > **Licensing ops (PEM / lic):** [docs/licensing-ops.md](docs/licensing-ops.md).  
-> **Encoded client build:** [docs/client-build-encoding.md](docs/client-build-encoding.md).
+> **Encoded client build:** [docs/client-build-encoding.md](docs/client-build-encoding.md).  
+> **Production deploy:** [docs/production-deploy.md](docs/production-deploy.md).
 
 ## Установка
 

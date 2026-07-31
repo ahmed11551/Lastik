@@ -17,6 +17,13 @@
 **/.DS_Store
 /dist
 /dist-encoded
+/.env.prod
+/licensing/*.lic
+/licensing/private.pem
+/licensing/public.pem
+!/licensing/.gitkeep
+!/licensing/README.md
+!/licensing/.gitignore
 
 # Licensing: только public.pem и example попадают в клиентский репозиторий.
 # private.pem и *.lic НИКОГДА не коммитятся.

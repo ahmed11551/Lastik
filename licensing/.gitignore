@@ -1,0 +1,8 @@
+# Client deploy licensing drop-zone
+# Place on the client server next to docker-compose.prod.yml:
+#   licensing/autometria.lic   (issued by vendor)
+#   licensing/public.pem       (RSA public key)
+*
+!.gitignore
+!.gitkeep
+!README.md

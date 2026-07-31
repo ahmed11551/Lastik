@@ -16,14 +16,14 @@ PHP target: **8.4** (как в Docker/prod).
 ```bash
 chmod +x scripts/build-encoded-dist.sh
 
-# SourceGuardian 17
+# SourceGuardian 17 → ./dist (для docker/production/php/Dockerfile)
 ENCODER=sourceguardian PHP_VERSION=8.4 ./scripts/build-encoded-dist.sh
 
 # IonCube Encoder 15
 ENCODER=ioncube PHP_VERSION=8.4 ./scripts/build-encoded-dist.sh
 ```
 
-Результат: `dist-encoded/`
+Результат по умолчанию: `dist/` (override: `OUT_DIR=./dist-encoded`).
 
 Скрипт:
 
