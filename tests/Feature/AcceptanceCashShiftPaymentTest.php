@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\DTOs\CreateOrderDTO;
+use App\Exceptions\Domain\ShiftAlreadyClosedException;
 use App\Models\AuditLog;
 use App\Models\CashMovement;
 use App\Models\MoneyRecipient;
@@ -117,14 +118,26 @@ it('supports inkasso and withdrawal on open shift and blocks payment rewrite aft
         $fx->shift->id,
     );
 
+    $payment = $payments[0];
+
+    // Корректировка допустима только пока смена открыта
+    $correction = app(PaymentService::class)->correct(
+        $payment,
+        900.0,
+        'Ошибка кассира до закрытия смены',
+        $fx->user->id,
+    );
+
+    expect($correction)->toBeInstanceOf(PaymentCorrection::class);
+    expect((float) $correction->old_amount)->toBe(1000.0);
+    expect((float) $correction->new_amount)->toBe(900.0);
+
     $closed = $cash->close($fx->shift->fresh());
     expect($closed->closed_at)->not->toBeNull();
     expect($closed->totals)->toHaveKeys(['cash', 'inkasso', 'withdrawal']);
-    expect((float) $closed->totals['cash'])->toBe(1000.0);
+    expect((float) $closed->totals['cash'])->toBe(900.0);
     expect((float) $closed->totals['inkasso'])->toBe(500.0);
     expect((float) $closed->totals['withdrawal'])->toBe(200.0);
-
-    $payment = $payments[0];
 
     // Прямая перезапись после закрытия смены запрещена сервисом accept
     expect(fn () => app(PaymentService::class)->accept(
@@ -135,16 +148,13 @@ it('supports inkasso and withdrawal on open shift and blocks payment rewrite aft
         $fx->shift->id,
     ))->toThrow(RuntimeException::class);
 
-    $correction = app(PaymentService::class)->correct(
-        $payment,
-        900.0,
-        'Ошибка кассира после закрытия смены',
+    // Корректировка после закрытия смены запрещена
+    expect(fn () => app(PaymentService::class)->correct(
+        $payment->fresh(),
+        800.0,
+        'Попытка после закрытия',
         $fx->user->id,
-    );
-
-    expect($correction)->toBeInstanceOf(PaymentCorrection::class);
-    expect((float) $correction->old_amount)->toBe(1000.0);
-    expect((float) $correction->new_amount)->toBe(900.0);
+    ))->toThrow(ShiftAlreadyClosedException::class);
 
     $log = AuditLog::query()->withoutGlobalScopes()
         ->where('tenant_id', $fx->tenant->id)
@@ -152,7 +162,7 @@ it('supports inkasso and withdrawal on open shift and blocks payment rewrite aft
         ->first();
 
     expect($log)->not->toBeNull();
-    expect($log->reason)->toBe('Ошибка кассира после закрытия смены');
+    expect($log->reason)->toBe('Ошибка кассира до закрытия смены');
 });
 
 it('writes audit on shift open via service', function (): void {

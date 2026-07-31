@@ -46,7 +46,7 @@ it('pulls price from price list into order item snapshot', function (): void {
     expect($item->snapshot)->toHaveKey('discount');
 });
 
-it('stores price and discount snapshot and audits manual price change', function (): void {
+it('stores catalog price snapshot and ignores client price override', function (): void {
     $fx = $this->fx;
 
     $permissions = $fx->role->permissions ?? [];
@@ -73,7 +73,7 @@ it('stores price and discount snapshot and audits manual price change', function
             'type' => 'product',
             'product_id' => $fx->product->id,
             'qty' => 1,
-            'price' => 4500, // ручная цена
+            'price' => 4500, // клиентская цена игнорируется
             'discount' => 200,
             'warehouse_id' => $fx->warehouse->id,
         ]],
@@ -82,13 +82,13 @@ it('stores price and discount snapshot and audits manual price change', function
 
     /** @var OrderItem $item */
     $item = $order->orderItems->first();
-    expect((float) $item->snapshot['price'])->toBe(4500.0);
+    expect((float) $item->snapshot['price'])->toBe(5000.0);
     expect((float) $item->snapshot['discount'])->toBe(200.0);
 
     // изменение карточки товара не трогает snapshot
     $fx->product->update(['base_price' => 9999, 'name' => 'Новое имя']);
     $item->refresh();
-    expect((float) $item->snapshot['price'])->toBe(4500.0);
+    expect((float) $item->snapshot['price'])->toBe(5000.0);
     expect($item->snapshot['name'])->toBe('Шина тест');
 
     $log = AuditLog::query()->withoutGlobalScopes()

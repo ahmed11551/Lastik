@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\NoActiveShiftException;
 use App\Http\Requests\StoreOrderRequest;
+use App\Models\Location;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\OrderLifecycleService;
@@ -22,11 +23,19 @@ class OrderController extends Controller
         private readonly OrderLifecycleService $lifecycle,
     ) {}
 
-    public function index(): array
+    public function index(Request $request): array
     {
-        $query = Order::query();
+        $user = $request->user();
+        abort_unless($user !== null, 401);
 
-        $locationId = location_id();
+        $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
+        abort_unless($tenantId > 0, 422, 'Tenant context required');
+
+        $locationId = location_id() ?? ($user->location_id ? (int) $user->location_id : null);
+        $this->assertLocationBelongsToTenant($tenantId, $locationId);
+
+        $query = Order::query()->where('tenant_id', $tenantId);
+
         if ($locationId !== null) {
             $query->where('location_id', $locationId);
         }
@@ -99,6 +108,8 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'reason' => ['required', 'string', 'min:3'],
+            'tenant_id' => ['prohibited'],
+            'location_id' => ['prohibited'],
         ]);
 
         $cancelled = $this->lifecycle->cancel(
@@ -113,11 +124,14 @@ class OrderController extends Controller
 
     public function destroyItem(Request $request, OrderItem $item): JsonResponse
     {
+        // Tenant global scope must stay on — no withoutGlobalScopes().
         $order = Order::query()->findOrFail($item->order_id);
         $this->authorize('update', $order);
 
         $validated = $request->validate([
             'reason' => ['required', 'string', 'min:3'],
+            'tenant_id' => ['prohibited'],
+            'location_id' => ['prohibited'],
         ]);
 
         $this->lifecycle->removeItem(
@@ -128,5 +142,19 @@ class OrderController extends Controller
         );
 
         return response()->json(['ok' => true]);
+    }
+
+    private function assertLocationBelongsToTenant(int $tenantId, ?int $locationId): void
+    {
+        if ($locationId === null) {
+            return;
+        }
+
+        $belongs = Location::query()
+            ->whereKey($locationId)
+            ->where('tenant_id', $tenantId)
+            ->exists();
+
+        abort_unless($belongs, 403, 'Location does not belong to current tenant');
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\DTOs\CreateOrderDTO;
+use App\Models\Location;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\ValidationException;
@@ -33,7 +34,8 @@ class StoreOrderRequest extends FormRequest
             'items.*.type' => ['required', 'string', 'in:product,service'],
             'items.*.product_id' => ['required', 'integer', 'exists:products_services,id'],
             'items.*.qty' => ['required', 'numeric', 'min:0.001'],
-            'items.*.price' => ['required', 'numeric', 'min:0'],
+            // Цена берётся сервером из prices — клиентский price игнорируется
+            'items.*.price' => ['prohibited'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
             'items.*.warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
             'items.*.worker_id' => ['required_if:items.*.type,service', 'nullable', 'integer', 'exists:users,id'],
@@ -47,6 +49,16 @@ class StoreOrderRequest extends FormRequest
     {
         $tenantId = (int) ($this->user()?->tenant_id ?? tenant_id() ?? 0);
         $locationId = (int) (location_id() ?? $this->user()?->location_id ?? 0);
+
+        abort_unless($tenantId > 0 && $locationId > 0, 422, 'Tenant/location context required');
+        abort_unless(
+            Location::query()
+                ->whereKey($locationId)
+                ->where('tenant_id', $tenantId)
+                ->exists(),
+            403,
+            'Location does not belong to current tenant',
+        );
 
         return CreateOrderDTO::fromRequest(
             [

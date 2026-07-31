@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\Domain\ShiftAlreadyClosedException;
 use App\Exceptions\Domain\ShiftAlreadyOpenedException;
 use App\Models\CashShift;
+use App\Models\Location;
 use App\Services\Cash\CashShiftService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,9 +20,31 @@ class CashShiftController extends Controller
         private readonly CashShiftService $shifts,
     ) {}
 
-    public function index(): array
+    public function index(Request $request): array
     {
-        return ['data' => CashShift::all()];
+        $user = $request->user();
+        abort_unless($user !== null, 401);
+
+        $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
+        $locationId = location_id() ?? ($user->location_id ? (int) $user->location_id : null);
+        abort_unless($tenantId > 0, 422, 'Tenant context required');
+
+        if ($locationId !== null) {
+            abort_unless(
+                Location::query()->whereKey($locationId)->where('tenant_id', $tenantId)->exists(),
+                403,
+                'Location does not belong to current tenant',
+            );
+        }
+
+        $query = CashShift::query()
+            ->where('tenant_id', $tenantId);
+
+        if ($locationId !== null) {
+            $query->where('location_id', $locationId);
+        }
+
+        return ['data' => $query->latest('id')->get()];
     }
 
     public function store(Request $request): JsonResponse|RedirectResponse
@@ -40,6 +64,11 @@ class CashShiftController extends Controller
         $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
         $locationId = (int) (location_id() ?? $user->location_id ?? 0);
         abort_unless($tenantId > 0 && $locationId > 0, 422, 'Tenant/location context required');
+        abort_unless(
+            Location::query()->whereKey($locationId)->where('tenant_id', $tenantId)->exists(),
+            403,
+            'Location does not belong to current tenant',
+        );
 
         try {
             $shift = $this->shifts->open($tenantId, $locationId, (int) $user->id);
@@ -73,7 +102,11 @@ class CashShiftController extends Controller
     {
         $this->authorize('close', $shift);
 
-        $closed = $this->shifts->close($shift);
+        try {
+            $closed = $this->shifts->close($shift);
+        } catch (ShiftAlreadyClosedException $e) {
+            abort(409, $e->getMessage());
+        }
 
         return ['data' => $closed];
     }

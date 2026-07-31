@@ -19,7 +19,7 @@ test('order item stores immutable snapshot with price and kpi rule at add time',
     $fx->product->update(['name' => 'Изменено']);
     $item->refresh();
 
-    expect((float) $item->snapshot['price'])->toBe(150.0);
+    expect((float) $item->snapshot['price'])->toBe(5000.0);
     expect($item->snapshot['kpi_rule']['percent'])->toBe($snapshot['kpi_rule']['percent']);
     expect($item->snapshot['name'])->toBe($snapshot['name']);
 });

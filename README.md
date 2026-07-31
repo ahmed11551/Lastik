@@ -12,10 +12,24 @@
 cp .env.example .env
 composer install
 php artisan key:generate
-docker compose up -d postgres redis
+docker compose up -d postgres redis          # дождаться healthcheck
+# полный стек: docker compose up -d          # app + nginx + queue-worker + scheduler
 php artisan migrate
 php artisan db:seed --class=AcceptanceSeeder
 ```
+
+### Docker-сервисы
+
+| Сервис | Команда / роль |
+|--------|----------------|
+| `postgres` | Postgres 16, healthcheck `pg_isready` |
+| `redis` | Redis 7, healthcheck `redis-cli ping` |
+| `app` | PHP-приложение |
+| `queue-worker` | `php artisan queue:work` |
+| `scheduler` | `php artisan schedule:work` |
+| `webserver` | nginx |
+
+Тесты: `.env.testing` → `DB_DATABASE=lastik_test`. Acceptance: [docs/acceptance-run.md](docs/acceptance-run.md) (сценарии **49.1–49.21**).
 
 ## Переменные окружения
 

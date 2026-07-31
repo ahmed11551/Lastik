@@ -1,6 +1,6 @@
-# Smoke Test Guide — LASTIK Acceptance
+# Acceptance Run Guide — LASTIK (п. 49.1–49.21)
 
-Пошаговый запуск приёмочного окружения (п. 45) с Laravel API и React-мостом.
+Пошаговый запуск приёмочного контура: Docker → Postgres/Redis → миграции → сидер → Pest → smoke UI.
 
 ## 0. Требования
 
@@ -13,45 +13,46 @@
 ```bash
 cd /path/to/Lastik-main
 docker compose up -d postgres redis
-# опционально полный стек: docker compose up -d
+# полный стек (app + nginx + queue-worker + scheduler):
+# docker compose up -d
 ```
 
-Дождитесь healthcheck Postgres (`pg_isready`).
+Healthcheck:
+
+- Postgres: `pg_isready -U lastik -d lastik`
+- Redis: `redis-cli ping`
+
+Сервисы compose:
+
+| Сервис | Назначение |
+|--------|------------|
+| `postgres` | СУБД + RLS |
+| `redis` | cache / queue |
+| `app` | PHP-FPM / приложение |
+| `queue-worker` | `php artisan queue:work` |
+| `scheduler` | `php artisan schedule:work` |
+| `webserver` | nginx |
 
 ## 2. Backend: env, миграции, сидер
 
 ```bash
-cp .env.example .env   # если ещё нет Laravel .env
-# Минимум для локали:
-# APP_KEY=... (php artisan key:generate)
-# DB_CONNECTION=pgsql
-# DB_HOST=127.0.0.1
-# DB_PORT=5432
-# DB_DATABASE=lastik
-# DB_USERNAME=lastik
-# DB_PASSWORD=secret
-# DEFAULT_TENANT_SLUG=acceptance
-# QUEUE_CONNECTION=redis
-# REDIS_HOST=127.0.0.1
-
+cp .env.example .env
 composer install
 php artisan key:generate
+# DB_* → lastik / secret @ 127.0.0.1:5432
+
 php artisan migrate:fresh --force
 php artisan db:seed --class=AcceptanceSeeder
 ```
 
-Сидер создаёт:
+Тестовый env (Pest): `.env.testing` → `DB_DATABASE=lastik_test`.
 
-| Сущность | Значение |
-|----------|----------|
-| Тенант | `acceptance` — «Приёмочный шинный центр» |
-| Точки | Точка Север, Точка Юг |
-| Склады | Склад Север / Склад Юг |
-| Роли | owner, admin, seller, cashier, master, warehouse_manager |
-| Смена | открытая на Точке Север |
-| TV-заказы | `TV-QUEUE-1`, `TV-WORK-1`, `TV-READY-1` (with_installation) |
+```bash
+docker compose exec postgres psql -U lastik -c "CREATE DATABASE lastik_test;"
+./vendor/bin/pest
+```
 
-### Учётные данные (пароль у всех: `password`)
+### Учётные данные (пароль: `password`)
 
 | Роль | Email |
 |------|-------|
@@ -62,86 +63,99 @@ php artisan db:seed --class=AcceptanceSeeder
 | Master | `master@lastik.local` |
 | Warehouse | `warehouse@lastik.local` |
 
-## 3. Laravel API
+## 3. Карта acceptance 49.1–49.21
+
+| № | Сценарий | Как проверить | Артефакт |
+|---|----------|---------------|----------|
+| **49.1** | Tenant isolation | Два fixture-тенанта; заказ A не виден в контексте B; RLS + `BelongsToTenant` | `AcceptanceTenantOrderTest`, `SecurityTest` |
+| **49.2** | Device limit | Превышение `devices_limit` → 429 | `DeviceLimitTest` |
+| **49.3** | Prices / reserve / stock | Создание заказа резервирует stock под `lockForUpdate`; цена только из `prices` | `OrderStoreTest`, `StockReserveRaceTest` |
+| **49.4** | Reservations / release | Отмена / снятие позиции → release; unique `(tenant_id, order_item_id, stock_id, status)` | `AcceptanceIssuanceTest`, миграция `000040` |
+| **49.5** | Payments + mixed | Несколько `parts` (cash/card/transfer); `accept()` только на открытой смене | `AcceptanceCashShiftPaymentTest` |
+| **49.6** | Shifts + reports | `close()` в транзакции + `lockForUpdate`; totals = сумма платежей | `ShiftTotalsMatchTest`, `ShiftManagementTest` |
+| **49.7** | KPI snapshots | `kpi_percent`/`kpi_amount` и `snapshot.kpi_rule` не меняются после правки `kpi_rules` | `OrderItemSnapshotTest`, `AcceptanceKpiTest` |
+| **49.8** | Audit log append-only | UPDATE/DELETE `audit_logs` запрещены (модель + PG trigger) | `AcceptanceAuditLogTest`, миграция `000039` |
+| **49.9** | Location isolation | Листинг заказов/смен фильтруется `location_id`; чужая точка → 403 | `AcceptanceLocationIsolationTest`, `EnforceLocationAccess` |
+| **49.10** | Price list / discount | Цена из `prices.amount`; `items.*.price` prohibited; discount в snapshot | `AcceptancePriceDiscountTest` |
+| **49.11** | Payment correction guard | `PaymentService::correct()` → `ShiftAlreadyClosedException` если смена закрыта | `AcceptanceCashShiftPaymentTest` |
+| **49.12** | Order cancel | `POST /orders/{id}/cancel` + причина; release резервов | `OrderController::cancel`, lifecycle tests |
+| **49.13** | Issuance / fulfill | Списание `actual` через `OrderFulfillmentService` + lock | `AcceptanceIssuanceTest` |
+| **49.14** | Stock transfer | Перемещение между складами, conflicts | `AcceptanceStockTransferTest` |
+| **49.15** | CommerceML import | Upsert товаров/остатков; conflict → `stock_conflicts` | `CommerceMLUpsertTest`, `AcceptanceCommerceMLConflictTest` |
+| **49.16** | Customer merge | Merge под lock; изоляция tenant | `AcceptanceCustomerMergeTest` |
+| **49.17** | Tasks | Создание / complete / cancel в tenant-контексте | `AcceptanceTaskTest` |
+| **49.18** | Search (п.36) | `GET /api/v1/search?q=` клиент / авто / заказ | `AcceptanceSearchTest` |
+| **49.19** | TV board (п.42) | `GET /api/v1/tv/board` колонки queue/work/ready | `AcceptanceTvBoardTest` |
+| **49.20** | Bookings | Overlap → `SlotAlreadyBookedException`; изоляция tenant | `BookingTest` |
+| **49.21** | Modules enable/disable | `ModuleController` без потери settings JSON | `Module` + AcceptanceSeeder demo_module |
+
+### Команды по группам
+
+```bash
+# Tenant / location / security
+./vendor/bin/pest tests/Feature/AcceptanceTenantOrderTest.php tests/Feature/AcceptanceLocationIsolationTest.php tests/Feature/SecurityTest.php
+
+# Orders / stock / prices
+./vendor/bin/pest tests/Feature/OrderStoreTest.php tests/Feature/OrderItemSnapshotTest.php tests/Feature/AcceptancePriceDiscountTest.php
+
+# Cash / payments / shifts
+./vendor/bin/pest tests/Feature/AcceptanceCashShiftPaymentTest.php tests/Feature/PaymentAfterShiftCloseTest.php tests/Feature/ShiftManagementTest.php
+
+# Import / transfer / issuance
+./vendor/bin/pest tests/Feature/CommerceMLUpsertTest.php tests/Feature/AcceptanceStockTransferTest.php tests/Feature/AcceptanceIssuanceTest.php
+
+# Полный прогон
+./vendor/bin/pest
+```
+
+## 4. Laravel API smoke
 
 ```bash
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 
-Проверка:
-
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" \
-  -H "X-Tenant-Slug: acceptance" \
-  http://127.0.0.1:8000/api/v1/search?q=Алексей
-# ожидается 401 без сессии (маршрут под auth) — сервис жив
-```
-
-После логина (session/cookie или Sanctum — по текущей конфигурации Auth):
-
-```bash
-curl -s 'http://127.0.0.1:8000/api/v1/search?q=Алексей' \
+# login вне tenant middleware
+curl -s -X POST http://127.0.0.1:8000/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
   -H 'Accept: application/json' \
-  -H 'X-Tenant-ID: 1' \
-  -H 'X-Tenant-Slug: acceptance' \
-  -H 'X-Location-ID: 1' \
-  -b 'laravel_session=...'
+  -d '{"email":"admin@lastik.local","password":"password"}'
 ```
 
-Ключевые маршруты моста:
+Защищённые маршруты требуют Sanctum token + контекст пользователя (`tenant_id` из auth; `X-Location-ID` только если совпадает с tenant).
 
-- `GET /api/v1/search?q=`
-- `GET /api/v1/tv/board?location_id=`
+| Метод | Путь | Примечание |
+|-------|------|------------|
+| GET | `/api/v1/orders` | фильтр tenant + location |
+| POST | `/api/v1/orders` | `tenant_id`/`location_id`/`items.*.price` prohibited |
+| POST | `/api/v1/payments` | только открытая смена |
+| POST | `/api/v1/payments/{id}/correct` | 409 если смена закрыта |
+| GET/POST | `/api/v1/shifts` | index строго по tenant+location |
+| GET | `/api/v1/search?q=` | п.36 |
+| GET | `/api/v1/tv/board` | п.42 |
 
-Заголовки, которые шлёт React (`src/api/laravelClient.ts`):
-
-- `X-Tenant-ID`
-- `X-Tenant-Slug` (по умолчанию `acceptance`)
-- `X-Location-ID`
-
-Ошибки `401` / `403` / `422` мапятся в `LaravelApiError` и показываются в Header (поиск) и TV-табло.
-
-## 4. Frontend с Laravel proxy
-
-В `.env` (корень Vite-проекта):
+## 5. Frontend (React bridge)
 
 ```bash
+# .env
 VITE_API_BASE=/api/v1
 VITE_LARAVEL_PROXY=http://127.0.0.1:8000
+
+npm install && npm run dev
 ```
 
-```bash
-npm install
-npm run dev
-```
+Checklist: TV-колонки, поиск в шапке, баннеры 401/403.
 
-Vite проксирует `/api/v1/*` на Laravel (`vite.config.ts`). Без `VITE_API_BASE` UI остаётся на Express mock (`/api/bootstrap`).
+## 6. CI
 
-### Smoke checklist UI
+`.github/workflows/ci.yml` — PHP 8.4, Postgres 16, Redis 7, `npm run build`, Pest.
 
-1. Открыть приложение, перейти на вкладку TV — видны колонки очереди / в работе / готов (из Laravel или mock).
-2. В шапке ввести `Алексей` или `A123BC77` — при включённом мосте появляются результаты Laravel search (нужна auth-сессия к API).
-3. При 401 — баннер «Сессия истекла…»; при 403 — «Недостаточно прав…».
-
-## 5. Тесты
-
-```bash
-# Один раз: создать БД для Pest
-docker compose exec postgres psql -U lastik -c "CREATE DATABASE lastik_test;"
-# или: createdb -U lastik lastik_test
-
-./vendor/bin/pest
-# CI: .github/workflows/ci.yml (Postgres 16 + Redis + npm build + Pest)
-```
-
-Pest использует PostgreSQL `lastik_test` (`phpunit.xml`).
-
-## 6. Типичные проблемы
+## 7. Типичные проблемы
 
 | Симптом | Что проверить |
 |---------|----------------|
 | `connection refused :5432` | `docker compose up -d postgres` |
-| Seed падает на unique | `migrate:fresh` перед `db:seed` |
-| Search всегда 401 | нужен login/session к Laravel; mock Express ≠ Laravel auth |
+| Pest падает на RLS | `.env.testing` + `set_current_tenant_id()` |
+| `items.*.price` 422 | цена только из `prices`; не передавать `price` в body |
+| 409 на correction | смена уже закрыта — ожидаемо |
 | Proxy 502 | `php artisan serve` и `VITE_LARAVEL_PROXY` |
-| TV пустой на Laravel | сидер создал `TV-*` заказы на Точке Север |

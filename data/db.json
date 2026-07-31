@@ -888,6 +888,10 @@
         {
           "userId": "usr-master",
           "readAt": "2026-07-30T10:15:00Z"
+        },
+        {
+          "userId": "usr-superadmin",
+          "readAt": "2026-07-31T20:28:57.674Z"
         }
       ],
       "createdAt": "2026-07-30T10:00:00Z",
@@ -978,6 +982,24 @@
   "corrections": [],
   "shifts": [
     {
+      "id": "shift-1785528560781",
+      "tenantId": "tenant-1",
+      "locationId": "loc-1",
+      "locationName": "Шинный Центр - Центральный (Магазин + Сервис)",
+      "cashierUserId": "usr-superadmin",
+      "cashierUserName": "Алексей Сергеев (Суперадмин)",
+      "openedAt": "2026-07-31T20:09:20.781Z",
+      "status": "open",
+      "openingBalance": 15000,
+      "cashInflow": 0,
+      "cardInflow": 0,
+      "transferInflow": 0,
+      "accountInflow": 0,
+      "totalInflow": 0,
+      "encashmentTotal": 0,
+      "withdrawalTotal": 0
+    },
+    {
       "id": "shift-101",
       "tenantId": "tenant-1",
       "locationId": "loc-1",
@@ -985,7 +1007,7 @@
       "cashierUserId": "usr-cashier",
       "cashierUserName": "Елена Кузнецова",
       "openedAt": "2026-07-30T08:00:00Z",
-      "status": "open",
+      "status": "closed",
       "openingBalance": 15000,
       "cashInflow": 30000,
       "cardInflow": 91200,
@@ -994,7 +1016,10 @@
       "totalInflow": 152200,
       "encashmentTotal": 0,
       "withdrawalTotal": 0,
-      "notes": "Смена открыта штатно"
+      "notes": "",
+      "closedAt": "2026-07-31T20:09:14.701Z",
+      "closingCashActual": 45000,
+      "discrepancy": 0
     }
   ],
   "kpiRecords": [
@@ -1048,6 +1073,38 @@
     }
   ],
   "auditLogs": [
+    {
+      "tenantId": "tenant-1",
+      "locationId": "loc-1",
+      "userId": "usr-superadmin",
+      "userName": "Алексей Сергеев (Суперадмин)",
+      "userRole": "superadmin",
+      "entity": "shift",
+      "entityId": "shift-1785528560781",
+      "action": "open_shift",
+      "details": "Открыта кассовая смена #shift-1785528560781 в точке \"Шинный Центр - Центральный (Магазин + Сервис)\". Начальный остаток: 15000 руб",
+      "ipAddress": "127.0.0.1",
+      "deviceInfo": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+      "id": "log-1785528560783-13",
+      "timestamp": "2026-07-31T20:09:20.783Z"
+    },
+    {
+      "tenantId": "tenant-1",
+      "locationId": "loc-1",
+      "userId": "usr-superadmin",
+      "userName": "Алексей Сергеев (Суперадмин)",
+      "userRole": "superadmin",
+      "entity": "shift",
+      "entityId": "shift-101",
+      "action": "close_shift",
+      "details": "Закрыта кассовая смена #shift-101. Итог выручки: 152200 руб. Фактическая касса: 45000 руб. Расхождение: 0 руб",
+      "oldValue": "Открыта: 2026-07-30T08:00:00Z",
+      "newValue": "Закрыта: 2026-07-31T20:09:14.701Z",
+      "ipAddress": "127.0.0.1",
+      "deviceInfo": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+      "id": "log-1785528554708-933",
+      "timestamp": "2026-07-31T20:09:14.708Z"
+    },
     {
       "tenantId": "tenant-1",
       "userId": "usr-manager",

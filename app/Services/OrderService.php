@@ -7,10 +7,12 @@ namespace App\Services;
 use App\DTOs\CreateOrderDTO;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\NoActiveShiftException;
+use App\Exceptions\Domain\PriceNotFoundException;
 use App\Models\CashShift;
 use App\Models\KpiRule;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Price;
 use App\Models\ProductService;
 use App\Models\Stock;
 use App\Support\AuditLog;
@@ -74,7 +76,8 @@ final class OrderService
             foreach ($dto->items as $itemPayload) {
                 $productId = (int) $itemPayload['product_id'];
                 $qty = (float) $itemPayload['qty'];
-                $price = (float) $itemPayload['price'];
+                // Immutable price lookup: never trust client-supplied price.
+                $price = $this->lookupCatalogPrice($dto->tenantId, $productId);
                 $discount = (float) ($itemPayload['discount'] ?? 0);
                 $type = (string) ($itemPayload['type'] ?? 'product');
 
@@ -193,5 +196,29 @@ final class OrderService
             ->count() + 1;
 
         return sprintf('ORD-%s-%05d', date('Ymd'), $seq);
+    }
+
+    /**
+     * Каталожная цена из `prices` (retail), без доверия к HTTP payload.
+     */
+    private function lookupCatalogPrice(int $tenantId, int $productId): float
+    {
+        $row = Price::query()
+            ->withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->where('product_id', $productId)
+            ->where(function ($q): void {
+                $q->where('type', 'retail')->orWhereNull('type');
+            })
+            ->orderByDesc('id')
+            ->first();
+
+        if ($row === null) {
+            throw PriceNotFoundException::forProduct($productId);
+        }
+
+        $amount = $row->amount ?? $row->price;
+
+        return round((float) $amount, 2);
     }
 }

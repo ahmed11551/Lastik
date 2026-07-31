@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\Domain\ShiftAlreadyClosedException;
 use App\Models\Payment;
-use App\Services\Cash\CashShiftService;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,13 +14,25 @@ use RuntimeException;
 class PaymentController extends Controller
 {
     public function __construct(
-        private readonly CashShiftService $cashShifts,
         private readonly PaymentService $payments,
     ) {}
 
-    public function index(): array
+    public function index(Request $request): array
     {
-        return ['data' => Payment::all()];
+        $user = $request->user();
+        abort_unless($user !== null, 401);
+
+        $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
+        $locationId = location_id() ?? ($user->location_id ? (int) $user->location_id : null);
+        abort_unless($tenantId > 0, 422, 'Tenant context required');
+
+        $query = Payment::query()->where('tenant_id', $tenantId);
+
+        if ($locationId !== null) {
+            $query->whereHas('order', fn ($q) => $q->where('location_id', $locationId));
+        }
+
+        return ['data' => $query->latest('id')->get()];
     }
 
     public function store(Request $request): JsonResponse
@@ -59,28 +71,22 @@ class PaymentController extends Controller
         $this->authorize('correct', $payment);
 
         $validated = $request->validate([
+            'tenant_id' => ['prohibited'],
+            'location_id' => ['prohibited'],
             'new_amount' => ['required', 'numeric', 'min:0'],
             'reason' => ['required', 'string', 'min:3'],
         ]);
 
-        // После закрытия смены прямая правка запрещена — только correction workflow
-        if ($payment->shift_id && $this->cashShifts->isClosed((int) $payment->shift_id)) {
+        try {
             $correction = $this->payments->correct(
                 $payment,
                 (float) $validated['new_amount'],
                 $validated['reason'],
                 (int) $request->user()->id,
             );
-
-            return response()->json(['data' => $correction, 'via' => 'correction'], 201);
+        } catch (ShiftAlreadyClosedException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
         }
-
-        $correction = $this->payments->correct(
-            $payment,
-            (float) $validated['new_amount'],
-            $validated['reason'],
-            (int) $request->user()->id,
-        );
 
         return response()->json(['data' => $correction], 201);
     }

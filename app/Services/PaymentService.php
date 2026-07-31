@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Exceptions\Domain\NoActiveShiftException;
+use App\Exceptions\Domain\ShiftAlreadyClosedException;
 use App\Models\CashShift;
 use App\Models\Dictionary;
 use App\Models\Order;
@@ -125,6 +126,17 @@ final class PaymentService
                 ->whereKey($payment->id)
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if ($payment->shift_id) {
+                $shift = CashShift::query()->withoutGlobalScopes()
+                    ->whereKey($payment->shift_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($shift !== null && ($shift->closed_at !== null || $shift->status === 'closed')) {
+                    throw ShiftAlreadyClosedException::default();
+                }
+            }
 
             $oldAmount = (float) $payment->amount;
 

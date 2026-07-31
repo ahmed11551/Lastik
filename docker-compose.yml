@@ -25,6 +25,11 @@ services:
       - "6379:6379"
     volumes:
       - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - lastik_network
 
@@ -53,16 +58,15 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     networks:
       - lastik_network
 
-  # Laravel queue worker — обрабатывает Jobs (импорт Excel/CommerceML, KPI, уведомления)
-  queue:
+  queue-worker:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: lastik_queue
+    container_name: lastik_queue_worker
     restart: unless-stopped
     working_dir: /var/www/html
     command: php artisan queue:work redis --sleep=1 --tries=3 --max-time=3600 --timeout=120
@@ -74,13 +78,12 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       app:
         condition: service_started
     networks:
       - lastik_network
 
-  # Laravel scheduler — cron-замена: schedule:run каждую минуту
   scheduler:
     build:
       context: .
@@ -88,8 +91,7 @@ services:
     container_name: lastik_scheduler
     restart: unless-stopped
     working_dir: /var/www/html
-    command: >
-      sh -c "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
+    command: php artisan schedule:work
     volumes:
       - .:/var/www/html
     environment:
@@ -98,7 +100,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       app:
         condition: service_started
     networks:

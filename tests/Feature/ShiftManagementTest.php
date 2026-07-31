@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\Domain\ShiftAlreadyClosedException;
 use App\Services\Cash\CashShiftService;
 use Tests\Support\AcceptanceFixture;
 
@@ -21,4 +22,13 @@ it('opens a replacement shift after the prior one closes', function (): void {
     $service->close($fx->shift);
     $replacement = $service->open($fx->tenant->id, $fx->location->id, $fx->user->id);
     expect($replacement->id)->not->toBe($fx->shift->id)->and($replacement->status)->toBe('opened');
+});
+
+it('rejects a second close with ShiftAlreadyClosedException', function (): void {
+    $fx = AcceptanceFixture::make('shift-twice-'.uniqid());
+    $service = app(CashShiftService::class);
+    $service->close($fx->shift);
+
+    expect(fn () => $service->close($fx->shift->fresh()))
+        ->toThrow(ShiftAlreadyClosedException::class);
 });

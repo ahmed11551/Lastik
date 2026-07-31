@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Cash;
 
+use App\Exceptions\Domain\ShiftAlreadyClosedException;
 use App\Models\CashMovement;
 use App\Models\CashShift;
 use App\Models\Payment;
@@ -63,8 +64,8 @@ class CashShiftService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($shift->closed_at !== null) {
-                return $shift;
+            if ($shift->closed_at !== null || $shift->status === 'closed') {
+                throw ShiftAlreadyClosedException::default();
             }
 
             $totals = $this->calculateTotals($shift);
