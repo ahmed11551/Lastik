@@ -40,6 +40,7 @@ namespace Autometria\Http\Controllers;
 
 use Autometria\Exceptions\Domain\ShiftAlreadyClosedException;
 use Autometria\Exceptions\Domain\ShiftAlreadyOpenedException;
+use Autometria\Exceptions\Domain\ShiftExpiredException;
 use Autometria\Models\CashShift;
 use Autometria\Models\Location;
 use Autometria\Services\Cash\CashShiftService;
@@ -96,6 +97,8 @@ class CashShiftController extends Controller
             ->first();
 
         $revenue = 0.0;
+        $expectedCash = 0.0;
+        $totals = [];
         if ($shift) {
             $totals = is_array($shift->totals) ? $shift->totals : [];
             $revenue = (float) (
@@ -103,6 +106,15 @@ class CashShiftController extends Controller
                 + ($totals['card'] ?? 0)
                 + ($totals['transfer'] ?? 0)
                 + ($totals['online'] ?? 0)
+            );
+            $opening = (float) ($shift->opening_amount ?? 0);
+            $expectedCash = round(
+                $opening
+                + (float) ($totals['cash'] ?? 0)
+                + (float) ($totals['deposit'] ?? 0)
+                - (float) ($totals['inkasso'] ?? 0)
+                - (float) ($totals['withdrawal'] ?? 0),
+                2,
             );
         }
 
@@ -114,7 +126,8 @@ class CashShiftController extends Controller
                 'opened_at' => optional($shift->opened_at)?->toIso8601String(),
                 'opening_amount' => (float) ($shift->opening_amount ?? 0),
                 'revenue' => $revenue,
-                'totals' => $shift->totals,
+                'expected_cash' => $expectedCash,
+                'totals' => $totals,
                 'location_id' => $shift->location_id,
             ] : [
                 'open' => false,
@@ -122,10 +135,57 @@ class CashShiftController extends Controller
                 'opened_at' => null,
                 'opening_amount' => 0,
                 'revenue' => 0,
+                'expected_cash' => 0,
                 'totals' => null,
                 'location_id' => $locationId,
             ],
         ]);
+    }
+
+    public function movement(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user !== null, 401);
+
+        $data = $request->validate([
+            'type' => ['required', 'in:deposit,withdrawal,inkasso'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'reason' => ['nullable', 'string', 'max:500'],
+            'shift_id' => ['nullable', 'integer', 'exists:cash_shifts,id'],
+        ]);
+
+        $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
+        $locationId = (int) (location_id() ?? $user->location_id ?? 0);
+
+        $shift = null;
+        if (! empty($data['shift_id'])) {
+            $shift = CashShift::query()->whereKey((int) $data['shift_id'])->first();
+        } else {
+            $shift = CashShift::query()
+                ->where('tenant_id', $tenantId)
+                ->where('location_id', $locationId)
+                ->whereNull('closed_at')
+                ->latest('id')
+                ->first();
+        }
+
+        abort_unless($shift !== null, 422, 'Нет открытой смены');
+        $this->authorize('close', $shift);
+
+        $amount = (float) $data['amount'];
+        $reason = $data['reason'] ?? null;
+
+        try {
+            $movement = match ($data['type']) {
+                'deposit' => $this->shifts->deposit($shift, $amount, $reason),
+                'withdrawal' => $this->shifts->withdrawal($shift, $amount, $reason),
+                'inkasso' => $this->shifts->inkasso($shift, $amount, $reason),
+            };
+        } catch (\Throwable $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['data' => $movement], 201);
     }
 
     public function openShift(Request $request): JsonResponse|RedirectResponse
@@ -169,9 +229,11 @@ class CashShiftController extends Controller
                     'note' => $data['note'] ?? $shift->note,
                 ])->save();
             }
-            $closed = $this->shifts->close($shift);
+            $closed = $this->shifts->close($shift, isset($data['closing_amount']) ? (float) $data['closing_amount'] : null);
         } catch (ShiftAlreadyClosedException $e) {
             return response()->json(['message' => $e->getMessage()], 409);
+        } catch (ShiftExpiredException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
 
         return response()->json(['data' => $closed]);
@@ -201,7 +263,12 @@ class CashShiftController extends Controller
         );
 
         try {
-            $shift = $this->shifts->open($tenantId, $locationId, (int) $user->id);
+            $shift = $this->shifts->open(
+                $tenantId,
+                $locationId,
+                (int) $user->id,
+                (float) $request->input('opening_amount', 0),
+            );
 
             if ($request->filled('opening_amount') || $request->filled('note')) {
                 $shift->forceFill([

@@ -53,7 +53,12 @@ class CashShift extends TenantModel
         'status',
         'opening_amount',
         'closing_amount',
+        'expected_cash',
+        'shortage',
+        'overage',
+        'z_report',
         'opened_at',
+        'expires_at',
         'closed_at',
         'totals',
         'note',
@@ -61,9 +66,14 @@ class CashShift extends TenantModel
 
     protected $casts = [
         'totals' => 'array',
+        'z_report' => 'array',
         'opening_amount' => 'decimal:2',
         'closing_amount' => 'decimal:2',
+        'expected_cash' => 'decimal:2',
+        'shortage' => 'decimal:2',
+        'overage' => 'decimal:2',
         'opened_at' => 'datetime',
+        'expires_at' => 'datetime',
         'closed_at' => 'datetime',
     ];
 

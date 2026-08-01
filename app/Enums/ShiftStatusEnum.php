@@ -42,4 +42,5 @@ enum ShiftStatusEnum: string
 {
     case OPENED = 'opened';
     case CLOSED = 'closed';
+    case EXPIRED = 'expired';
 }
