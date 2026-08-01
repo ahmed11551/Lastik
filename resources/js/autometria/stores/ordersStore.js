@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { apiGet, apiPost } from '../api/client'
+import { applyBulkError, applyBulkSuccess, assertBulkIds, normalizeBulkIds } from '../api/bulk'
 import { toast } from '../api/toast'
 import { getStoredUser } from '../api/client'
 
@@ -9,6 +10,7 @@ export const useOrdersStore = defineStore('orders', {
     meta: { current_page: 1, last_page: 1, per_page: 50, total: 0 },
     loading: false,
     creating: false,
+    bulkPending: false,
     error: null,
     query: '',
     status: 'all',
@@ -63,6 +65,35 @@ export const useOrdersStore = defineStore('orders', {
         return res
       } finally {
         this.creating = false
+      }
+    },
+
+    /**
+     * POST /orders/bulk-status
+     * @param {number[]} ids
+     * @param {string} status - CRM alias: accepted|negotiation|rejected|review|prospective
+     * @param {{ clearSelection?: () => void }} [opts]
+     */
+    async bulkStatus(ids, status, opts = {}) {
+      const intIds = normalizeBulkIds(ids)
+      if (!assertBulkIds(intIds)) return null
+      this.bulkPending = true
+      try {
+        const res = await apiPost(
+          '/orders/bulk-status',
+          { ids: intIds, status },
+          { silent: true },
+        )
+        await applyBulkSuccess(res, {
+          clearSelection: opts.clearSelection,
+          refresh: () => this.fetchOrders(),
+        })
+        return res
+      } catch (e) {
+        applyBulkError(e)
+        throw e
+      } finally {
+        this.bulkPending = false
       }
     },
   },

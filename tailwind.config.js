@@ -25,6 +25,15 @@ export default {
           danger: "#EF4444",
           warning: "#F59E0B",
         },
+        ds: {
+          "table-surface": "var(--ds-table-surface, #1F2937)",
+          "row-selected": "var(--ds-row-selected, #1E1B4B)",
+          "row-hover": "var(--ds-row-hover, #374151)",
+          accepted: "var(--color-status-accepted, #10B981)",
+          negotiation: "var(--color-status-negotiation, #F59E0B)",
+          rejected: "var(--color-status-rejected, #EF4444)",
+          review: "var(--color-status-review, #818CF8)",
+        },
         background: "var(--color-bg)",
         foreground: "var(--color-text-primary)",
         primary: {
@@ -37,6 +46,7 @@ export default {
         surface: {
           DEFAULT: "var(--color-surface)",
           elevated: "var(--color-surface-elevated)",
+          table: "var(--ds-table-surface, #1F2937)",
         },
         success: "var(--color-success)",
         danger: "var(--color-danger)",

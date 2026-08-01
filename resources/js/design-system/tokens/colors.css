@@ -25,6 +25,12 @@
   --color-border: #1f2937;
   --color-focus: #f59e0b;
 
+  /* B2B CRM status palette */
+  --color-status-accepted: #10b981;
+  --color-status-negotiation: #f59e0b;
+  --color-status-rejected: #ef4444;
+  --color-status-review: #818cf8;
+
   --font-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
 
@@ -34,8 +40,13 @@
   --ds-row-comfortable: 48px;
   --ds-sidebar-width: 260px;
 
+  /* Table chrome (B2B CRM reverse-eng) */
+  --ds-table-surface: #1f2937;
+  --ds-row-selected: #1e1b4b;
+  --ds-row-hover: #374151;
+
   --ds-zebra: rgba(255, 255, 255, 0.02);
-  --ds-hover-tint: rgba(245, 158, 11, 0.06);
+  --ds-hover-tint: #374151;
 }
 
 [data-theme="light"] {
@@ -58,8 +69,17 @@
   --color-border: #e2e8f0;
   --color-focus: #d97706;
 
+  --color-status-accepted: #059669;
+  --color-status-negotiation: #d97706;
+  --color-status-rejected: #dc2626;
+  --color-status-review: #6366f1;
+
+  --ds-table-surface: #e2e8f0;
+  --ds-row-selected: #e0e7ff;
+  --ds-row-hover: #f1f5f9;
+
   --ds-zebra: rgba(15, 23, 42, 0.03);
-  --ds-hover-tint: rgba(217, 119, 6, 0.08);
+  --ds-hover-tint: #f1f5f9;
 }
 
 @media (prefers-color-scheme: light) {
@@ -76,7 +96,14 @@
     --color-danger: #dc2626;
     --color-border: #e2e8f0;
     --color-focus: #d97706;
+    --color-status-accepted: #059669;
+    --color-status-negotiation: #d97706;
+    --color-status-rejected: #dc2626;
+    --color-status-review: #6366f1;
+    --ds-table-surface: #e2e8f0;
+    --ds-row-selected: #e0e7ff;
+    --ds-row-hover: #f1f5f9;
     --ds-zebra: rgba(15, 23, 42, 0.03);
-    --ds-hover-tint: rgba(217, 119, 6, 0.08);
+    --ds-hover-tint: #f1f5f9;
   }
 }

@@ -10,7 +10,7 @@ import { DsBadge, DsTable } from '@/design-system'
 const emit = defineEmits(['open-palette'])
 
 const query = ref('')
-const selected = ref(new Set([1, 2, 4, 7]))
+const selectedKeys = ref([1, 2, 4, 7])
 const page = ref(1)
 const perPage = ref(20)
 
@@ -45,34 +45,18 @@ const filtered = computed(() => {
   )
 })
 
-const selectedCount = computed(() => selected.value.size)
+const selectedCount = computed(() => selectedKeys.value.length)
 
 const columns = [
-  { key: 'select', label: '', mono: false, width: '40px' },
-  { key: 'star', label: '', mono: false, width: '36px' },
+  { key: 'star', label: '', mono: false, width: '36px', align: 'center' },
   { key: 'name', label: 'Client Name', mono: false },
   { key: 'company', label: 'Company', mono: false },
-  { key: 'price', label: 'Listing Price' },
+  { key: 'price', label: 'Listing Price', align: 'right' },
   { key: 'address', label: 'Address', mono: false },
   { key: 'status', label: 'Status', mono: false },
-  { key: 'date', label: 'Date' },
+  { key: 'date', label: 'Date', align: 'right' },
   { key: 'categories', label: 'Categories', mono: false },
 ]
-
-function toggleRow(id) {
-  const next = new Set(selected.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
-  selected.value = next
-}
-
-function toggleAll() {
-  if (selected.value.size === filtered.value.length) {
-    selected.value = new Set()
-  } else {
-    selected.value = new Set(filtered.value.map((r) => r.id))
-  }
-}
 
 function formatPrice(n) {
   return `$${Number(n).toLocaleString('en-US')}`
@@ -81,10 +65,10 @@ function formatPrice(n) {
 function statusVariant(s) {
   return (
     {
-      negotiation: 'warning',
-      rejected: 'danger',
-      review: 'pending',
-      accepted: 'success',
+      negotiation: 'negotiation',
+      rejected: 'rejected',
+      review: 'review',
+      accepted: 'accepted',
       prospective: 'neutral',
     }[s] || 'neutral'
   )
@@ -181,20 +165,25 @@ function initials(name) {
 
     <!-- Dense table -->
     <DsTable
+      v-model:selected-keys="selectedKeys"
       :columns="columns"
       :rows="filtered"
       density="compact"
       sticky-header
+      selectable
       max-height="min(62vh, 640px)"
       empty-text="No partners found"
     >
-      <template #select="{ row }">
-        <input
-          type="checkbox"
-          class="accent-[var(--color-primary)]"
-          :checked="selected.has(row.id)"
-          @change="toggleRow(row.id)"
-        >
+      <template #bulk-actions="{ count }">
+        <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm">Update</button>
+        <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm relative">
+          Filter
+          <span
+            class="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded px-1 font-mono text-[10px]"
+            style="background: var(--color-danger); color: #fff; border-radius: 4px"
+          >{{ count }}</span>
+        </button>
+        <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm">Export</button>
       </template>
       <template #star="{ row }">
         <span
@@ -282,7 +271,7 @@ function initials(name) {
           Next
         </button>
       </div>
-      <button type="button" class="sr-only" @click="toggleAll">Select all</button>
+      <button type="button" class="sr-only">Select all</button>
     </div>
   </div>
 </template>

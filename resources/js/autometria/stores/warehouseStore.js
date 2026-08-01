@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { apiGet } from '../api/client'
+import { apiGet, apiPost } from '../api/client'
+import { applyBulkError, applyBulkSuccess, assertBulkIds, normalizeBulkIds } from '../api/bulk'
 
 export const useWarehouseStore = defineStore('warehouse', {
   state: () => ({
@@ -8,6 +9,7 @@ export const useWarehouseStore = defineStore('warehouse', {
     categories: [],
     meta: { current_page: 1, last_page: 1, per_page: 50, total: 0 },
     loading: false,
+    bulkPending: false,
     error: null,
     query: '',
     category: 'all',
@@ -67,6 +69,36 @@ export const useWarehouseStore = defineStore('warehouse', {
         throw e
       } finally {
         this.loading = false
+      }
+    },
+
+    /**
+     * POST /stock/bulk-update
+     * @param {number[]} ids
+     * @param {'update_category'|'adjust_actual'|'adjust_reserved'} action
+     * @param {{ category?: string, adjustment?: number }} payload
+     * @param {{ clearSelection?: () => void }} [opts]
+     */
+    async bulkUpdate(ids, action, payload, opts = {}) {
+      const intIds = normalizeBulkIds(ids)
+      if (!assertBulkIds(intIds)) return null
+      this.bulkPending = true
+      try {
+        const res = await apiPost(
+          '/stock/bulk-update',
+          { ids: intIds, action, payload },
+          { silent: true },
+        )
+        await applyBulkSuccess(res, {
+          clearSelection: opts.clearSelection,
+          refresh: () => this.fetchStock(),
+        })
+        return res
+      } catch (e) {
+        applyBulkError(e)
+        throw e
+      } finally {
+        this.bulkPending = false
       }
     },
   },

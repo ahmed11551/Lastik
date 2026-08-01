@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 /**
- * AUTOMETRIA ERP — Warehouse / Stock balances (API-wired)
- * Industrial Precision · /api/v1/stock · ⌘K search
+ * AUTOMETRIA ERP — Warehouse / Stock (Mobile-First + Bulk)
+ * Bulk: POST /api/v1/stock/bulk-update
  */
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -17,6 +17,7 @@ const {
   categories,
   meta,
   loading,
+  bulkPending,
   error,
   query,
   category,
@@ -24,10 +25,14 @@ const {
   degraded,
 } = storeToRefs(store)
 
-const searchRef = ref(null)
-let debounceTimer = null
+const searchRef = ref<HTMLInputElement | null>(null)
+const tableRef = ref<{ clearSelection?: () => void } | null>(null)
+const selectedKeys = ref<Array<string | number>>([])
+const bulkCategory = ref('')
+const bulkAdjustment = ref(1)
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-const STATUS = {
+const STATUS: Record<string, { variant: string; label: string }> = {
   ok: { variant: 'success', label: 'В наличии' },
   low: { variant: 'warning', label: 'Низкий остаток' },
   critical: { variant: 'danger', label: 'Дефицит / 0' },
@@ -45,20 +50,47 @@ const columns = [
 ]
 
 const categoryOptions = computed(() => ['all', ...categories.value])
-const warehouseOptions = computed(() => ['all', ...warehouses.value.map((w) => w.name)])
+const warehouseOptions = computed(() => ['all', ...warehouses.value.map((w: { name: string }) => w.name)])
+const bulkCategoryOptions = computed(() => {
+  const fromMeta = categories.value.filter(Boolean)
+  const defaults = ['tires', 'disks', 'services', 'parts']
+  return [...new Set([...fromMeta, ...defaults])]
+})
 
 const stats = computed(() => ({
   skus: meta.value.total || rows.value.length,
-  critical: rows.value.filter((r) => r.status === 'critical').length,
-  low: rows.value.filter((r) => r.status === 'low').length,
-  reserved: rows.value.reduce((s, r) => s + Number(r.reserved || 0), 0),
+  critical: rows.value.filter((r: { status?: string }) => r.status === 'critical').length,
+  low: rows.value.filter((r: { status?: string }) => r.status === 'low').length,
+  reserved: rows.value.reduce((s: number, r: { reserved?: number }) => s + Number(r.reserved || 0), 0),
 }))
 
-function money(n) {
+function money(n: number | string | null | undefined): string {
   return `₽${Number(n || 0).toLocaleString('ru-RU')}`
 }
 
-async function load(opts = {}) {
+function selectedIds(): number[] {
+  return selectedKeys.value.map(Number).filter((n) => Number.isInteger(n) && n > 0)
+}
+
+function clearTableSelection(): void {
+  selectedKeys.value = []
+  tableRef.value?.clearSelection?.()
+}
+
+function isSelected(id: number | string): boolean {
+  return selectedKeys.value.some((k) => Number(k) === Number(id))
+}
+
+function toggleCard(id: number | string): void {
+  const num = Number(id)
+  if (selectedKeys.value.some((k) => Number(k) === num)) {
+    selectedKeys.value = selectedKeys.value.filter((k) => Number(k) !== num)
+  } else {
+    selectedKeys.value = [...selectedKeys.value, num]
+  }
+}
+
+async function load(opts: Record<string, unknown> = {}): Promise<void> {
   try {
     await store.fetchStock(opts)
   } catch {
@@ -66,15 +98,15 @@ async function load(opts = {}) {
   }
 }
 
-function scheduleSearch() {
-  clearTimeout(debounceTimer)
+function scheduleSearch(): void {
+  if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => load({ page: 1 }), 280)
 }
 
 watch(query, scheduleSearch)
 watch([category, warehouse], () => load({ page: 1 }))
 
-async function focusSearch(e) {
+async function focusSearch(e: KeyboardEvent): Promise<void> {
   if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'k') return
   e.preventDefault()
   e.stopImmediatePropagation()
@@ -83,125 +115,184 @@ async function focusSearch(e) {
   searchRef.value?.select?.()
 }
 
+async function applyCategory(): Promise<void> {
+  const ids = selectedIds()
+  const cat = String(bulkCategory.value || '').trim()
+  if (!ids.length) {
+    toast.warning('Не выбрана ни одна запись')
+    return
+  }
+  if (!cat) {
+    toast.warning('Укажите категорию')
+    return
+  }
+  try {
+    await store.bulkUpdate(ids, 'update_category', { category: cat }, {
+      clearSelection: clearTableSelection,
+    })
+  } catch {
+    /* toast via store */
+  }
+}
+
+async function applyAdjustment(delta?: number): Promise<void> {
+  const ids = selectedIds()
+  if (!ids.length) {
+    toast.warning('Не выбрана ни одна запись')
+    return
+  }
+  const adjustment = Number.isFinite(Number(delta)) ? Number(delta) : Number(bulkAdjustment.value)
+  if (!Number.isInteger(adjustment) || adjustment === 0) {
+    toast.warning('Укажите целое ненулевое изменение остатка')
+    return
+  }
+  try {
+    await store.bulkUpdate(ids, 'adjust_actual', { adjustment }, {
+      clearSelection: clearTableSelection,
+    })
+  } catch {
+    /* toast via store */
+  }
+}
+
+function focusScan(): void {
+  searchRef.value?.focus()
+  searchRef.value?.select?.()
+}
+
 onMounted(async () => {
   window.addEventListener('keydown', focusSearch, true)
   await store.fetchWarehouses()
   await load({ page: 1 })
+  if (!bulkCategory.value && bulkCategoryOptions.value[0]) {
+    bulkCategory.value = bulkCategoryOptions.value[0]
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', focusSearch, true)
-  clearTimeout(debounceTimer)
+  if (debounceTimer) clearTimeout(debounceTimer)
 })
 </script>
 
 <template>
   <div
-    class="-m-4 space-y-4 p-4 lg:-m-6 lg:p-6"
+    class="min-w-0 max-w-full space-y-3 overflow-x-hidden p-3 sm:space-y-4 sm:p-4 lg:p-6"
     style="background: var(--autometria-bg, #0b0d10); min-height: 100%"
   >
     <div
-      class="flex flex-col gap-3 border p-4 sm:flex-row sm:items-center sm:justify-between"
+      class="flex flex-col gap-3 border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
       style="background: #11151a; border-color: #1f2937; border-radius: 4px"
     >
-      <div>
-        <div
-          class="mb-1 font-mono text-[10px] font-medium uppercase tracking-[0.14em]"
-          style="color: #f59e0b"
-        >
+      <div class="min-w-0">
+        <div class="mb-1 font-mono text-[10px] font-medium uppercase tracking-[0.14em]" style="color: #f59e0b">
           Warehouse // /api/v1/stock
         </div>
-        <h2 class="text-sm font-medium text-white sm:text-base">
-          Склад и остатки
-        </h2>
-        <p class="mt-1 text-xs font-medium" style="color: #9ca3af">
-          Факт − резерв = доступно · OEM · розница
-        </p>
+        <h2 class="text-sm font-medium text-white sm:text-base">Склад и остатки</h2>
+        <p class="mt-1 text-xs font-medium" style="color: #9ca3af">Факт − резерв = доступно · OEM · розница</p>
       </div>
 
       <div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
-        <DsLoadingBadge
-          v-if="loading"
-          label="Fetching"
-        />
-        <DsBadge
-          v-if="degraded"
-          status="warning"
-          label="Degraded"
-          variant="warning"
-          dot
-        />
-        <span class="border px-2 py-1" style="border-color: #1f2937; border-radius: 4px; color: #9ca3af">
-          SKU {{ stats.skus }}
-        </span>
-        <span class="border px-2 py-1" style="border-color: #1f2937; border-radius: 4px; color: #f59e0b">
-          Низкий {{ stats.low }}
-        </span>
-        <span class="border px-2 py-1" style="border-color: #1f2937; border-radius: 4px; color: #ef4444">
-          Дефицит {{ stats.critical }}
-        </span>
-        <span class="border px-2 py-1" style="border-color: #1f2937; border-radius: 4px; color: #6b7280">
-          Резерв {{ stats.reserved }}
-        </span>
+        <DsLoadingBadge v-if="loading || bulkPending" label="Fetching" />
+        <DsBadge v-if="degraded" status="warning" label="Degraded" variant="warning" dot />
+        <span class="border px-2 py-1.5" style="border-color: #1f2937; border-radius: 4px; color: #9ca3af">SKU {{ stats.skus }}</span>
+        <span class="border px-2 py-1.5" style="border-color: #1f2937; border-radius: 4px; color: #f59e0b">Низкий {{ stats.low }}</span>
+        <span class="border px-2 py-1.5" style="border-color: #1f2937; border-radius: 4px; color: #ef4444">Дефицит {{ stats.critical }}</span>
       </div>
     </div>
 
+    <!-- Scan / search bar — sticky-friendly on mobile -->
     <div
-      class="flex flex-wrap items-center gap-2 border p-3"
+      class="sticky top-0 z-10 flex flex-col gap-2 border p-3 sm:flex-row sm:flex-wrap sm:items-center"
       style="background: #11151a; border-color: #1f2937; border-radius: 4px"
     >
-      <div class="relative min-w-[240px] flex-1">
+      <div class="relative w-full min-w-0 flex-1">
         <input
           ref="searchRef"
           v-model="query"
-          class="ds-input pr-14 font-mono text-xs"
+          class="ds-input h-12 w-full pr-20 font-mono text-base sm:h-10 sm:text-xs"
           style="border-radius: 4px; background: #161b22; border-color: #1f2937"
           type="search"
-          placeholder="Артикул / OEM / наименование…"
+          inputmode="search"
+          enterkeyhint="search"
+          autocomplete="off"
+          placeholder="Скан / артикул / OEM…"
         >
-        <kbd
-          class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 font-mono text-[10px]"
-          style="
-            color: #f59e0b;
-            border: 1px solid #1f2937;
-            border-radius: 4px;
-            padding: 2px 6px;
-            background: #11151a;
-          "
-        >⌘K</kbd>
+        <button
+          type="button"
+          class="absolute right-1.5 top-1/2 h-9 -translate-y-1/2 border px-2.5 font-mono text-[11px] sm:h-8"
+          style="border-color: #f59e0b; color: #f59e0b; border-radius: 4px; background: #11151a"
+          title="Фокус на ввод артикула"
+          @click="focusScan"
+        >
+          ⌁ Scan
+        </button>
       </div>
 
       <select
         v-model="category"
-        class="ds-select text-xs"
+        class="ds-select h-11 w-full text-sm sm:h-9 sm:w-auto sm:text-xs"
         style="border-radius: 4px; background: #161b22; border-color: #1f2937"
       >
-        <option
-          v-for="c in categoryOptions"
-          :key="c"
-          :value="c"
-        >
+        <option v-for="c in categoryOptions" :key="c" :value="c">
           {{ c === 'all' ? 'Все категории' : c }}
         </option>
       </select>
 
       <select
         v-model="warehouse"
-        class="ds-select text-xs"
+        class="ds-select h-11 w-full text-sm sm:h-9 sm:w-auto sm:text-xs"
         style="border-radius: 4px; background: #161b22; border-color: #1f2937"
       >
-        <option
-          v-for="w in warehouseOptions"
-          :key="w"
-          :value="w"
-        >
+        <option v-for="w in warehouseOptions" :key="w" :value="w">
           {{ w === 'all' ? 'Все склады' : w }}
         </option>
       </select>
 
-      <span class="font-mono text-xs" style="color: #9ca3af">
-        {{ rows.length }} results
-      </span>
+      <span class="font-mono text-xs" style="color: #9ca3af">{{ rows.length }} results</span>
+    </div>
+
+    <!-- Mobile bulk toolbar -->
+    <div
+      v-if="selectedKeys.length"
+      class="flex flex-col gap-2 border px-3 py-2 sm:hidden"
+      style="background: color-mix(in srgb, #1e1b4b 72%, #11151a); border-color: #1f2937; border-radius: 4px"
+    >
+      <span class="font-mono text-[12px]" style="color: #9ca3af">{{ selectedKeys.length }} выбрано</span>
+      <div class="flex flex-col gap-2">
+        <label class="flex flex-col gap-1 font-mono text-[11px]" style="color: #9ca3af">
+          Категория
+          <div class="flex gap-2">
+            <select
+              v-model="bulkCategory"
+              class="ds-select h-11 flex-1 text-sm"
+              style="border-radius: 4px; background: #161b22; border-color: #1f2937"
+              :disabled="bulkPending"
+            >
+              <option v-for="c in bulkCategoryOptions" :key="c" :value="c">{{ c }}</option>
+            </select>
+            <button type="button" class="ds-btn ds-btn-ghost h-11 px-3" :disabled="bulkPending" @click="applyCategory">
+              OK
+            </button>
+          </div>
+        </label>
+        <label class="flex flex-col gap-1 font-mono text-[11px]" style="color: #9ca3af">
+          +/- остаток
+          <div class="flex gap-2">
+            <input
+              v-model.number="bulkAdjustment"
+              type="number"
+              step="1"
+              class="ds-input h-11 w-20 text-center font-mono text-base"
+              style="border-radius: 4px; background: #161b22; border-color: #1f2937"
+              :disabled="bulkPending"
+            >
+            <button type="button" class="ds-btn ds-btn-ghost h-11 flex-1" :disabled="bulkPending" @click="applyAdjustment(Math.abs(Number(bulkAdjustment) || 1))">+</button>
+            <button type="button" class="ds-btn ds-btn-ghost h-11 flex-1" :disabled="bulkPending" @click="applyAdjustment(-Math.abs(Number(bulkAdjustment) || 1))">−</button>
+          </div>
+        </label>
+        <button type="button" class="ds-btn ds-btn-ghost h-11" @click="clearTableSelection">Снять</button>
+      </div>
     </div>
 
     <div
@@ -209,60 +300,136 @@ onUnmounted(() => {
       class="space-y-2 border p-3"
       style="background: #11151a; border-color: #1f2937; border-radius: 4px"
     >
-      <div
-        v-for="n in 8"
-        :key="n"
-        class="h-8 animate-pulse"
-        style="background: #161b22; border-radius: 4px"
-      />
+      <div v-for="n in 6" :key="n" class="h-16 animate-pulse sm:h-8" style="background: #161b22; border-radius: 4px" />
     </div>
 
-    <DsTable
-      v-else
-      :columns="columns"
-      :rows="rows"
-      density="compact"
-      sticky-header
-      max-height="min(62vh, 560px)"
-      empty-text="Номенклатура не найдена"
-    >
-      <template #sku="{ row }">
-        <div class="leading-tight">
-          <div class="font-mono text-[12px] font-medium tabular-nums text-white">{{ row.sku }}</div>
-          <div class="font-mono text-[10px] tabular-nums" style="color: #6b7280">OEM {{ row.oem }}</div>
-        </div>
-      </template>
-      <template #name="{ value }">
-        <span class="font-sans text-[12px] font-medium text-white">{{ value }}</span>
-      </template>
-      <template #category="{ value }">
-        <span class="font-sans text-[12px]" style="color: #9ca3af">{{ value }}</span>
-      </template>
-      <template #cell="{ row }">
-        <div class="leading-tight">
-          <div class="font-mono text-[12px] tabular-nums" style="color: #9ca3af">{{ row.cell }}</div>
-          <div class="font-mono text-[10px]" style="color: #6b7280">{{ row.warehouse }}</div>
-        </div>
-      </template>
-      <template #available="{ value }">
-        <span class="font-mono text-[12px] font-bold tabular-nums text-white">{{ value }}</span>
-      </template>
-      <template #reserved="{ value }">
-        <span class="font-mono text-[12px] tabular-nums" style="color: #6b7280">{{ value }}</span>
-      </template>
-      <template #price="{ value }">
-        <span class="font-mono text-[12px] font-bold tabular-nums" style="color: #f59e0b">
-          {{ money(value) }}
-        </span>
-      </template>
-      <template #status="{ row }">
-        <DsBadge
-          :variant="(STATUS[row.status] || STATUS.ok).variant"
-          :label="(STATUS[row.status] || STATUS.ok).label"
-          :status="row.status"
-          dot
-        />
-      </template>
-    </DsTable>
+    <template v-else>
+      <!-- Mobile cards -->
+      <div class="space-y-2 sm:hidden">
+        <article
+          v-for="row in rows"
+          :key="row.id"
+          class="border p-3"
+          :class="isSelected(row.id) ? 'border-indigo-400' : 'border-[#1F2937]'"
+          :style="{
+            background: isSelected(row.id) ? '#1E1B4B' : '#11151A',
+            borderRadius: '4px',
+          }"
+          @click="toggleCard(row.id)"
+        >
+          <div class="flex items-start gap-3">
+            <input
+              type="checkbox"
+              class="mt-1 h-5 w-5 accent-[var(--color-primary)]"
+              :checked="isSelected(row.id)"
+              @click.stop
+              @change="toggleCard(row.id)"
+            >
+            <div class="min-w-0 flex-1 space-y-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="truncate font-mono text-[13px] font-medium text-white">{{ row.sku }}</span>
+                <span class="shrink-0 font-mono text-[13px] font-bold tabular-nums" style="color: #f59e0b">{{ money(row.price) }}</span>
+              </div>
+              <div class="truncate text-[13px] text-white">{{ row.name }}</div>
+              <div class="font-mono text-[11px]" style="color: #6b7280">OEM {{ row.oem }} · {{ row.cell }} · {{ row.warehouse }}</div>
+              <div class="flex flex-wrap items-center gap-2 pt-1">
+                <span class="font-mono text-[12px] text-white">в наличии {{ row.available }}</span>
+                <span class="font-mono text-[11px]" style="color: #6b7280">резерв {{ row.reserved }}</span>
+                <DsBadge
+                  :variant="(STATUS[row.status] || STATUS.ok).variant"
+                  :label="(STATUS[row.status] || STATUS.ok).label"
+                  :status="row.status"
+                  dot
+                />
+              </div>
+            </div>
+          </div>
+        </article>
+        <p v-if="!rows.length" class="py-8 text-center text-sm" style="color: #9ca3af">Номенклатура не найдена</p>
+      </div>
+
+      <!-- Desktop table with horizontal scroll containment -->
+      <div class="hidden min-w-0 overflow-x-auto sm:block">
+        <DsTable
+          ref="tableRef"
+          v-model:selected-keys="selectedKeys"
+          :columns="columns"
+          :rows="rows"
+          density="compact"
+          sticky-header
+          selectable
+          max-height="min(62vh, 560px)"
+          empty-text="Номенклатура не найдена"
+        >
+          <template #bulk-actions>
+            <label class="flex flex-wrap items-center gap-1.5 font-mono text-[11px]" style="color: #9ca3af">
+              Категория
+              <select
+                v-model="bulkCategory"
+                class="ds-select py-1 text-xs"
+                style="border-radius: 4px; background: #161b22; border-color: #1f2937; min-width: 110px"
+                :disabled="bulkPending"
+              >
+                <option v-for="c in bulkCategoryOptions" :key="c" :value="c">{{ c }}</option>
+              </select>
+              <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" :disabled="bulkPending" @click="applyCategory">
+                Применить
+              </button>
+            </label>
+
+            <label class="flex flex-wrap items-center gap-1.5 font-mono text-[11px]" style="color: #9ca3af">
+              +/- остаток
+              <input
+                v-model.number="bulkAdjustment"
+                type="number"
+                step="1"
+                class="ds-input w-16 py-1 text-center font-mono text-xs"
+                style="border-radius: 4px; background: #161b22; border-color: #1f2937"
+                :disabled="bulkPending"
+              >
+              <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" :disabled="bulkPending" @click="applyAdjustment(Math.abs(Number(bulkAdjustment) || 1))">+</button>
+              <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" :disabled="bulkPending" @click="applyAdjustment(-Math.abs(Number(bulkAdjustment) || 1))">−</button>
+              <button type="button" class="ds-btn ds-btn-primary ds-btn-sm" :disabled="bulkPending" @click="applyAdjustment(bulkAdjustment)">OK</button>
+            </label>
+          </template>
+
+          <template #sku="{ row }">
+            <div class="leading-tight">
+              <div class="font-mono text-[12px] font-medium tabular-nums text-white">{{ row.sku }}</div>
+              <div class="font-mono text-[10px] tabular-nums" style="color: #6b7280">OEM {{ row.oem }}</div>
+            </div>
+          </template>
+          <template #name="{ value }">
+            <span class="font-sans text-[12px] font-medium text-white">{{ value }}</span>
+          </template>
+          <template #category="{ value }">
+            <span class="font-sans text-[12px]" style="color: #9ca3af">{{ value }}</span>
+          </template>
+          <template #cell="{ row }">
+            <div class="leading-tight">
+              <div class="font-mono text-[12px] tabular-nums" style="color: #9ca3af">{{ row.cell }}</div>
+              <div class="font-mono text-[10px]" style="color: #6b7280">{{ row.warehouse }}</div>
+            </div>
+          </template>
+          <template #available="{ value }">
+            <span class="font-mono text-[12px] font-bold tabular-nums text-white">{{ value }}</span>
+          </template>
+          <template #reserved="{ value }">
+            <span class="font-mono text-[12px] tabular-nums" style="color: #6b7280">{{ value }}</span>
+          </template>
+          <template #price="{ value }">
+            <span class="font-mono text-[12px] font-bold tabular-nums" style="color: #f59e0b">{{ money(value) }}</span>
+          </template>
+          <template #status="{ row }">
+            <DsBadge
+              :variant="(STATUS[row.status] || STATUS.ok).variant"
+              :label="(STATUS[row.status] || STATUS.ok).label"
+              :status="row.status"
+              dot
+            />
+          </template>
+        </DsTable>
+      </div>
+    </template>
   </div>
 </template>

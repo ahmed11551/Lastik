@@ -1,7 +1,8 @@
 <script setup>
 /**
  * AUTOMETRIA ERP — B2B status badges
- * Active | Pending | Suspended | Open | Closed + semantic variants
+ * Dot + Badge: 6px indicator + label
+ * Statuses: Accepted | Negotiation | Rejected | Review + legacy variants
  */
 import { computed } from 'vue'
 
@@ -19,8 +20,23 @@ const props = defineProps({
     default: '',
     validator: (v) =>
       !v ||
-      ['success', 'danger', 'warning', 'pending', 'neutral', 'suspended', 'open', 'closed', 'active'].includes(v),
+      [
+        'success',
+        'danger',
+        'warning',
+        'pending',
+        'neutral',
+        'suspended',
+        'open',
+        'closed',
+        'active',
+        'accepted',
+        'negotiation',
+        'rejected',
+        'review',
+      ].includes(v),
   },
+  /** Colored 6px dot left of label */
   dot: {
     type: Boolean,
     default: false,
@@ -36,10 +52,10 @@ const STATUS_MAP = {
   success: { variant: 'success', label: 'OK' },
   danger: { variant: 'danger', label: 'Error' },
   warning: { variant: 'warning', label: 'Warning' },
-  negotiation: { variant: 'warning', label: 'In Negotiation' },
-  rejected: { variant: 'danger', label: 'Rejected' },
-  review: { variant: 'pending', label: 'Under Review' },
-  accepted: { variant: 'success', label: 'Accepted' },
+  negotiation: { variant: 'negotiation', label: 'In Negotiation' },
+  rejected: { variant: 'rejected', label: 'Rejected' },
+  review: { variant: 'review', label: 'Under Review' },
+  accepted: { variant: 'accepted', label: 'Accepted' },
   prospective: { variant: 'neutral', label: 'Prospective' },
   // RU aliases
   активен: { variant: 'active', label: 'Active' },
@@ -62,14 +78,16 @@ const resolved = computed(() => {
 <template>
   <span
     class="ds-badge"
-    :class="`ds-badge--${resolved.variant}`"
+    :class="[
+      `ds-badge--${resolved.variant}`,
+      { 'ds-badge--dot': dot },
+    ]"
   >
     <span
       v-if="dot"
-      class="inline-block h-1.5 w-1.5 rounded-full"
-      :style="{ background: 'currentColor' }"
+      class="ds-badge__dot"
       aria-hidden="true"
     />
-    {{ resolved.label }}
+    <span class="ds-badge__label">{{ resolved.label }}</span>
   </span>
 </template>

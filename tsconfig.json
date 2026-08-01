@@ -17,10 +17,26 @@
     "jsx": "react-jsx",
     "paths": {
       "@/*": [
-        "./*"
+        "./resources/js/*"
       ]
     },
     "allowImportingTsExtensions": true,
-    "noEmit": true
-  }
+    "noEmit": true,
+    "strict": false,
+    "types": ["vite/client"]
+  },
+  "include": [
+    "resources/js/autometria/**/*.ts",
+    "resources/js/autometria/**/*.vue",
+    "resources/js/design-system/**/*.ts",
+    "resources/js/design-system/**/*.vue",
+    "resources/js/Layouts/**/*.vue",
+    "resources/js/shims-vue.d.ts",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "resources/js/app.ts",
+    "node_modules",
+    "dist"
+  ]
 }

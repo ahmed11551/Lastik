@@ -28,6 +28,8 @@ const { set: setTheme, toggle: toggleTheme } = useTheme()
 const paletteOpen = ref(false)
 const mobileNav = ref(false)
 const themeLabel = ref('Dark')
+const quickSearch = ref('')
+const quickSearchRef = ref(null)
 
 onMounted(() => {
   document.documentElement.setAttribute('data-theme', 'dark')
@@ -119,6 +121,17 @@ const defaultCommands = computed(() => [
   },
   ...props.commandItems,
 ])
+
+function openQuickSearch() {
+  paletteOpen.value = true
+}
+
+function onQuickSearchKeydown(e) {
+  if (e.key === 'Enter' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
+    e.preventDefault()
+    paletteOpen.value = true
+  }
+}
 </script>
 
 <template>
@@ -167,18 +180,18 @@ const defaultCommands = computed(() => [
           <div class="min-w-0">
             <nav
               v-if="breadcrumbs.length"
-              class="mb-0.5 flex flex-wrap items-center gap-1 text-[11px]"
-              style="color: var(--color-text-secondary)"
+              class="mb-0.5 flex flex-wrap items-center gap-1 text-[13px] font-normal text-[#9CA3AF]"
+              aria-label="Breadcrumb"
             >
               <template
                 v-for="(crumb, i) in breadcrumbs"
                 :key="crumb.href || crumb.label"
               >
-                <span v-if="i > 0">/</span>
-                <span>{{ crumb.label }}</span>
+                <span v-if="i > 0" class="text-[#9CA3AF]/opacity-60">/</span>
+                <span class="font-normal text-[#9CA3AF]">{{ crumb.label }}</span>
               </template>
             </nav>
-            <h1 class="truncate text-sm font-semibold">
+            <h1 class="truncate text-sm font-semibold" style="color: var(--color-text-primary)">
               {{ title }}
             </h1>
           </div>
@@ -186,6 +199,27 @@ const defaultCommands = computed(() => [
         </div>
 
         <div class="flex shrink-0 items-center gap-2">
+          <div class="relative hidden min-w-[160px] sm:block md:min-w-[220px]">
+            <input
+              ref="quickSearchRef"
+              v-model="quickSearch"
+              type="search"
+              class="ds-input h-8 py-1 pl-8 pr-10 text-[13px] font-normal text-[#9CA3AF] placeholder:text-[#9CA3AF]"
+              placeholder="Быстрый поиск…"
+              aria-label="Быстрый поиск"
+              @focus="openQuickSearch"
+              @keydown="onQuickSearchKeydown"
+              @click="openQuickSearch"
+            >
+            <span
+              class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[13px] text-[#9CA3AF]"
+              aria-hidden="true"
+            >⌕</span>
+            <kbd
+              class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border px-1 font-mono text-[10px] text-[#9CA3AF] md:inline"
+              style="border-color: var(--color-border)"
+            >⌘K</kbd>
+          </div>
           <DsShiftWidget
             :open="currentShiftOpen"
             :started-at="shiftStartedAt"
@@ -195,7 +229,7 @@ const defaultCommands = computed(() => [
           />
           <button
             type="button"
-            class="ds-btn ds-btn-ghost ds-btn-sm"
+            class="ds-btn ds-btn-ghost ds-btn-sm text-[13px] font-normal"
             :title="`Тема: ${themeLabel}`"
             @click="onToggleTheme"
           >
@@ -203,7 +237,7 @@ const defaultCommands = computed(() => [
           </button>
           <button
             type="button"
-            class="ds-btn ds-btn-primary ds-btn-sm font-mono"
+            class="ds-btn ds-btn-primary ds-btn-sm font-mono sm:hidden"
             title="Command palette (⌘K)"
             @click="paletteOpen = true"
           >
@@ -212,7 +246,7 @@ const defaultCommands = computed(() => [
         </div>
       </header>
 
-      <main class="min-h-0 flex-1 overflow-y-auto p-4 lg:p-6" style="background: var(--autometria-bg, #0b0d10)">
+      <main class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 lg:p-6" style="background: var(--autometria-bg, #0b0d10)">
         <slot />
       </main>
     </div>
