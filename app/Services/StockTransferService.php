@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace Autometria\Services;
 
+use Autometria\Enums\StockTransferStatus;
 use Autometria\Exceptions\Domain\InsufficientStockException;
 use Autometria\Models\Stock;
 use Autometria\Models\StockConflict;
@@ -140,6 +141,11 @@ final class StockTransferService
                 'qty' => $qty,
                 'reason' => $reason,
                 'created_by' => $createdBy,
+                'status' => StockTransferStatus::COMPLETED->value,
+                'shipped_at' => now(),
+                'received_at' => now(),
+                'shipped_by' => $createdBy,
+                'received_by' => $createdBy,
             ]);
 
             AuditLog::write(
@@ -160,6 +166,118 @@ final class StockTransferService
                 [],
                 $reason,
             );
+
+            return $transfer;
+        });
+    }
+
+    /**
+     * Отгрузка (DRAFT -> IN_TRANSIT): резервирует товар на исходном складе,
+     * но НЕ списывает его (он остаётся на source до приёмки).
+     */
+    public function ship(int $tenantId, int $transferId, int $shippedBy): StockTransfer
+    {
+        return DB::transaction(function () use ($tenantId, $transferId, $shippedBy): StockTransfer {
+            $transfer = StockTransfer::query()->withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->whereKey($transferId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($transfer->status !== StockTransferStatus::DRAFT) {
+                throw new InvalidArgumentException('Transfer must be in DRAFT to ship');
+            }
+
+            $from = Stock::query()->withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->where('warehouse_id', $transfer->from_warehouse_id)
+                ->where('product_id', $transfer->product_id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($from === null || (float) $from->available < (float) $transfer->qty) {
+                throw new InsufficientStockException('available_less_than_qty');
+            }
+
+            // Резервируем под перемещение (уменьшаем available, но не actual).
+            $from->reserved = (float) $from->reserved + (float) $transfer->qty;
+            $from->available = (float) $from->actual - (float) $from->reserved;
+            $from->save();
+
+            $transfer->status = StockTransferStatus::IN_TRANSIT;
+            $transfer->shipped_by = $shippedBy;
+            $transfer->shipped_at = now();
+            $transfer->save();
+
+            AuditLog::write($tenantId, $shippedBy, 'stock.transfer.shipped', StockTransfer::class, (int) $transfer->id,
+                [], ['qty' => (float) $transfer->qty]);
+
+            return $transfer;
+        });
+    }
+
+    /**
+     * Приёмка (IN_TRANSIT -> COMPLETED): списывает с source, оприходывает на destination.
+     */
+    public function receive(int $tenantId, int $transferId, int $receivedBy): StockTransfer
+    {
+        return DB::transaction(function () use ($tenantId, $transferId, $receivedBy): StockTransfer {
+            $transfer = StockTransfer::query()->withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->whereKey($transferId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($transfer->status !== StockTransferStatus::IN_TRANSIT) {
+                throw new InvalidArgumentException('Transfer must be IN_TRANSIT to receive');
+            }
+
+            $qty = (float) $transfer->qty;
+
+            // Source: снимаем резерв и уменьшаем actual (товар уехал).
+            $from = Stock::query()->withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->where('warehouse_id', $transfer->from_warehouse_id)
+                ->where('product_id', $transfer->product_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $from->actual = (float) $from->actual - $qty;
+            $from->reserved = max(0.0, (float) $from->reserved - $qty);
+            $from->available = (float) $from->actual - (float) $from->reserved;
+            $from->save();
+
+            // Destination: оприходование.
+            $to = Stock::query()->withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->where('warehouse_id', $transfer->to_warehouse_id)
+                ->where('product_id', $transfer->product_id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($to === null) {
+                $to = Stock::query()->withoutGlobalScopes()->forceCreate([
+                    'tenant_id' => $tenantId,
+                    'warehouse_id' => $transfer->to_warehouse_id,
+                    'product_id' => $transfer->product_id,
+                    'actual' => 0,
+                    'reserved' => 0,
+                    'available' => 0,
+                ]);
+                $to = Stock::query()->withoutGlobalScopes()->whereKey($to->id)->lockForUpdate()->firstOrFail();
+            }
+
+            $to->actual = (float) $to->actual + $qty;
+            $to->available = (float) $to->actual - (float) $to->reserved;
+            $to->save();
+
+            $transfer->status = StockTransferStatus::COMPLETED;
+            $transfer->received_by = $receivedBy;
+            $transfer->received_at = now();
+            $transfer->save();
+
+            AuditLog::write($tenantId, $receivedBy, 'stock.transfer.received', StockTransfer::class, (int) $transfer->id,
+                [], ['qty' => $qty, 'to_warehouse_id' => $transfer->to_warehouse_id]);
 
             return $transfer;
         });

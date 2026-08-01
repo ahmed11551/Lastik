@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace Autometria\Models;
 
+use Autometria\Enums\StockTransferStatus;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StockTransfer extends TenantModel
@@ -51,10 +52,16 @@ class StockTransfer extends TenantModel
         'qty',
         'reason',
         'created_by',
+        'status',
+        'shipped_by',
+        'received_by',
     ];
 
     protected $casts = [
         'qty' => 'decimal:3',
+        'status' => StockTransferStatus::class,
+        'shipped_at' => 'datetime',
+        'received_at' => 'datetime',
     ];
 
     public function product(): BelongsTo
