@@ -1,62 +1,82 @@
-/* Industrial Precision — Design Tokens (AUTOMETRIA ERP) */
-:root {
-  --color-bg: #0B0D10;
-  --color-surface: #11151A;
-  --color-surface-elevated: #1A1F26;
-  --color-primary: #F59E0B;
-  --color-primary-hover: #D97706;
-  --color-text-primary: #E5E7EB;
-  --color-text-secondary: #9CA3AF;
-  --color-success: #10B981;
-  --color-danger: #EF4444;
-  --color-border: #1F2937;
-  --color-focus: #F59E0B;
-  --font-ui: 'Inter', ui-sans-serif, system-ui;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code';
+/**
+ * AUTOMETRIA ERP — Industrial Amber + High Density
+ * Multi-theme design tokens (Dark default / Light)
+ */
+
+:root,
+[data-theme="dark"] {
+  --autometria-bg: #0b0d10;
+  --autometria-surface: #11151a;
+  --autometria-surface-2: #161b22;
+  --color-bg: #0b0d10;
+  --color-surface: #11151a;
+  --color-surface-elevated: #161b22;
+
+
+  --color-primary: #f59e0b;
+  --color-primary-hover: #d97706;
+  --color-warning: #f59e0b;
+
+  --color-text-primary: #e5e7eb;
+  --color-text-secondary: #9ca3af;
+
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-border: #1f2937;
+  --color-focus: #f59e0b;
+
+  --font-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+
   --radius: 4px;
-  --table-row-height: 32px;
+
+  --ds-row-compact: 32px;
+  --ds-row-comfortable: 48px;
+  --ds-sidebar-width: 260px;
+
+  --ds-zebra: rgba(255, 255, 255, 0.02);
+  --ds-hover-tint: rgba(245, 158, 11, 0.06);
+}
+
+[data-theme="light"] {
+  --autometria-bg: #f8fafc;
+  --autometria-surface: #ffffff;
+  --autometria-surface-2: #f1f5f9;
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f1f5f9;
+
+  --color-primary: #d97706;
+  --color-primary-hover: #b45309;
+  --color-warning: #d97706;
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+
+  --color-success: #059669;
+  --color-danger: #dc2626;
+  --color-border: #e2e8f0;
+  --color-focus: #d97706;
+
+  --ds-zebra: rgba(15, 23, 42, 0.03);
+  --ds-hover-tint: rgba(217, 119, 6, 0.08);
 }
 
 @media (prefers-color-scheme: light) {
-  :root {
-    --color-bg: #F8FAFC;
-    --color-surface: #FFFFFF;
-    --color-surface-elevated: #F1F5F9;
-    --color-primary: #D97706;
-    --color-primary-hover: #B45309;
-    --color-text-primary: #0F172A;
+  :root:not([data-theme="dark"]) {
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-surface-elevated: #f1f5f9;
+    --color-primary: #d97706;
+    --color-primary-hover: #b45309;
+    --color-warning: #d97706;
+    --color-text-primary: #0f172a;
     --color-text-secondary: #475569;
     --color-success: #059669;
-    --color-danger: #DC2626;
-    --color-border: #E2E8F0;
-    --color-focus: #D97706;
+    --color-danger: #dc2626;
+    --color-border: #e2e8f0;
+    --color-focus: #d97706;
+    --ds-zebra: rgba(15, 23, 42, 0.03);
+    --ds-hover-tint: rgba(217, 119, 6, 0.08);
   }
-}
-
-[data-theme='light'] {
-  --color-bg: #F8FAFC;
-  --color-surface: #FFFFFF;
-  --color-surface-elevated: #F1F5F9;
-  --color-primary: #D97706;
-  --color-primary-hover: #B45309;
-  --color-text-primary: #0F172A;
-  --color-text-secondary: #475569;
-  --color-success: #059669;
-  --color-danger: #DC2626;
-  --color-border: #E2E8F0;
-  --color-focus: #D97706;
-}
-
-[data-theme='dark'] {
-  --color-bg: #0B0D10;
-  --color-surface: #11151A;
-  --color-surface-elevated: #1A1F26;
-  --color-primary: #F59E0B;
-  --color-primary-hover: #D97706;
-  --color-text-primary: #E5E7EB;
-  --color-text-secondary: #9CA3AF;
-  --color-success: #10B981;
-  --color-danger: #EF4444;
-  --color-border: #1F2937;
-  --color-focus: #F59E0B;
 }

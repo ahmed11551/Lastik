@@ -1,11 +1,13 @@
-@import './tokens/colors.css';
+@import "../tokens/colors.css";
 
 @layer base {
   * {
     box-sizing: border-box;
   }
 
-  html, body, #app {
+  html,
+  body,
+  #app {
     background: var(--color-bg);
     color: var(--color-text-primary);
     font-family: var(--font-ui);
@@ -24,18 +26,21 @@
     justify-content: center;
     gap: 8px;
     padding: 8px 14px;
-    border-radius: var(--radius);
+    border-radius: 4px;
     border: 1px solid transparent;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     line-height: 1.2;
-    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+    transition:
+      background-color 120ms ease,
+      color 120ms ease,
+      border-color 120ms ease;
     cursor: pointer;
   }
 
   .ds-btn-primary {
     background: var(--color-primary);
-    color: #0B0D10;
+    color: #0b0d10;
     border-color: var(--color-primary);
   }
 
@@ -54,15 +59,21 @@
     background: var(--color-surface-elevated);
   }
 
+  .ds-btn-sm {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
   .ds-input {
     width: 100%;
     padding: 8px 10px;
-    border-radius: var(--radius);
+    border-radius: 4px;
     border: 1px solid var(--color-border);
     background: var(--color-surface);
     color: var(--color-text-primary);
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.4;
+    font-family: var(--font-ui);
   }
 
   .ds-input:focus {
@@ -71,35 +82,164 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-focus) 25%, transparent);
   }
 
+  .ds-select {
+    appearance: none;
+    padding: 8px 28px 8px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239CA3AF' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+      no-repeat right 10px center;
+    color: var(--color-text-primary);
+    font-size: 13px;
+    font-family: var(--font-ui);
+  }
+
   .ds-surface {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+    border-radius: 4px;
   }
 
   .ds-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .ds-table th {
     text-align: left;
-    padding: 10px 12px;
+    padding: 0 12px;
     font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--color-text-secondary);
     border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface);
+    background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+    font-family: var(--font-ui);
+  }
+
+  .ds-table thead.ds-table__sticky th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .ds-table td {
-    padding: 10px 12px;
+    padding: 0 12px;
     border-bottom: 1px solid var(--color-border);
-    font-family: var(--font-mono);
     font-size: 12px;
+    color: var(--color-text-primary);
+    vertical-align: middle;
   }
 
-  .ds-table tr:hover td {
-    background: var(--color-surface-elevated);
+  .ds-table td.ds-mono,
+  .ds-table--mono-data td {
+    font-family: var(--font-mono);
+  }
+
+  .ds-table tbody tr:nth-child(even) td {
+    background: var(--ds-zebra);
+  }
+
+  .ds-table tbody tr {
+    position: relative;
+  }
+
+  .ds-table tbody tr:hover td {
+    background: var(--ds-hover-tint);
+  }
+
+  .ds-table tbody tr:hover td:first-child {
+    box-shadow: inset 2px 0 0 var(--color-primary);
+  }
+
+  .ds-table--compact th,
+  .ds-table--compact td {
+    height: var(--ds-row-compact);
+  }
+
+  .ds-table--comfortable th,
+  .ds-table--comfortable td {
+    height: var(--ds-row-comfortable);
+  }
+
+  .ds-sidebar {
+    width: var(--ds-sidebar-width);
+    border-right: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .ds-sidebar__item {
+    border-radius: 4px;
+  }
+
+  .ds-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--font-mono);
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .ds-badge--success {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--color-success);
+  }
+
+  .ds-badge--danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--color-danger);
+  }
+
+  .ds-badge--warning,
+  .ds-badge--pending {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--color-warning);
+  }
+
+  .ds-badge--neutral,
+  .ds-badge--suspended {
+    background: rgba(156, 163, 175, 0.14);
+    color: var(--color-text-secondary);
+  }
+
+  .ds-badge--open {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--color-success);
+  }
+
+  .ds-badge--closed {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--color-danger);
+  }
+
+  .ds-badge--active {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--color-success);
+  }
+
+  .ds-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .ds-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
   }
 }

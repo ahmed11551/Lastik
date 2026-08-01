@@ -48,6 +48,8 @@ final class PermissionSeeder extends Seeder
         ['section' => 'locations', 'slug' => 'locations.all', 'action' => 'all'],
         ['section' => 'stock', 'slug' => 'stock.view', 'action' => 'view'],
         ['section' => 'users', 'slug' => 'users.view', 'action' => 'view'],
+        ['section' => 'users', 'slug' => 'users.create', 'action' => 'create'],
+        ['section' => 'users', 'slug' => 'users.update', 'action' => 'update'],
     ];
 
     public function run(): void

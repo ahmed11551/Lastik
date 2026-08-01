@@ -201,7 +201,7 @@
       ],
       "active": true,
       "createdAt": "2026-01-12T09:00:00Z",
-      "lastLoginAt": "2026-07-31T19:44:26.377Z",
+      "lastLoginAt": "2026-07-31T21:39:46.143Z",
       "devices": [
         {
           "id": "dev-4",
@@ -1073,6 +1073,20 @@
     }
   ],
   "auditLogs": [
+    {
+      "tenantId": "tenant-1",
+      "userId": "usr-cashier",
+      "userName": "Елена Кузнецова (Кассир)",
+      "userRole": "cashier",
+      "entity": "user",
+      "entityId": "usr-cashier",
+      "action": "login",
+      "details": "Вход пользователя Елена Кузнецова (Кассир) (Старший Кассир)",
+      "ipAddress": "127.0.0.1",
+      "deviceInfo": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/3.10.17 Chrome/144.0.7559.236 Electron/40.10.3 Safari/537.36",
+      "id": "log-1785533986145-141",
+      "timestamp": "2026-07-31T21:39:46.145Z"
+    },
     {
       "tenantId": "tenant-1",
       "locationId": "loc-1",

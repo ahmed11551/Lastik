@@ -1,4 +1,6 @@
 export function useTheme() {
+  const current = () => document.documentElement.getAttribute('data-theme') || 'dark'
+
   const set = (theme) => {
     if (theme === 'system') {
       document.documentElement.removeAttribute('data-theme')
@@ -8,9 +10,8 @@ export function useTheme() {
   }
 
   const toggle = () => {
-    const current = document.documentElement.getAttribute('data-theme')
-    set(current === 'dark' ? 'light' : 'dark')
+    set(current() === 'dark' ? 'light' : 'dark')
   }
 
-  return { set, toggle }
+  return { set, toggle, current }
 }

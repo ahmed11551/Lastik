@@ -1,23 +1,31 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0891b2" />
-    <meta name="description" content="LASTIK — ERP шинных центров" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#F59E0B" />
+    <meta name="description" content="AUTOMETRIA ERP — Industrial Amber / High-Density B2B" />
     <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
-    <title>LASTIK</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <title>AUTOMETRIA ERP</title>
   </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body style="margin:0;background:#0B0D10;color:#E5E7EB">
+    <div id="app"></div>
+    <script type="module" src="/resources/js/autometria/main.js"></script>
     <script>
+      // Drop legacy LASTIK React service worker / caches
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => r.unregister())
+        })
+      }
+      if (window.caches) {
+        caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)))
       }
     </script>
   </body>

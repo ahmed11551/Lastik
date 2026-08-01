@@ -71,14 +71,110 @@ class CashShiftController extends Controller
             );
         }
 
-        $query = CashShift::query()
-            ->where('tenant_id', $tenantId);
-
+        $query = CashShift::query()->where('tenant_id', $tenantId);
         if ($locationId !== null) {
             $query->where('location_id', $locationId);
         }
 
         return ['data' => $query->latest('id')->get()];
+    }
+
+    public function current(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user !== null, 401);
+
+        $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
+        $locationId = (int) (location_id() ?? $user->location_id ?? 0);
+        abort_unless($tenantId > 0 && $locationId > 0, 422, 'Tenant/location context required');
+
+        $shift = CashShift::query()
+            ->where('tenant_id', $tenantId)
+            ->where('location_id', $locationId)
+            ->whereNull('closed_at')
+            ->latest('id')
+            ->first();
+
+        $revenue = 0.0;
+        if ($shift) {
+            $totals = is_array($shift->totals) ? $shift->totals : [];
+            $revenue = (float) (
+                ($totals['cash'] ?? 0)
+                + ($totals['card'] ?? 0)
+                + ($totals['transfer'] ?? 0)
+                + ($totals['online'] ?? 0)
+            );
+        }
+
+        return response()->json([
+            'data' => $shift ? [
+                'id' => $shift->id,
+                'open' => true,
+                'status' => $shift->status,
+                'opened_at' => optional($shift->opened_at)?->toIso8601String(),
+                'opening_amount' => (float) ($shift->opening_amount ?? 0),
+                'revenue' => $revenue,
+                'totals' => $shift->totals,
+                'location_id' => $shift->location_id,
+            ] : [
+                'open' => false,
+                'status' => 'closed',
+                'opened_at' => null,
+                'opening_amount' => 0,
+                'revenue' => 0,
+                'totals' => null,
+                'location_id' => $locationId,
+            ],
+        ]);
+    }
+
+    public function openShift(Request $request): JsonResponse|RedirectResponse
+    {
+        return $this->store($request);
+    }
+
+    public function closeCurrent(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user !== null, 401);
+
+        $data = $request->validate([
+            'shift_id' => ['nullable', 'integer', 'exists:cash_shifts,id'],
+            'closing_amount' => ['nullable', 'numeric', 'min:0'],
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
+        $locationId = (int) (location_id() ?? $user->location_id ?? 0);
+
+        $shift = null;
+        if (! empty($data['shift_id'])) {
+            $shift = CashShift::query()->whereKey((int) $data['shift_id'])->first();
+        } else {
+            $shift = CashShift::query()
+                ->where('tenant_id', $tenantId)
+                ->where('location_id', $locationId)
+                ->whereNull('closed_at')
+                ->latest('id')
+                ->first();
+        }
+
+        abort_unless($shift !== null, 422, 'Нет открытой смены');
+        $this->authorize('close', $shift);
+
+        try {
+            if (isset($data['closing_amount']) || isset($data['note'])) {
+                $shift->forceFill([
+                    'closing_amount' => $data['closing_amount'] ?? $shift->closing_amount,
+                    'note' => $data['note'] ?? $shift->note,
+                ])->save();
+            }
+            $closed = $this->shifts->close($shift);
+        } catch (ShiftAlreadyClosedException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
+
+        return response()->json(['data' => $closed]);
     }
 
     public function store(Request $request): JsonResponse|RedirectResponse

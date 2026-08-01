@@ -42,6 +42,11 @@ use Autometria\Models\User;
 
 class UserPolicy
 {
+    public function create(User $user): bool
+    {
+        return true;
+    }
+
     public function view(User $user, User $model): bool
     {
         return (int) $model->tenant_id === (int) $user->tenant_id;

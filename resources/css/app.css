@@ -1,11 +1,39 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+@import "../js/design-system/styles/design-system.css";
+
+/* Bridge legacy HSL tokens → Industrial Amber defaults */
 :root {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --radius: 0.5rem;
-  --background: 0 0% 100%;
+  --font-sans: var(--font-ui);
+  --radius: 4px;
+  --background: 220 14% 4%;
+  --foreground: 220 13% 91%;
+  --card: 210 18% 8%;
+  --card-foreground: 220 13% 91%;
+  --primary: 38 92% 50%;
+  --primary-foreground: 220 14% 4%;
+  --secondary: 215 19% 12%;
+  --secondary-foreground: 220 13% 91%;
+  --muted: 215 19% 12%;
+  --muted-foreground: 220 9% 65%;
+  --accent: 215 19% 12%;
+  --accent-foreground: 220 13% 91%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 217 19% 17%;
+  --input: 217 19% 17%;
+  --ring: 38 92% 50%;
+  --surface-0: 210 18% 8%;
+  --surface-1: 220 14% 4%;
+  --surface-2: 215 19% 12%;
+}
+
+[data-theme="light"] {
+  --background: 210 40% 98%;
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
-  --primary: 222 47% 11%;
+  --primary: 32 95% 44%;
   --primary-foreground: 0 0% 100%;
   --secondary: 210 40% 96%;
   --secondary-foreground: 222 47% 11%;
@@ -13,35 +41,10 @@
   --muted-foreground: 215 16% 47%;
   --accent: 210 40% 96%;
   --accent-foreground: 222 47% 11%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 100%;
   --border: 214 32% 91%;
   --input: 214 32% 91%;
-  --ring: 222 47% 11%;
+  --ring: 32 95% 44%;
   --surface-0: 0 0% 100%;
   --surface-1: 210 40% 97%;
   --surface-2: 210 40% 94%;
-}
-
-[data-theme="dark"] {
-  --background: 222 47% 11%;
-  --foreground: 210 40% 98%;
-  --card: 222 47% 14%;
-  --card-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222 47% 11%;
-  --secondary: 217 33% 17%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
-  --accent: 217 33% 17%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62% 30%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217 33% 19%;
-  --input: 217 33% 19%;
-  --ring: 213 27% 84%;
-  --surface-0: 222 47% 14%;
-  --surface-1: 222 47% 12%;
-  --surface-2: 217 33% 17%;
 }

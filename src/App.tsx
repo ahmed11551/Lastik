@@ -5,14 +5,8 @@ import { Sidebar, ViewTab } from './components/Sidebar';
 
 // Views
 import { DashboardView } from './views/DashboardView';
-import { OrdersView } from './views/OrdersView';
-import { NewOrderWizard } from './views/NewOrderWizard';
 import { CustomersView } from './views/CustomersView';
 import { VehiclesView } from './views/VehiclesView';
-import { StockView } from './views/StockView';
-import { CashShiftView } from './views/CashShiftView';
-import { KPIView } from './views/KPIView';
-import { AuditView } from './views/AuditView';
 import { UsersRolesView } from './views/UsersRolesView';
 import { TenantsLocationsView } from './views/TenantsLocationsView';
 import { TasksView } from './views/TasksView';
@@ -79,30 +73,24 @@ const MainLayout: React.FC = () => {
             />
           )}
 
-          {currentView === 'orders' && (
-            <OrdersView
-              searchTerm={globalSearch}
-              onOpenNewOrder={handleOpenNewOrder}
-            />
-          )}
-
-          {currentView === 'new_order' && (
-            <NewOrderWizard
-              onComplete={() => setCurrentView('orders')}
-            />
+          {(currentView === 'orders' || currentView === 'new_order' || currentView === 'stock' || currentView === 'kpi' || currentView === 'shifts' || currentView === 'audit') && (
+            <div className="rounded border border-amber-500/40 bg-slate-950 p-6 text-sm text-amber-200 font-mono">
+              React shell disabled. Open Vue Autometria:{' '}
+              {currentView === 'stock'
+                ? 'http://127.0.0.1:5178/#/warehouse'
+                : currentView === 'shifts'
+                  ? 'http://127.0.0.1:5178/#/cashier'
+                  : currentView === 'kpi'
+                    ? 'http://127.0.0.1:5178/#/kpi'
+                    : currentView === 'audit'
+                      ? 'http://127.0.0.1:5178/#/audit'
+                      : 'http://127.0.0.1:5178/#/orders'}
+            </div>
           )}
 
           {currentView === 'customers' && <CustomersView />}
 
           {currentView === 'vehicles' && <VehiclesView />}
-
-          {currentView === 'stock' && <StockView />}
-
-          {currentView === 'shifts' && <CashShiftView />}
-
-          {currentView === 'kpi' && <KPIView />}
-
-          {currentView === 'audit' && <AuditView />}
 
           {currentView === 'users' && <UsersRolesView />}
 

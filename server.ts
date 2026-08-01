@@ -1060,7 +1060,8 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`LASTIK Platform Backend Server running on http://0.0.0.0:${PORT}`);
+    console.log(`AUTOMETRIA API (legacy Express) on http://0.0.0.0:${PORT}`);
+    console.log('UI: run `npm run dev` → http://127.0.0.1:5178 (Vue Autometria DS)');
   });
 }
 

@@ -7,11 +7,22 @@ export function useCommandPalette() {
     window.dispatchEvent(new CustomEvent('command-palette:close'))
   }
 
-  const register = (id, label, action) => {
-    window.addEventListener('command-palette:register', () => {
-      window.__commandPaletteItems = window.__commandPaletteItems || []
-      window.__commandPaletteItems.push({ id, label, action })
-    })
+  const register = (id, label, action, meta = {}) => {
+    window.__commandPaletteItems = window.__commandPaletteItems || []
+    const existing = window.__commandPaletteItems.findIndex((i) => i.id === id)
+    const entry = {
+      id,
+      label,
+      action,
+      hint: meta.hint,
+      type: meta.type,
+      keywords: meta.keywords || [],
+    }
+    if (existing >= 0) {
+      window.__commandPaletteItems[existing] = entry
+    } else {
+      window.__commandPaletteItems.push(entry)
+    }
   }
 
   return { open, close, register }

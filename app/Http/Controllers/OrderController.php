@@ -57,7 +57,7 @@ class OrderController extends Controller
         private readonly OrderLifecycleService $lifecycle,
     ) {}
 
-    public function index(Request $request): array
+    public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         abort_unless($user !== null, 401);
@@ -68,13 +68,113 @@ class OrderController extends Controller
         $locationId = location_id() ?? ($user->location_id ? (int) $user->location_id : null);
         $this->assertLocationBelongsToTenant($tenantId, $locationId);
 
-        $query = Order::query()->where('tenant_id', $tenantId);
+        $perPage = min(100, max(1, (int) $request->integer('per_page', 50)));
+        $q = trim((string) $request->query('q', ''));
+        $status = trim((string) $request->query('status', ''));
+        $payment = trim((string) $request->query('payment', ''));
+
+        $query = Order::query()
+            ->with([
+                'customer:id,name,legal_name,phone',
+                'vehicle:id,plate,brand,model,vin',
+                'orderItems:id,order_id',
+            ])
+            ->where('tenant_id', $tenantId);
 
         if ($locationId !== null) {
             $query->where('location_id', $locationId);
         }
 
-        return ['data' => $query->latest('id')->get()];
+        if ($status !== '' && strtolower($status) !== 'all') {
+            if ($status === 'in_progress') {
+                $query->whereIn('status', [Order::STATUS_CREATED, Order::STATUS_IN_PROGRESS]);
+            } elseif ($status === 'ready') {
+                $query->whereIn('status', [Order::STATUS_READY, Order::STATUS_ISSUED]);
+            } elseif ($status === 'paid') {
+                $query->where('payment_status', 'paid');
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        if ($payment !== '' && strtolower($payment) !== 'all') {
+            $map = [
+                'paid' => 'paid',
+                'partial' => 'partial',
+                'debt' => 'unpaid',
+                'unpaid' => 'unpaid',
+            ];
+            $query->where('payment_status', $map[$payment] ?? $payment);
+        }
+
+        if ($q !== '') {
+            $likeOp = \Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $like = '%'.$q.'%';
+            $query->where(function ($builder) use ($like, $likeOp, $q): void {
+                $builder
+                    ->where('number', $likeOp, $like)
+                    ->orWhereHas('customer', function ($c) use ($like, $likeOp): void {
+                        $c->where('name', $likeOp, $like)
+                            ->orWhere('legal_name', $likeOp, $like)
+                            ->orWhere('phone', $likeOp, $like);
+                    })
+                    ->orWhereHas('vehicle', function ($v) use ($like, $likeOp): void {
+                        $v->where('vin', $likeOp, $like)
+                            ->orWhere('plate', $likeOp, $like)
+                            ->orWhere('brand', $likeOp, $like)
+                            ->orWhere('model', $likeOp, $like);
+                    });
+                if (ctype_digit($q)) {
+                    $builder->orWhere('id', (int) $q);
+                }
+            });
+        }
+
+        $paginator = $query->latest('id')->paginate($perPage);
+
+        $data = collect($paginator->items())->map(function (Order $o): array {
+            $payment = match ((string) $o->payment_status) {
+                'paid' => 'paid',
+                'partial' => 'partial',
+                default => 'debt',
+            };
+            $fulfillment = match ((string) $o->status) {
+                Order::STATUS_READY, Order::STATUS_ISSUED => 'ready',
+                Order::STATUS_CLOSED => 'done',
+                Order::STATUS_IN_PROGRESS => 'in_progress',
+                Order::STATUS_CREATED => 'in_progress',
+                default => 'assembled',
+            };
+
+            $client = $o->customer?->legal_name ?: ($o->customer?->name ?: '—');
+            $vehicle = trim(($o->vehicle?->brand ?: '').' '.($o->vehicle?->model ?: '')) ?: ($o->vehicle?->plate ?: '—');
+
+            return [
+                'id' => $o->id,
+                'number' => $o->number ?: ('#'.$o->id),
+                'date' => optional($o->created_at)?->format('d.m H:i'),
+                'client' => $client,
+                'phone' => $o->customer?->phone ?: '—',
+                'vehicle' => $vehicle,
+                'vin' => $o->vehicle?->vin ?: '—',
+                'items' => $o->orderItems->count(),
+                'total' => (float) $o->total,
+                'payment' => $payment,
+                'fulfillment' => $fulfillment,
+                'status' => $o->status,
+                'payment_status' => $o->payment_status,
+            ];
+        })->values();
+
+        return response()->json([
+            'data' => $data,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 
     public function show(Order $order): array

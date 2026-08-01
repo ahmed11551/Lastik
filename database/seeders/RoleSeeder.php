@@ -26,7 +26,7 @@ final class RoleSeeder extends Seeder
                     'orders.view', 'orders.create', 'orders.update', 'orders.cancel',
                     'payments.create', 'payments.correct',
                     'shifts.create', 'shifts.close',
-                    'stock.transfer', 'stock.import',
+                    'stock.transfer', 'stock.import', 'stock.view',
                     'customers.view', 'customers.create', 'customers.update',
                     'vehicles.view', 'vehicles.create', 'vehicles.update',
                     'warehouses.view', 'warehouses.create', 'warehouses.update',
@@ -34,6 +34,10 @@ final class RoleSeeder extends Seeder
                     'settings.view', 'settings.update',
                     'modules.view', 'modules.update',
                     'admin.dashboard',
+                    'locations.all',
+                    'users.view',
+                    'users.create',
+                    'users.update',
                 ],
             ],
             [
@@ -58,7 +62,7 @@ final class RoleSeeder extends Seeder
                 'slug' => 'warehouse_manager',
                 'name' => 'Warehouse Manager',
                 'permissions' => [
-                    'stock.transfer', 'stock.import',
+                    'stock.view', 'stock.transfer', 'stock.import',
                     'warehouses.view', 'warehouses.create', 'warehouses.update',
                     'products.view', 'products.create', 'products.update',
                 ],

@@ -1,32 +1,44 @@
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import { defineConfig, loadEnv } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-export default defineConfig(({mode}) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  const laravelTarget = env.VITE_LARAVEL_PROXY || 'http://127.0.0.1:8010';
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+/**
+ * AUTOMETRIA ERP — Vue 3 primary frontend (React Orbital disabled)
+ */
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const laravelTarget = env.VITE_LARAVEL_PROXY || 'http://127.0.0.1:8010'
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [vue(), tailwindcss()],
+    publicDir: false,
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(__dirname, 'resources/js'),
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      host: '127.0.0.1',
+      port: 5178,
+      strictPort: true,
+      open: '/',
       proxy: {
-        // Optional bridge: set VITE_API_BASE=/api/v1 and hit Laravel via this proxy.
         '/api/v1': {
           target: laravelTarget,
           changeOrigin: true,
         },
       },
     },
-  };
-});
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
+      rollupOptions: {
+        input: path.resolve(__dirname, 'index.html'),
+      },
+    },
+  }
+})

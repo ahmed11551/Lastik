@@ -1,0 +1,233 @@
+<script setup>
+/**
+ * AUTOMETRIA ERP — primary SPA shell
+ */
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import AutometriaLayout from '@/Layouts/AutometriaLayout.vue'
+import OperationalDashboard from '@/autometria/views/OperationalDashboard.vue'
+import BusinessPartnerCrm from '@/autometria/views/BusinessPartnerCrm.vue'
+import KpiView from '@/autometria/views/KpiView.vue'
+import WarehouseView from '@/autometria/views/WarehouseView.vue'
+import CashierView from '@/autometria/views/CashierView.vue'
+import OrdersView from '@/autometria/views/OrdersView.vue'
+import AuditView from '@/autometria/views/AuditView.vue'
+import LoginView from '@/autometria/views/LoginView.vue'
+import SystemModuleView from '@/autometria/views/SystemModuleView.vue'
+import UsersManagement from '@/design-system/pages/UsersManagement.vue'
+import DsToastHost from '@/autometria/components/DsToastHost.vue'
+import { getToken } from '@/autometria/api/client'
+import { useShiftStore } from '@/autometria/stores/cashierStore'
+
+const VIEW_TITLES = {
+  login: 'Вход',
+  dashboard: 'Дашборд',
+  crm: 'Business Partner CRM',
+  orders: 'Заказы и продажи',
+  new_order: 'Создать заказ',
+  customers: 'Покупатели & Импорт',
+  vehicles: 'Автомобили',
+  warehouse: 'Склад и остатки',
+  stock: 'Склад и остатки',
+  cashier: 'Касса и смены',
+  shifts: 'Касса и смены',
+  kpi: 'Выработка & KPI',
+  tasks: 'Задачи',
+  audit: 'Журнал действий',
+  users: 'Пользователи & Устройства',
+  tenants: 'Организации & Точки',
+  modules: 'Модули',
+  tv_display: 'TV-Экран очереди',
+  settings: 'Настройки',
+}
+
+function normalizeView(raw) {
+  if (raw === 'stock') return 'warehouse'
+  if (raw === 'shifts') return 'cashier'
+  return VIEW_TITLES[raw] ? raw : 'dashboard'
+}
+
+function readHash() {
+  const raw = location.hash.replace(/^#\/?/, '') || 'dashboard'
+  return normalizeView(raw)
+}
+
+const view = ref(readHash())
+const shiftStore = useShiftStore()
+const {
+  open: shiftOpen,
+  startedAt: shiftStartedAt,
+  revenue: shiftRevenue,
+} = storeToRefs(shiftStore)
+
+const title = computed(() => VIEW_TITLES[view.value] || 'AUTOMETRIA')
+const breadcrumbs = computed(() => {
+  if (view.value === 'warehouse') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Остатки' }]
+  }
+  if (view.value === 'cashier') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Касса' }, { label: 'Смены' }]
+  }
+  if (view.value === 'orders' || view.value === 'new_order') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Продажи' }, { label: 'Заказы' }]
+  }
+  if (view.value === 'audit') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Система' }, { label: 'Аудит' }]
+  }
+  if (view.value === 'kpi') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Выработка' }, { label: 'KPI' }]
+  }
+  if (view.value === 'crm') {
+    return [{ label: 'Dashboard' }, { label: 'Data' }, { label: 'Business Partner CRM' }]
+  }
+  return [{ label: 'AUTOMETRIA ERP' }, { label: title.value }]
+})
+
+watch(view, (v) => {
+  const next = `#/${v}`
+  if (location.hash !== next) location.hash = next
+})
+
+function onHashChange() {
+  view.value = readHash()
+}
+
+onMounted(() => {
+  window.addEventListener('hashchange', onHashChange)
+  document.documentElement.setAttribute('data-theme', 'dark')
+  if (!location.hash || location.hash === '#/stock') location.hash = '#/dashboard'
+  if (location.hash === '#/shifts') location.hash = '#/cashier'
+  if (getToken()) {
+    shiftStore.fetchCurrent().catch(() => {})
+  }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('hashchange', onHashChange)
+})
+
+function onNavigate(item) {
+  if (!item?.id) return
+  const id = normalizeView(item.id)
+  if (VIEW_TITLES[id]) view.value = id
+}
+
+function onOpenShift() {
+  shiftStore.openShift(0).catch(() => {})
+}
+
+function onCloseShift() {
+  shiftStore.closeShift().catch(() => {})
+}
+
+function onCashierPay() {
+  shiftStore.fetchCurrent().catch(() => {})
+}
+
+function openPalette() {
+  window.dispatchEvent(new CustomEvent('command-palette:open'))
+}
+
+function onLoginSuccess() {
+  view.value = 'dashboard'
+  shiftStore.fetchCurrent().catch(() => {})
+}
+</script>
+
+<template>
+  <div>
+    <LoginView
+      v-if="view === 'login'"
+      @success="onLoginSuccess"
+    />
+
+    <AutometriaLayout
+      v-else
+      spa-mode
+      :title="title"
+      :active-nav="view"
+      :breadcrumbs="breadcrumbs"
+      :current-shift-open="shiftOpen"
+      :shift-started-at="shiftStartedAt"
+      :shift-revenue="shiftRevenue"
+      @navigate="onNavigate"
+      @open-shift="onOpenShift"
+      @close-shift="onCloseShift"
+    >
+      <template #header-meta>
+        <span
+          v-if="!getToken()"
+          class="ds-badge ds-badge--danger"
+        >No token</span>
+        <span
+          v-else-if="view === 'audit'"
+          class="ds-badge ds-badge--warning"
+        >Audit</span>
+        <span
+          v-else-if="view === 'warehouse'"
+          class="ds-badge ds-badge--warning"
+        >Warehouse</span>
+        <span
+          v-else-if="view === 'cashier'"
+          class="ds-badge ds-badge--warning"
+        >Cashier</span>
+        <span
+          v-else-if="view === 'orders' || view === 'new_order'"
+          class="ds-badge ds-badge--warning"
+        >Orders</span>
+        <span
+          v-else-if="view === 'kpi'"
+          class="ds-badge ds-badge--warning"
+        >KPI</span>
+        <span
+          v-else
+          class="ds-badge ds-badge--warning"
+        >Industrial Amber</span>
+      </template>
+
+      <OperationalDashboard
+        v-if="view === 'dashboard'"
+        :shift-open="shiftOpen"
+        :shift-revenue="shiftRevenue"
+        @navigate="onNavigate"
+        @create-order="view = 'new_order'"
+      />
+
+      <WarehouseView v-else-if="view === 'warehouse'" />
+
+      <OrdersView
+        v-else-if="view === 'orders' || view === 'new_order'"
+        @create-order="view = 'orders'"
+      />
+
+      <CashierView
+        v-else-if="view === 'cashier'"
+        @navigate="onNavigate"
+        @pay="onCashierPay"
+      />
+
+      <KpiView
+        v-else-if="view === 'kpi'"
+        :shift-open="shiftOpen"
+      />
+
+      <AuditView v-else-if="view === 'audit'" />
+
+      <BusinessPartnerCrm
+        v-else-if="view === 'crm'"
+        @open-palette="openPalette"
+      />
+
+      <UsersManagement v-else-if="view === 'users'" />
+
+      <SystemModuleView
+        v-else
+        :view="view"
+        :title="title"
+        @navigate="onNavigate"
+      />
+    </AutometriaLayout>
+
+    <DsToastHost />
+  </div>
+</template>
