@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace Autometria\Services;
 
 use Autometria\Exceptions\Domain\NoActiveShiftException;
+use Autometria\Exceptions\Domain\OverpaymentException;
 use Autometria\Exceptions\Domain\ShiftAlreadyClosedException;
 use Autometria\Models\CashShift;
 use Autometria\Models\Dictionary;
@@ -82,6 +83,7 @@ final class PaymentService
             }
 
             $payments = [];
+            $orderTotal = (float) $order->total;
             $paidSum = 0.0;
 
             foreach ($parts as $part) {
@@ -92,15 +94,10 @@ final class PaymentService
 
                 $method = (string) $part['method'];
 
-                $hasForms = Dictionary::query()->withoutGlobalScopes()
-                    ->where('tenant_id', $tenantId)
-                    ->where('type', Dictionary::TYPE_PAYMENT_FORM)
-                    ->where('is_active', true)
-                    ->exists();
-
-                if ($hasForms) {
-                    $this->dictionaries->assertActiveCode($tenantId, Dictionary::TYPE_PAYMENT_FORM, $method);
-                }
+                // P1: payment method MUST be an active dictionary code. No fallback
+                // to hardcoded strings — if no payment-form dictionary exists for the
+                // tenant, payment is rejected (fail-closed, not fail-open).
+                $this->dictionaries->assertActiveCode($tenantId, Dictionary::TYPE_PAYMENT_FORM, $method);
 
                 $payment = Payment::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
@@ -132,9 +129,14 @@ final class PaymentService
 
                 $payments[] = $payment;
                 $paidSum += $amount;
+
+                // P0: hard overpayment guard (financial safety). Catch within the
+                // loop so a single inflated part in a mixed batch is rejected before commit.
+                if ($paidSum > $orderTotal + 0.001) {
+                    throw new OverpaymentException($orderTotal, $paidSum);
+                }
             }
 
-            $orderTotal = (float) $order->total;
             $paymentStatus = match (true) {
                 $paidSum + 0.001 < $orderTotal => 'partial',
                 default => 'paid',

@@ -3,41 +3,19 @@
 /**
  * AUTOMETRIA ERP Engine Core
  *
- * @package    Autometria\Core
- * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
+ * @package    Autometria\Http\Middleware
+ * @copyright  (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
  * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
- * @license    Proprietary & Confidential. Unauthorized copying, distribution,
- *             modification, or reverse engineering of this file, via any medium,
- *             is strictly prohibited.
- *
- * NOTICE: All information contained herein is, and remains the property of
- * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
- * herein are proprietary and protected by trade secret and copyright law.
- */
-/**
- * LASTIK B2B SaaS Engine Core
- *
- * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
- * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
- * @license    Proprietary & Confidential. Unauthorized copying, distribution,
- *             modification, or reverse engineering of this file, via any medium,
- *             is strictly prohibited.
- *
- * NOTICE: All information contained herein is, and remains the property of
- * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
- * herein are proprietary and protected by trade secret and copyright law.
- */
-/*
- * AUTOMETRIA ERP Engine Core
- * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
- * @author Себиев Ахмед Сулейманович
- * @license Proprietary & Confidential.
+ * @license    Proprietary & Confidential.
  */
 
 declare(strict_types=1);
 
 namespace Autometria\Http\Middleware;
 
+use Autometria\Enums\DeviceType;
+use Autometria\Models\Device;
+use Autometria\Services\DeviceService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -45,6 +23,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckDeviceLimit
 {
+    private const MOBILE_LIMIT_MESSAGE = 'Превышен лимит активных смартфонов (не более 2 устройств)';
+
+    public function __construct(
+        private readonly DeviceService $devices = new DeviceService,
+    ) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         $user = Auth::user();
@@ -53,21 +37,23 @@ class CheckDeviceLimit
             return $next($request);
         }
 
-        // Load devices relation if not already loaded
-        if (! $user->relationLoaded('devices')) {
-            $user->load('devices');
+        $routeName = $request->route()?->getName() ?? '';
+        if (! str_starts_with($routeName, 'auth.devices.register')) {
+            return $next($request);
         }
 
-        $activeDevices = $user->devices->where('is_active', true)->count();
+        // device_type is derived SERVER-SIDE from User-Agent, never from client input.
+        $registeringMobile = DeviceType::detectFromUserAgent((string) $request->userAgent())
+            ->value === DeviceType::MOBILE->value;
+
+        if (! $registeringMobile) {
+            return $next($request);
+        }
+
         $limit = (int) ($user->devices_limit ?? 2);
 
-        // Deny only if the current request is about to register a NEW device beyond limit.
-        // We allow login itself to pass; subsequent requests with already-known devices
-        // are checked in the controller/service by device/refresh-token logic.
-        $routeName = $request->route()?->getName() ?? '';
-
-        if (str_starts_with($routeName, 'auth.devices.register') && $activeDevices >= $limit) {
-            abort(Response::HTTP_TOO_MANY_REQUESTS, 'Device limit exceeded');
+        if ($this->devices->activeMobileCount($user, $limit) >= $limit) {
+            abort(Response::HTTP_TOO_MANY_REQUESTS, self::MOBILE_LIMIT_MESSAGE);
         }
 
         return $next($request);

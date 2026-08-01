@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace Autometria\Http\Controllers;
 
+use Autometria\Exceptions\Domain\OverpaymentException;
 use Autometria\Exceptions\Domain\ShiftAlreadyClosedException;
 use Autometria\Models\Payment;
 use Autometria\Services\PaymentService;
@@ -79,7 +80,7 @@ class PaymentController extends Controller
             'created_by' => ['prohibited'],
             'order_id' => ['required', 'integer', 'exists:orders,id'],
             'parts' => ['required', 'array', 'min:1'],
-            'parts.*.method' => ['required', 'string', 'in:cash,card,transfer,sbp,terminal'],
+            'parts.*.method' => ['required', 'string', 'max:40'],
             'parts.*.amount' => ['required', 'numeric', 'min:0.01'],
             'parts.*.payee_id' => ['nullable', 'integer', 'exists:users,id'],
             'shift_id' => ['nullable', 'integer'],
@@ -93,6 +94,8 @@ class PaymentController extends Controller
                 (int) $request->user()->id,
                 isset($validated['shift_id']) ? (int) $validated['shift_id'] : null,
             );
+        } catch (OverpaymentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         } catch (RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 409);
         }

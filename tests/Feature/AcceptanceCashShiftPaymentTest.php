@@ -10,6 +10,7 @@
 declare(strict_types=1);
 
 use Autometria\DTOs\CreateOrderDTO;
+use Autometria\Exceptions\Domain\OverpaymentException;
 use Autometria\Exceptions\Domain\ShiftAlreadyClosedException;
 use Autometria\Models\AuditLog;
 use Autometria\Models\CashMovement;
@@ -87,6 +88,54 @@ it('opens shift and accepts cash, card and transfer payments including mixed', f
 
     $order->refresh();
     expect($order->payment_status)->toBe('paid');
+});
+
+it('accepts mixed payment of 4000 cash and 6000 card on 10000 order within open shift', function (): void {
+    $fx = $this->fx;
+
+    $order = app(OrderService::class)->create(new CreateOrderDTO(
+        tenantId: $fx->tenant->id,
+        customerId: $fx->customer->id,
+        locationId: $fx->location->id,
+        assignedSellerId: $fx->user->id,
+        masterId: $fx->master->id,
+        items: [[
+            'type' => 'product',
+            'product_id' => $fx->product->id,
+            'qty' => 2,
+            'price' => 5000,
+            'discount' => 0,
+            'warehouse_id' => $fx->warehouse->id,
+        ]],
+        vehicleId: $fx->vehicle->id,
+        scenario: 'without_installation',
+    ), $fx->user->id);
+
+    expect((float) $order->total)->toBe(10000.0);
+
+    $payments = app(PaymentService::class)->accept(
+        $fx->tenant->id,
+        $order->id,
+        [
+            ['method' => 'cash', 'amount' => 4000, 'payee_id' => $fx->user->id],
+            ['method' => 'card', 'amount' => 6000, 'payee_id' => $fx->user->id],
+        ],
+        $fx->user->id,
+        $fx->shift->id,
+    );
+
+    expect($payments)->toHaveCount(2);
+    expect(collect($payments)->sum(fn ($p) => (float) $p->amount))->toBe(10000.0);
+    expect(collect($payments)->pluck('method')->sort()->values()->all())->toBe(['card', 'cash']);
+    expect(collect($payments)->every(fn ($p) => $p->type === 'mixed'))->toBeTrue();
+
+    $order->refresh();
+    expect($order->payment_status)->toBe('paid');
+    expect($order->locked_at)->not->toBeNull();
+
+    $closed = app(CashShiftService::class)->close($fx->shift->fresh());
+    expect((float) $closed->totals['cash'])->toBe(4000.0);
+    expect((float) $closed->totals['card'])->toBe(6000.0);
 });
 
 it('supports inkasso and withdrawal on open shift and blocks payment rewrite after close', function (): void {
@@ -196,4 +245,58 @@ it('writes audit on shift open via service', function (): void {
 
     expect($log)->not->toBeNull();
     expect((int) $log->object_id)->toBe($opened->id);
+});
+
+it('rejects overpayment (sum of parts exceeds order total)', function (): void {
+    $fx = $this->fx;
+
+    $order = app(OrderService::class)->create(new CreateOrderDTO(
+        tenantId: $fx->tenant->id,
+        customerId: $fx->customer->id,
+        locationId: $fx->location->id,
+        assignedSellerId: $fx->user->id,
+        masterId: 0,
+        items: [[
+            'type' => 'product',
+            'product_id' => $fx->product->id,
+            'qty' => 1,
+            'price' => 1000,
+            'warehouse_id' => $fx->warehouse->id,
+        ]],
+        scenario: 'without_installation',
+    ), $fx->user->id);
+
+    $orderTotal = (float) $order->total;
+    expect($orderTotal)->toBeGreaterThan(0);
+
+    // Single inflated payment (150% of total)
+    expect(fn () => app(PaymentService::class)->accept(
+        $fx->tenant->id,
+        $order->id,
+        [['method' => 'cash', 'amount' => $orderTotal * 1.5]],
+        $fx->user->id,
+        $fx->shift->id,
+    ))->toThrow(OverpaymentException::class);
+
+    // Mixed payment where the second part pushes over total
+    expect(fn () => app(PaymentService::class)->accept(
+        $fx->tenant->id,
+        $order->id,
+        [
+            ['method' => 'cash', 'amount' => $orderTotal * 0.8],
+            ['method' => 'card', 'amount' => $orderTotal * 0.4],
+        ],
+        $fx->user->id,
+        $fx->shift->id,
+    ))->toThrow(OverpaymentException::class);
+
+    // Exact total is allowed (no overpayment)
+    $ok = app(PaymentService::class)->accept(
+        $fx->tenant->id,
+        $order->id,
+        [['method' => 'cash', 'amount' => $orderTotal]],
+        $fx->user->id,
+        $fx->shift->id,
+    );
+    expect($ok)->toHaveCount(1);
 });

@@ -38,16 +38,23 @@ declare(strict_types=1);
 
 namespace Autometria\Http\Controllers;
 
+use Autometria\Services\DeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly DeviceService $devices = new DeviceService,
+    ) {}
+
     public function login(Request $request): JsonResponse
     {
         $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            'device_name' => ['nullable', 'string', 'max:120'],
+            'fingerprint' => ['nullable', 'string', 'max:255'],
         ]);
 
         if (! auth()->attempt($request->only('email', 'password'))) {
@@ -55,6 +62,18 @@ class AuthController extends Controller
         }
 
         $user = auth()->user();
+
+        // Register/refresh device — type is derived server-side from User-Agent.
+        $fingerprint = (string) $request->input('fingerprint', hash('sha256', $request->userAgent() . $request->ip()));
+        $deviceName = (string) $request->input('device_name', $request->userAgent() ?? 'unknown');
+
+        $this->devices->register(
+            $user,
+            $fingerprint,
+            $deviceName,
+            (string) $request->userAgent(),
+            $request->ip(),
+        );
 
         $token = $user->createToken('default')->plainTextToken;
 
