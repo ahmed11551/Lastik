@@ -32,6 +32,10 @@ const props = defineProps({
     type: String,
     default: 'Нет данных',
   },
+  emptyHint: {
+    type: String,
+    default: '',
+  },
   rowKey: {
     type: String,
     default: 'id',
@@ -237,10 +241,17 @@ defineExpose({ clearSelection, selectedCount })
           <tr v-if="!rows.length">
             <td
               :colspan="colSpan"
-              class="text-center font-sans"
-              style="color: var(--color-text-secondary); height: var(--ds-row-comfortable)"
+              class="ds-table__empty"
             >
-              {{ emptyText }}
+              <div class="ds-empty">
+                <div class="ds-empty__title">{{ emptyText }}</div>
+                <div
+                  v-if="emptyHint"
+                  class="ds-empty__hint"
+                >
+                  {{ emptyHint }}
+                </div>
+              </div>
             </td>
           </tr>
           <tr

@@ -3,7 +3,7 @@
  * AUTOMETRIA ERP — Supplier order form (create / confirm / receive)
  */
 import AutometriaLayout from '@/Layouts/AutometriaLayout.vue'
-import { DsTable } from '@/design-system'
+import { DsTable, DsBadge } from '@/design-system'
 import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { apiGet } from '@/autometria/api/client'
@@ -215,7 +215,9 @@ onMounted(async () => {
       </div>
       <div>
         <label class="text-[11px] uppercase tracking-[0.08em]" style="color: var(--color-text-secondary)">Статус</label>
-        <div class="mt-2 text-[13px]" data-testid="po-status">{{ currentOrder?.status || 'NEW' }}</div>
+        <div class="mt-2" data-testid="po-status">
+          <DsBadge :status="String(currentOrder?.status || 'NEW')" dot />
+        </div>
       </div>
     </div>
 
