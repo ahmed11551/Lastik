@@ -21,6 +21,8 @@ import InventoryIndex from '@/Pages/Inventory/Index.vue'
 import InventoryDocumentForm from '@/Pages/Inventory/DocumentForm.vue'
 import RegulatoryMarkingIndex from '@/Pages/Regulatory/Marking/Index.vue'
 import RegulatoryEgaisIndex from '@/Pages/Regulatory/Egais/Index.vue'
+import BranchesIndex from '@/Pages/Settings/Branches/Index.vue'
+import WarehousePrices from '@/Pages/Inventory/WarehousePrices.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
 import { getToken } from '@/autometria/api/client'
@@ -38,6 +40,8 @@ const VIEW_TITLES = {
   stock: 'Склад и остатки',
   inventory: 'Инвентаризация',
   inventory_create: 'Складской документ',
+  warehouse_prices: 'Цены по складам',
+  branches: 'Филиалы',
   regulatory: 'Маркировка (Честный Знак)',
   egais: 'ЕГАИС',
   onec: 'Синхронизация 1С',
@@ -83,6 +87,12 @@ const breadcrumbs = computed(() => {
   }
   if (view.value === 'inventory' || view.value === 'inventory_create') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Документы' }]
+  }
+  if (view.value === 'warehouse_prices') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Цены' }]
+  }
+  if (view.value === 'branches') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Настройки' }, { label: 'Филиалы' }]
   }
   if (view.value === 'integrations') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Интеграции' }, { label: '1С CommerceML' }]
@@ -247,6 +257,16 @@ function onLoginSuccess() {
         v-else-if="view === 'inventory_create'"
         embedded
         @navigate="onNavigate"
+      />
+
+      <WarehousePrices
+        v-else-if="view === 'warehouse_prices'"
+        embedded
+      />
+
+      <BranchesIndex
+        v-else-if="view === 'branches'"
+        embedded
       />
 
       <RegulatoryMarkingIndex

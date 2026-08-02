@@ -12,6 +12,8 @@ declare(strict_types=1);
 use Autometria\Http\Controllers\AnalyticsController;
 use Autometria\Http\Controllers\AuthController;
 use Autometria\Http\Controllers\BulkOrderController;
+use Autometria\Http\Controllers\BranchController;
+use Autometria\Http\Controllers\StockReservationController;
 use Autometria\Http\Controllers\BulkStockController;
 use Autometria\Http\Controllers\CashShiftController;
 use Autometria\Http\Controllers\CommerceMLImportController;
@@ -154,6 +156,16 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
 
     Route::get('vehicles', [VehicleController::class, 'index'])->middleware('ensure.permission:customers.view');
     Route::get('warehouses', [WarehouseController::class, 'index'])->middleware('ensure.permission:stock.view');
+
+    Route::get('branches', [BranchController::class, 'index'])->middleware('ensure.permission:stock.view');
+    Route::post('branches', [BranchController::class, 'store'])->middleware('ensure.permission:stock.transfer');
+    Route::get('inventory/warehouse-prices', [BranchController::class, 'listWarehousePrices'])->middleware('ensure.permission:stock.view');
+    Route::post('inventory/warehouse-prices', [BranchController::class, 'upsertWarehousePrices'])->middleware('ensure.permission:stock.transfer');
+    Route::get('inventory/consolidated-stock', [BranchController::class, 'consolidatedStock'])->middleware('ensure.permission:stock.view');
+    Route::get('inventory/resolve-price', [BranchController::class, 'resolvePrice'])->middleware('ensure.permission:stock.view');
+    Route::post('inventory/reservations', [StockReservationController::class, 'store'])->middleware('ensure.permission:stock.transfer');
+    Route::post('inventory/reservations/release-expired', [StockReservationController::class, 'releaseExpired'])->middleware('ensure.permission:stock.transfer');
+    Route::post('stock/transfers', [StockTransferController::class, 'store'])->middleware('ensure.permission:stock.transfer');
     Route::get('products', [ProductController::class, 'index'])->middleware('ensure.permission:products.view');
 
     Route::get('modules', [ModuleController::class, 'index'])->middleware('ensure.permission:modules.view');

@@ -218,7 +218,7 @@ final class StockDocumentService
         }
 
         foreach ($items as $item) {
-            $this->transferLotsFifo(
+            $this->batches->transferFifo(
                 $tenantId,
                 $fromId,
                 $toId,
@@ -290,124 +290,6 @@ final class StockDocumentService
                 );
             }
         }
-    }
-
-    private function transferLotsFifo(
-        int $tenantId,
-        int $fromWarehouseId,
-        int $toWarehouseId,
-        int $productId,
-        float $qty,
-        int $userId,
-        string $docNumber,
-    ): void {
-        $fromStock = $this->lockOrFailStock($tenantId, $fromWarehouseId, $productId);
-        if ((float) $fromStock->available + 0.0001 < $qty) {
-            throw new InsufficientStockException('available_less_than_qty');
-        }
-
-        $batches = StockBatch::query()->withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->where('warehouse_id', $fromWarehouseId)
-            ->where('product_id', $productId)
-            ->where('remaining_qty', '>', 0)
-            ->where(function ($q): void {
-                $q->where('is_overdraft', false)->orWhereNull('is_overdraft');
-            })
-            ->orderBy('received_at', 'asc')
-            ->orderBy('id', 'asc')
-            ->lockForUpdate()
-            ->get();
-
-        $remaining = round($qty, 3);
-        $moved = 0.0;
-
-        foreach ($batches as $batch) {
-            if ($remaining <= 0.0001) {
-                break;
-            }
-            $available = (float) $batch->remaining_qty;
-            $take = min($available, $remaining);
-            $batch->remaining_qty = round($available - $take, 3);
-            $batch->save();
-
-            StockBatch::query()->withoutGlobalScopes()->forceCreate([
-                'tenant_id' => $tenantId,
-                'warehouse_id' => $toWarehouseId,
-                'product_id' => $productId,
-                'batch_number' => 'TR-'.$docNumber.'-'.$batch->id,
-                'qty' => round($take, 3),
-                'remaining_qty' => round($take, 3),
-                'cost_price' => round((float) $batch->cost_price, 2),
-                'received_at' => $batch->received_at ?? now(),
-                'is_overdraft' => false,
-            ]);
-
-            $moved += $take;
-            $remaining = round($remaining - $take, 3);
-        }
-
-        if ($remaining > 0.0001) {
-            throw new InsufficientStockException('batch_coverage_gap');
-        }
-
-        $fromStock->actual = round((float) $fromStock->actual - $moved, 3);
-        $fromStock->available = round((float) $fromStock->actual - (float) $fromStock->reserved, 3);
-        $fromStock->save();
-
-        $toStock = Stock::query()->withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->where('warehouse_id', $toWarehouseId)
-            ->where('product_id', $productId)
-            ->lockForUpdate()
-            ->first();
-
-        if ($toStock === null) {
-            $toStock = Stock::query()->withoutGlobalScopes()->forceCreate([
-                'tenant_id' => $tenantId,
-                'warehouse_id' => $toWarehouseId,
-                'product_id' => $productId,
-                'actual' => 0,
-                'reserved' => 0,
-                'available' => 0,
-            ]);
-            $toStock = Stock::query()->withoutGlobalScopes()->whereKey($toStock->id)->lockForUpdate()->firstOrFail();
-        }
-
-        $toStock->actual = round((float) $toStock->actual + $moved, 3);
-        $toStock->available = round((float) $toStock->actual - (float) $toStock->reserved, 3);
-        $toStock->save();
-
-        AuditLog::write(
-            $tenantId,
-            $userId,
-            'inventory.document.transfer_lots',
-            Stock::class,
-            (int) $fromStock->id,
-            [],
-            [
-                'from_warehouse_id' => $fromWarehouseId,
-                'to_warehouse_id' => $toWarehouseId,
-                'product_id' => $productId,
-                'qty' => $moved,
-            ],
-        );
-    }
-
-    private function lockOrFailStock(int $tenantId, int $warehouseId, int $productId): Stock
-    {
-        $stock = Stock::query()->withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('product_id', $productId)
-            ->lockForUpdate()
-            ->first();
-
-        if ($stock === null) {
-            throw new InsufficientStockException('available_less_than_qty');
-        }
-
-        return $stock;
     }
 
     private function assertWarehouseBelongsToTenant(int $tenantId, int $warehouseId): void

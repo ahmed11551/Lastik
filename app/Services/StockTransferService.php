@@ -3,35 +3,7 @@
 /**
  * AUTOMETRIA ERP Engine Core
  *
- * @package    Autometria\Core
- * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
- * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
- * @license    Proprietary & Confidential. Unauthorized copying, distribution,
- *             modification, or reverse engineering of this file, via any medium,
- *             is strictly prohibited.
- *
- * NOTICE: All information contained herein is, and remains the property of
- * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
- * herein are proprietary and protected by trade secret and copyright law.
- */
-/**
- * LASTIK B2B SaaS Engine Core
- *
- * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
- * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
- * @license    Proprietary & Confidential. Unauthorized copying, distribution,
- *             modification, or reverse engineering of this file, via any medium,
- *             is strictly prohibited.
- *
- * NOTICE: All information contained herein is, and remains the property of
- * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
- * herein are proprietary and protected by trade secret and copyright law.
- */
-/*
- * AUTOMETRIA ERP Engine Core
  * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
- * @author Себиев Ахмед Сулейманович
- * @license Proprietary & Confidential.
  */
 
 declare(strict_types=1);
@@ -49,6 +21,10 @@ use InvalidArgumentException;
 
 final class StockTransferService
 {
+    public function __construct(
+        private readonly StockBatchService $batches,
+    ) {}
+
     public function transfer(
         int $tenantId,
         int $productId,
@@ -81,46 +57,23 @@ final class StockTransferService
         ): StockTransfer {
             set_current_tenant_id($tenantId);
 
-            $from = Stock::query()->withoutGlobalScopes()
-                ->where('tenant_id', $tenantId)
-                ->where('warehouse_id', $fromWarehouseId)
-                ->where('product_id', $productId)
-                ->lockForUpdate()
-                ->first();
-
-            if ($from === null || (float) $from->available < $qty) {
-                throw new InsufficientStockException('available_less_than_qty');
-            }
-
-            // Нельзя переносить зарезервированное «втихую»: доступный остаток уже actual - reserved
-            $from->actual = (float) $from->actual - $qty;
-            $from->available = (float) $from->actual - (float) $from->reserved;
-            $from->save();
+            $this->batches->transferFifo(
+                $tenantId,
+                $fromWarehouseId,
+                $toWarehouseId,
+                $productId,
+                $qty,
+                $createdBy,
+                'ST-'.now()->format('YmdHis'),
+            );
 
             $to = Stock::query()->withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)
                 ->where('warehouse_id', $toWarehouseId)
                 ->where('product_id', $productId)
-                ->lockForUpdate()
                 ->first();
 
-            if ($to === null) {
-                $to = Stock::query()->withoutGlobalScopes()->forceCreate([
-                    'tenant_id' => $tenantId,
-                    'warehouse_id' => $toWarehouseId,
-                    'product_id' => $productId,
-                    'actual' => 0,
-                    'reserved' => 0,
-                    'available' => 0,
-                ]);
-                $to = Stock::query()->withoutGlobalScopes()->whereKey($to->id)->lockForUpdate()->firstOrFail();
-            }
-
-            $to->actual = (float) $to->actual + $qty;
-            $to->available = (float) $to->actual - (float) $to->reserved;
-            $to->save();
-
-            if ((float) $to->actual + 0.0001 < (float) $to->reserved) {
+            if ($to !== null && (float) $to->actual + 0.0001 < (float) $to->reserved) {
                 StockConflict::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
                     'stock_id' => $to->id,
@@ -156,12 +109,12 @@ final class StockTransferService
                 (int) $transfer->id,
                 [
                     'from_warehouse_id' => $fromWarehouseId,
-                    'from_available' => (float) $from->available + $qty,
                 ],
                 [
                     'to_warehouse_id' => $toWarehouseId,
                     'qty' => $qty,
                     'product_id' => $productId,
+                    'fifo' => true,
                 ],
                 [],
                 $reason,
@@ -199,7 +152,6 @@ final class StockTransferService
                 throw new InsufficientStockException('available_less_than_qty');
             }
 
-            // Резервируем под перемещение (уменьшаем available, но не actual).
             $from->reserved = (float) $from->reserved + (float) $transfer->qty;
             $from->available = (float) $from->actual - (float) $from->reserved;
             $from->save();
@@ -209,15 +161,22 @@ final class StockTransferService
             $transfer->shipped_at = now();
             $transfer->save();
 
-            AuditLog::write($tenantId, $shippedBy, 'stock.transfer.shipped', StockTransfer::class, (int) $transfer->id,
-                [], ['qty' => (float) $transfer->qty]);
+            AuditLog::write(
+                $tenantId,
+                $shippedBy,
+                'stock.transfer.shipped',
+                StockTransfer::class,
+                (int) $transfer->id,
+                [],
+                ['qty' => (float) $transfer->qty],
+            );
 
             return $transfer;
         });
     }
 
     /**
-     * Приёмка (IN_TRANSIT -> COMPLETED): списывает с source, оприходывает на destination.
+     * Приёмка (IN_TRANSIT -> COMPLETED): FIFO-списание с source + оприходование на destination.
      */
     public function receive(int $tenantId, int $transferId, int $receivedBy): StockTransfer
     {
@@ -234,7 +193,7 @@ final class StockTransferService
 
             $qty = (float) $transfer->qty;
 
-            // Source: снимаем резерв и уменьшаем actual (товар уехал).
+            // Снимаем резерв под перемещение, чтобы FIFO видел available.
             $from = Stock::query()->withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)
                 ->where('warehouse_id', $transfer->from_warehouse_id)
@@ -242,42 +201,34 @@ final class StockTransferService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $from->actual = (float) $from->actual - $qty;
-            $from->reserved = max(0.0, (float) $from->reserved - $qty);
-            $from->available = (float) $from->actual - (float) $from->reserved;
+            $from->reserved = max(0.0, round((float) $from->reserved - $qty, 3));
+            $from->available = round((float) $from->actual - (float) $from->reserved, 3);
             $from->save();
 
-            // Destination: оприходование.
-            $to = Stock::query()->withoutGlobalScopes()
-                ->where('tenant_id', $tenantId)
-                ->where('warehouse_id', $transfer->to_warehouse_id)
-                ->where('product_id', $transfer->product_id)
-                ->lockForUpdate()
-                ->first();
-
-            if ($to === null) {
-                $to = Stock::query()->withoutGlobalScopes()->forceCreate([
-                    'tenant_id' => $tenantId,
-                    'warehouse_id' => $transfer->to_warehouse_id,
-                    'product_id' => $transfer->product_id,
-                    'actual' => 0,
-                    'reserved' => 0,
-                    'available' => 0,
-                ]);
-                $to = Stock::query()->withoutGlobalScopes()->whereKey($to->id)->lockForUpdate()->firstOrFail();
-            }
-
-            $to->actual = (float) $to->actual + $qty;
-            $to->available = (float) $to->actual - (float) $to->reserved;
-            $to->save();
+            $this->batches->transferFifo(
+                $tenantId,
+                (int) $transfer->from_warehouse_id,
+                (int) $transfer->to_warehouse_id,
+                (int) $transfer->product_id,
+                $qty,
+                $receivedBy,
+                'ST-'.$transfer->id,
+            );
 
             $transfer->status = StockTransferStatus::COMPLETED;
             $transfer->received_by = $receivedBy;
             $transfer->received_at = now();
             $transfer->save();
 
-            AuditLog::write($tenantId, $receivedBy, 'stock.transfer.received', StockTransfer::class, (int) $transfer->id,
-                [], ['qty' => $qty, 'to_warehouse_id' => $transfer->to_warehouse_id]);
+            AuditLog::write(
+                $tenantId,
+                $receivedBy,
+                'stock.transfer.received',
+                StockTransfer::class,
+                (int) $transfer->id,
+                [],
+                ['qty' => $qty, 'to_warehouse_id' => $transfer->to_warehouse_id, 'fifo' => true],
+            );
 
             return $transfer;
         });

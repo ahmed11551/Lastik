@@ -47,6 +47,8 @@ class CashShift extends TenantModel
 
     protected $fillable = [
         'location_id',
+        'branch_id',
+        'warehouse_id',
         'user_id',
         'opened_by',
         'closed_by',

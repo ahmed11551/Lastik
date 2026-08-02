@@ -445,6 +445,154 @@ final class StockBatchService
         });
     }
 
+    /**
+     * FIFO-перенос партий между складами с зеркальным обновлением Stock.
+     *
+     * @return array{moved: float, batches: list<array{from_batch_id: int, to_batch_id: int, qty: float, cost_price: float}>}
+     */
+    public function transferFifo(
+        int $tenantId,
+        int $fromWarehouseId,
+        int $toWarehouseId,
+        int $productId,
+        float $qty,
+        ?int $createdBy = null,
+        ?string $docRef = null,
+    ): array {
+        if ($fromWarehouseId === $toWarehouseId) {
+            throw new InvalidArgumentException('Source and destination warehouses must differ');
+        }
+        if ($qty <= 0) {
+            throw new InvalidArgumentException('Transfer qty must be positive');
+        }
+
+        return DB::transaction(function () use (
+            $tenantId, $fromWarehouseId, $toWarehouseId, $productId, $qty, $createdBy, $docRef
+        ): array {
+            $fromStock = $this->lockStock($tenantId, $fromWarehouseId, $productId);
+            if ((float) $fromStock->available + 0.0001 < $qty) {
+                throw new InsufficientStockException('available_less_than_qty');
+            }
+
+            $this->ensureBatchCoverage($tenantId, $fromWarehouseId, $productId, $fromStock);
+
+            $batches = StockBatch::query()->withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->where('warehouse_id', $fromWarehouseId)
+                ->where('product_id', $productId)
+                ->where('remaining_qty', '>', 0)
+                ->where(function ($q): void {
+                    $q->where('is_overdraft', false)->orWhereNull('is_overdraft');
+                })
+                ->orderBy('received_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->lockForUpdate()
+                ->get();
+
+            $remaining = round($qty, 3);
+            $moved = 0.0;
+            $trace = [];
+            $ref = $docRef ?: ('TR-'.now()->format('YmdHis'));
+
+            foreach ($batches as $batch) {
+                if ($remaining <= 0.0001) {
+                    break;
+                }
+                $available = (float) $batch->remaining_qty;
+                $take = min($available, $remaining);
+                $batch->remaining_qty = round($available - $take, 3);
+                $batch->save();
+
+                $toBatch = StockBatch::query()->withoutGlobalScopes()->forceCreate([
+                    'tenant_id' => $tenantId,
+                    'warehouse_id' => $toWarehouseId,
+                    'product_id' => $productId,
+                    'batch_number' => $ref.'-'.$batch->id,
+                    'qty' => round($take, 3),
+                    'remaining_qty' => round($take, 3),
+                    'cost_price' => round((float) $batch->cost_price, 2),
+                    'received_at' => $batch->received_at ?? now(),
+                    'is_overdraft' => false,
+                ]);
+
+                $trace[] = [
+                    'from_batch_id' => (int) $batch->id,
+                    'to_batch_id' => (int) $toBatch->id,
+                    'qty' => round($take, 3),
+                    'cost_price' => round((float) $batch->cost_price, 2),
+                ];
+
+                $moved += $take;
+                $remaining = round($remaining - $take, 3);
+            }
+
+            if ($remaining > 0.0001) {
+                throw new InsufficientStockException('batch_coverage_gap');
+            }
+
+            $fromStock->actual = round((float) $fromStock->actual - $moved, 3);
+            $fromStock->available = round((float) $fromStock->actual - (float) $fromStock->reserved, 3);
+            $fromStock->save();
+
+            $toStock = $this->lockStock($tenantId, $toWarehouseId, $productId);
+            $toStock->actual = round((float) $toStock->actual + $moved, 3);
+            $toStock->available = round((float) $toStock->actual - (float) $toStock->reserved, 3);
+            $toStock->save();
+
+            AuditLog::write(
+                $tenantId,
+                $createdBy ?? auth()->id(),
+                'stock.batch.transferred',
+                Stock::class,
+                (int) $fromStock->id,
+                [],
+                [
+                    'from_warehouse_id' => $fromWarehouseId,
+                    'to_warehouse_id' => $toWarehouseId,
+                    'product_id' => $productId,
+                    'qty' => $moved,
+                    'batches' => $trace,
+                ],
+            );
+
+            return ['moved' => $moved, 'batches' => $trace];
+        });
+    }
+
+    /**
+     * Если Stock.actual опережает сумму партий — создаём балансирующую партию (legacy bridge).
+     */
+    public function ensureBatchCoverage(int $tenantId, int $warehouseId, int $productId, ?Stock $stock = null): void
+    {
+        $stock ??= $this->lockStock($tenantId, $warehouseId, $productId);
+
+        $batchSum = (float) StockBatch::query()->withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->where('warehouse_id', $warehouseId)
+            ->where('product_id', $productId)
+            ->where(function ($q): void {
+                $q->where('is_overdraft', false)->orWhereNull('is_overdraft');
+            })
+            ->sum('remaining_qty');
+
+        $gap = round((float) $stock->actual - $batchSum, 3);
+        if ($gap <= 0.0001) {
+            return;
+        }
+
+        StockBatch::query()->withoutGlobalScopes()->forceCreate([
+            'tenant_id' => $tenantId,
+            'warehouse_id' => $warehouseId,
+            'product_id' => $productId,
+            'batch_number' => 'BAL-'.now()->format('YmdHis').'-'.$productId,
+            'qty' => $gap,
+            'remaining_qty' => $gap,
+            'cost_price' => 0,
+            'received_at' => now()->subYear(),
+            'is_overdraft' => false,
+        ]);
+    }
+
     private function ensureStock(int $tenantId, int $warehouseId, int $productId): Stock
     {
         $stock = Stock::query()->withoutGlobalScopes()

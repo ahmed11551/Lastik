@@ -58,6 +58,7 @@ final class OrderService
     public function __construct(
         private readonly StockReservationService $reservations,
         private readonly EgaisAndMarkingService $marking,
+        private readonly PriceResolverService $prices,
     ) {}
 
     public function create(CreateOrderDTO $dto, int $createdBy): Order
@@ -112,8 +113,12 @@ final class OrderService
             foreach ($dto->items as $itemPayload) {
                 $productId = (int) $itemPayload['product_id'];
                 $qty = (float) $itemPayload['qty'];
+                $warehouseIdForPrice = isset($itemPayload['warehouse_id'])
+                    ? (int) $itemPayload['warehouse_id']
+                    : null;
                 // Immutable price lookup: never trust client-supplied price.
-                $price = $this->lookupCatalogPrice($dto->tenantId, $productId);
+                // Branch/warehouse override → tenant base (PriceResolverService).
+                $price = $this->lookupCatalogPrice($dto->tenantId, $productId, $warehouseIdForPrice);
                 $discount = (float) ($itemPayload['discount'] ?? 0);
                 $type = (string) ($itemPayload['type'] ?? 'product');
 
@@ -271,8 +276,16 @@ final class OrderService
     /**
      * Каталожная цена из `prices` (retail), без доверия к HTTP payload.
      */
-    private function lookupCatalogPrice(int $tenantId, int $productId): float
+    private function lookupCatalogPrice(int $tenantId, int $productId, ?int $warehouseId = null): float
     {
+        if ($warehouseId !== null && $warehouseId > 0) {
+            $resolved = $this->prices->resolve($tenantId, $productId, $warehouseId);
+            // Override or cascade found — including product.base_price fallback.
+            if ($resolved > 0) {
+                return $resolved;
+            }
+        }
+
         $row = Price::query()
             ->withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
