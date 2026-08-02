@@ -12,7 +12,7 @@ namespace Autometria\Models;
 
 class MarkingValidation extends TenantModel
 {
-    public $timestamps = false;
+    public const UPDATED_AT = 'updated_at';
 
     protected $table = 'marking_validations';
 
@@ -23,10 +23,12 @@ class MarkingValidation extends TenantModel
         'status',
         'response_payload',
         'created_at',
+        'updated_at',
     ];
 
     protected $casts = [
         'response_payload' => 'array',
         'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 }

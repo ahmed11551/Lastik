@@ -55,11 +55,15 @@ return new class extends Migration
                 $table->string('gtin', 14);
                 $table->string('status', 32);
                 $table->jsonb('response_payload')->nullable();
-                $table->timestampTz('created_at')->useCurrent();
+                $table->timestampsTz();
 
                 $table->index(['tenant_id', 'gtin']);
                 $table->index(['tenant_id', 'status']);
                 $table->index(['tenant_id', 'marking_code']);
+            });
+        } elseif (! Schema::hasColumn('marking_validations', 'updated_at')) {
+            Schema::table('marking_validations', function (Blueprint $table): void {
+                $table->timestampTz('updated_at')->nullable();
             });
         }
     }

@@ -87,7 +87,7 @@ it('checkout fails if marked product lacks marking code', function (): void {
     ]);
 
     $res->assertStatus(422);
-    expect($res->json('code'))->toBe('InvalidMarkingCodeException');
+    expect($res->json('code'))->toBe('MARKING_CODE_REQUIRED');
 });
 
 it('datamatrix parser correctly extracts gtin and serial', function (): void {
@@ -127,7 +127,7 @@ it('invalid datamatrix is rejected by chestny znak mock', function (): void {
     ]);
 
     $res->assertStatus(422);
-    expect($res->json('code'))->toBe('InvalidMarkingCodeException');
+    expect($res->json('code'))->toBeIn(['MARKING_INVALID', 'InvalidMarkingCodeException']);
 
     $expired = '010460043900001421EXPIRED91800092dGVzdA==';
     $res2 = postJson('/api/v1/pos/checkout', [
@@ -144,6 +144,7 @@ it('invalid datamatrix is rejected by chestny znak mock', function (): void {
         ],
     ]);
     $res2->assertStatus(422);
+    expect($res2->json('code'))->toBeIn(['MARKING_EXPIRED', 'InvalidMarkingCodeException']);
 
     // Happy path: valid mock mark is accepted and stored
     $valid = '010460043900001421sN&<3!91800092dGVzdA==';

@@ -60,12 +60,14 @@ class ChestnyZnakClient
         if (str_contains($upper, 'EXPIRED')) {
             throw new InvalidMarkingCodeException(
                 'Марка просрочена (Честный Знак: EXPIRED)',
+                'MARKING_EXPIRED',
             );
         }
 
         if (str_contains($upper, 'SOLD') || str_contains($upper, 'REUSED')) {
             throw new InvalidMarkingCodeException(
                 'Марка уже использована (Честный Знак: SOLD)',
+                'MARKING_SOLD',
             );
         }
 
@@ -85,6 +87,7 @@ class ChestnyZnakClient
 
         throw new InvalidMarkingCodeException(
             'Марка отклонена Честным Знаком (контрафакт / INVALID)',
+            'MARKING_INVALID',
         );
     }
 }

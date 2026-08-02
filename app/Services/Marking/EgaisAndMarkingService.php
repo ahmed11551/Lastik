@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace Autometria\Services\Marking;
 
+use Autometria\Enums\MarkingValidationStatusEnum;
 use Autometria\Exceptions\Domain\InvalidMarkingCodeException;
 use Autometria\Models\MarkingValidation;
 use Autometria\Models\ProductService;
@@ -46,27 +47,69 @@ class EgaisAndMarkingService
 
         $code = trim((string) $markingCode);
         if ($code === '') {
-            throw new InvalidMarkingCodeException(
-                'Для маркированного товара требуется код DataMatrix (marking_code)',
-            );
+            throw InvalidMarkingCodeException::required();
         }
 
-        $parsed = $this->parser->parse($code);
-        $result = $this->chestnyZnak->validate($code, $parsed);
+        try {
+            $parsed = $this->parser->parse($code);
+            $result = $this->chestnyZnak->validate($code, $parsed);
 
+            $this->logValidation(
+                $tenantId,
+                $code,
+                $parsed['gtin'],
+                $result['status'],
+                $result['payload'],
+            );
+
+            return [
+                'marking_code' => $code,
+                'gtin' => $parsed['gtin'],
+                'serial_number' => $parsed['serial'],
+            ];
+        } catch (InvalidMarkingCodeException $e) {
+            $gtin = '00000000000000';
+            try {
+                $partial = $this->parser->parse($code);
+                $gtin = $partial['gtin'];
+            } catch (InvalidMarkingCodeException) {
+                // keep placeholder GTIN for audit row
+            }
+
+            $status = str_contains(strtoupper($e->getMessage()), 'EXPIRED')
+                ? MarkingValidationStatusEnum::EXPIRED
+                : (str_contains(strtoupper($e->getMessage()), 'SOLD')
+                    ? MarkingValidationStatusEnum::SOLD
+                    : MarkingValidationStatusEnum::INVALID);
+
+            $this->logValidation($tenantId, $code, $gtin, $status, [
+                'source' => 'mock',
+                'error' => $e->getMessage(),
+                'error_code' => $e->errorCode,
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function logValidation(
+        int $tenantId,
+        string $markingCode,
+        string $gtin,
+        MarkingValidationStatusEnum $status,
+        array $payload,
+    ): void {
         MarkingValidation::query()->withoutGlobalScopes()->forceCreate([
             'tenant_id' => $tenantId,
-            'marking_code' => $code,
-            'gtin' => $parsed['gtin'],
-            'status' => $result['status']->value,
-            'response_payload' => $result['payload'],
+            'marking_code' => $markingCode,
+            'gtin' => $gtin,
+            'status' => $status->value,
+            'response_payload' => $payload,
             'created_at' => now(),
+            'updated_at' => now(),
         ]);
-
-        return [
-            'marking_code' => $code,
-            'gtin' => $parsed['gtin'],
-            'serial_number' => $parsed['serial'],
-        ];
     }
 }

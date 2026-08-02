@@ -152,6 +152,18 @@ class PosController extends Controller
         foreach ($data['items'] as $row) {
             $product = ProductService::query()->find((int) $row['product_id']);
             $type = $row['type'] ?? ($product?->type === 'service' ? 'service' : 'product');
+
+            // Regulatory: marked SKU must carry a CIS (Честный Знак / DataMatrix).
+            if ($product && (bool) $product->is_marked) {
+                $mark = trim((string) ($row['marking_code'] ?? ''));
+                if ($mark === '') {
+                    return response()->json([
+                        'message' => 'Для маркированного товара требуется код DataMatrix (marking_code)',
+                        'code' => 'MARKING_CODE_REQUIRED',
+                    ], 422);
+                }
+            }
+
             $items[] = [
                 'type' => $type,
                 'product_id' => (int) $row['product_id'],
@@ -238,7 +250,10 @@ class PosController extends Controller
         } catch (InsufficientStockException $e) {
             return response()->json(['message' => $e->getMessage(), 'code' => 'InsufficientStockException'], 422);
         } catch (InvalidMarkingCodeException $e) {
-            return response()->json(['message' => $e->getMessage(), 'code' => 'InvalidMarkingCodeException'], 422);
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => $e->errorCode,
+            ], 422);
         } catch (NoActiveShiftException $e) {
             return response()->json(['message' => $e->getMessage(), 'code' => 'NoActiveShiftException'], 422);
         } catch (PriceNotFoundException $e) {
