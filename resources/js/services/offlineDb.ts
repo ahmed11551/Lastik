@@ -39,6 +39,9 @@ export interface LocalReceipt {
   status: LocalReceiptStatus
   /** Offline receipt contains marking CIS → fiscal marking required on sync */
   requires_fiscal_marking?: boolean
+  /** Block 4.3 — CRM / Loyalty binding */
+  customer_id?: number
+  bonus_spend?: number
   created_at: string
   synced_at?: string | null
   last_error?: string | null

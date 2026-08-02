@@ -47,6 +47,7 @@ use Autometria\Models\Order;
 use Autometria\Models\Payment;
 use Autometria\Models\PaymentCorrection;
 use Autometria\Services\Fiscal\FiscalReceiptService;
+use Autometria\Services\ReceiptService;
 use Autometria\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -67,8 +68,10 @@ final class PaymentService
         array $parts,
         int $createdBy,
         ?int $shiftId = null,
+        float $bonusToSpend = 0.0,
+        float $loyaltyCredit = 0.0,
     ): array {
-        $payments = DB::transaction(function () use ($tenantId, $orderId, $parts, $createdBy, $shiftId): array {
+        $payments = DB::transaction(function () use ($tenantId, $orderId, $parts, $createdBy, $shiftId, $bonusToSpend, $loyaltyCredit): array {
             set_current_tenant_id($tenantId);
 
             $order = Order::query()->withoutGlobalScopes()
@@ -139,7 +142,7 @@ final class PaymentService
             }
 
             $paymentStatus = match (true) {
-                $paidSum + 0.001 < $orderTotal => 'partial',
+                ($paidSum + $loyaltyCredit) + 0.001 < $orderTotal => 'partial',
                 default => 'paid',
             };
 
@@ -147,6 +150,17 @@ final class PaymentService
                 'payment_status' => $paymentStatus,
                 'locked_at' => $paymentStatus === 'paid' ? now() : $order->locked_at,
             ]);
+
+            // Block 4.3: атомарный loyalty settle при полном закрытии чека.
+            if ($paymentStatus === 'paid' && $order->customer_id) {
+                app(ReceiptService::class)->settleLoyaltyForOrder(
+                    $tenantId,
+                    $order->fresh(),
+                    $bonusToSpend,
+                    null,
+                    $createdBy,
+                );
+            }
 
             return $created;
         });

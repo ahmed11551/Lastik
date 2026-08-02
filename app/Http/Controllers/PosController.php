@@ -99,6 +99,7 @@ class PosController extends Controller
             'payment_type' => ['nullable', 'string', 'max:20'],
             'shift_id' => ['nullable', 'integer'],
             'total_amount' => ['nullable', 'numeric', 'min:0'],
+            'bonus_spend' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
@@ -198,19 +199,47 @@ class PosController extends Controller
                 ), (int) $user->id);
 
                 $total = (float) $order->total;
+                $bonusSpend = (float) ($data['bonus_spend'] ?? 0);
+                $cashDue = $total;
+
+                if ($order->customer_id && $bonusSpend > 0) {
+                    $settled = app(\Autometria\Services\ReceiptService::class)->create(
+                        $tenantId,
+                        $order,
+                        (int) $order->customer_id,
+                        $bonusSpend,
+                        $total,
+                        null,
+                        (int) $user->id,
+                    );
+                    $cashDue = (float) ($settled['cash_due'] ?? $total);
+                    // Avoid double-settle inside PaymentService.
+                    $bonusSpend = 0;
+                }
+
                 $method = (string) $data['method'];
-                $tendered = isset($data['amount_tendered']) ? (float) $data['amount_tendered'] : $total;
-                if ($method === 'cash' && $tendered + 0.0001 < $total) {
+                $tendered = isset($data['amount_tendered']) ? (float) $data['amount_tendered'] : $cashDue;
+                if ($method === 'cash' && $tendered + 0.0001 < $cashDue) {
                     abort(422, 'Недостаточно внесённой суммы');
                 }
 
-                $this->payments->accept(
-                    $tenantId,
-                    (int) $order->id,
-                    [['method' => $method, 'amount' => $total, 'payee_id' => (int) $user->id]],
-                    (int) $user->id,
-                    (int) $shift->id,
-                );
+                if ($cashDue > 0.0001) {
+                    $loyaltyCredit = round($total - $cashDue, 2);
+                    $this->payments->accept(
+                        $tenantId,
+                        (int) $order->id,
+                        [['method' => $method, 'amount' => $cashDue, 'payee_id' => (int) $user->id]],
+                        (int) $user->id,
+                        (int) $shift->id,
+                        0.0,
+                        $loyaltyCredit,
+                    );
+                } else {
+                    $order->forceFill([
+                        'payment_status' => 'paid',
+                        'locked_at' => now(),
+                    ])->save();
+                }
 
                 // FIFO write-off. Online → no overdraft; offline → allow overdraft.
                 $allowOverdraft = $isOffline;

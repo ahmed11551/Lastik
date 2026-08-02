@@ -40,7 +40,7 @@ final class FiscalDiscountService
     public function allocate(array $items, float $receiptTotal, array $payments): array
     {
         if ($items === []) {
-            return ['items' => [], 'total' => $targetTotal];
+            return ['items' => [], 'total' => (int) round($receiptTotal * 100)];
         }
 
         // 1) Перевод в minor units (копейки).

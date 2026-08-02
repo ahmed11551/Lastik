@@ -108,6 +108,8 @@ export const useOfflineStore = defineStore('offline', {
       payment_type: LocalPaymentType
       payment_parts?: Array<{ method: string; amount: number }>
       requires_fiscal_marking?: boolean
+      customer_id?: number
+      bonus_spend?: number
     }): Promise<LocalReceipt> {
       const receipt: LocalReceipt = {
         uuid: createReceiptUuid(),
@@ -120,6 +122,8 @@ export const useOfflineStore = defineStore('offline', {
         payment_type: input.payment_type,
         payment_parts: input.payment_parts,
         requires_fiscal_marking: Boolean(input.requires_fiscal_marking),
+        customer_id: input.customer_id,
+        bonus_spend: input.bonus_spend,
         status: 'PENDING_SYNC',
         created_at: new Date().toISOString(),
         synced_at: null,
