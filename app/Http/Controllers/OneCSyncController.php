@@ -12,7 +12,10 @@ declare(strict_types=1);
 namespace Autometria\Http\Controllers;
 
 use Autometria\Models\ImportJob;
+use Autometria\Models\OneCSyncLog;
+use Autometria\Services\CommerceML\CommerceMLExportService;
 use Autometria\Services\Import\CommerceMLImportService;
+use Autometria\Services\OneC\OneCSyncLogger;
 use Autometria\Services\OneC\OneCSyncSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,6 +27,8 @@ class OneCSyncController extends Controller
     public function __construct(
         private readonly OneCSyncSettingsService $settings,
         private readonly CommerceMLImportService $imports,
+        private readonly CommerceMLExportService $export,
+        private readonly OneCSyncLogger $logger,
     ) {}
 
     public function credentials(Request $request): JsonResponse
@@ -56,12 +61,128 @@ class OneCSyncController extends Controller
             'update_stocks' => ['required', 'boolean'],
             'update_prices' => ['required', 'boolean'],
             'create_products' => ['required', 'boolean'],
+            'sync_mode' => ['nullable', 'string', 'in:manual,auto'],
+            'remote_url' => ['nullable', 'string', 'max:500'],
         ]);
 
         $tenantId = $this->tenantId($request);
         $options = $this->settings->updateOptions($tenantId, $data);
 
         return response()->json(['data' => ['options' => $options]]);
+    }
+
+    /**
+     * GET /api/v1/1c/sync-logs — реестр OneCSyncLog (inbound + outbound).
+     */
+    public function syncLogs(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'status' => ['nullable', 'string', 'in:pending,processing,done,failed,Success,Error'],
+            'direction' => ['nullable', 'string', 'in:inbound,outbound'],
+        ]);
+
+        $tenantId = $this->tenantId($request);
+        $perPage = (int) ($data['per_page'] ?? 20);
+
+        $q = OneCSyncLog::query()->withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->orderByDesc('id');
+
+        if (! empty($data['direction'])) {
+            $q->where('direction', $data['direction']);
+        }
+        if (! empty($data['status'])) {
+            $status = match ($data['status']) {
+                'Success' => 'done',
+                'Error' => 'failed',
+                default => $data['status'],
+            };
+            $q->where('status', $status);
+        }
+
+        $paginator = $q->paginate($perPage, ['*'], 'page', (int) ($data['page'] ?? 1));
+
+        return response()->json([
+            'data' => collect($paginator->items())->map(fn (OneCSyncLog $l) => [
+                'id' => $l->id,
+                'direction' => $l->direction ?? 'inbound',
+                'channel' => $l->channel ?? 'exchange',
+                'file_name' => $l->file_name,
+                'status' => $l->status === 'done' ? 'Success' : ($l->status === 'failed' ? 'Error' : $l->status),
+                'processed_count' => (int) $l->processed_count,
+                'payload_size' => (int) ($l->payload_size ?? 0),
+                'errors' => $l->errors,
+                'details' => $l->details ?? [],
+                'created_at' => optional($l->created_at)?->toIso8601String(),
+                'updated_at' => optional($l->updated_at)?->toIso8601String(),
+            ])->values(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * POST /api/v1/1c/push — ручная выгрузка заказов (XML) + лог.
+     */
+    public function push(Request $request): JsonResponse
+    {
+        $tenantId = $this->tenantId($request);
+
+        try {
+            $orders = $this->export->exportOrders($tenantId, null, 'manual_push');
+            $offers = $this->export->exportOffers($tenantId, 'manual_push');
+        } catch (Throwable $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'data' => [
+                'orders' => [
+                    'count' => $orders['count'],
+                    'log_id' => $orders['log']->id,
+                    'bytes' => strlen($orders['xml']),
+                ],
+                'offers' => [
+                    'count' => $offers['count'],
+                    'log_id' => $offers['log']->id,
+                    'bytes' => strlen($offers['xml']),
+                ],
+            ],
+            'message' => 'Выгрузка в 1С сформирована',
+        ]);
+    }
+
+    /**
+     * POST /api/v1/1c/pull — запросить импорт (ожидает файл в multipart или подтверждает готовность).
+     */
+    public function pull(Request $request): JsonResponse
+    {
+        if ($request->hasFile('file')) {
+            return $this->manualUpload($request);
+        }
+
+        $tenantId = $this->tenantId($request);
+        $creds = $this->settings->getPublicCredentials($tenantId);
+        $log = $this->logger->start($tenantId, 'pull.request', 'inbound', 'manual_pull');
+        $this->logger->succeed($log, 0, 0, [
+            'ready' => true,
+            'exchange_url' => $creds['exchange_url'],
+        ]);
+
+        return response()->json([
+            'data' => [
+                'ready' => true,
+                'log_id' => $log->id,
+                'exchange_url' => $creds['exchange_url'],
+                'hint' => 'Загрузите XML через manual-upload или инициируйте обмен 1С → exchange_url',
+            ],
+        ]);
     }
 
     public function logs(Request $request): JsonResponse

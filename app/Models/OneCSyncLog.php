@@ -21,14 +21,20 @@ class OneCSyncLog extends TenantModel
 
     protected $fillable = [
         'tenant_id',
+        'direction',
+        'channel',
         'file_name',
         'status',
         'processed_count',
+        'payload_size',
         'errors',
+        'details',
     ];
 
     protected $casts = [
         'processed_count' => 'integer',
+        'payload_size' => 'integer',
+        'details' => 'array',
     ];
 
     public function tenant(): BelongsTo

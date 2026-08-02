@@ -22,6 +22,8 @@ use Autometria\Http\Controllers\CustomerMergeController;
 use Autometria\Http\Controllers\DictionaryController;
 use Autometria\Http\Controllers\FiscalReceiptController;
 use Autometria\Http\Controllers\IssuanceController;
+use Autometria\Http\Controllers\CommerceMLExportController;
+use Autometria\Http\Controllers\JsonExchangeController;
 use Autometria\Http\Controllers\OneCExchangeController;
 use Autometria\Http\Controllers\OneCSyncController;
 use Autometria\Http\Controllers\KpiController;
@@ -129,7 +131,15 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
     Route::post('1c/credentials/reset', [OneCSyncController::class, 'resetCredentials'])->middleware('ensure.permission:stock.import');
     Route::put('1c/options', [OneCSyncController::class, 'updateOptions'])->middleware('ensure.permission:stock.import');
     Route::get('1c/logs', [OneCSyncController::class, 'logs'])->middleware('ensure.permission:stock.import');
+    Route::get('1c/sync-logs', [OneCSyncController::class, 'syncLogs'])->middleware('ensure.permission:stock.import');
     Route::post('1c/manual-upload', [OneCSyncController::class, 'manualUpload'])->middleware('ensure.permission:stock.import');
+    Route::post('1c/push', [OneCSyncController::class, 'push'])->middleware('ensure.permission:stock.import');
+    Route::post('1c/pull', [OneCSyncController::class, 'pull'])->middleware('ensure.permission:stock.import');
+
+    Route::match(['GET', 'POST'], '1c/export/orders', [CommerceMLExportController::class, 'orders'])->middleware('ensure.permission:stock.import');
+    Route::match(['GET', 'POST'], '1c/export/offers', [CommerceMLExportController::class, 'offers'])->middleware('ensure.permission:stock.import');
+    Route::post('1c/json/push', [JsonExchangeController::class, 'push'])->middleware('ensure.permission:stock.import');
+    Route::post('1c/json/pull', [JsonExchangeController::class, 'pull'])->middleware('ensure.permission:stock.import');
 
     Route::get('vehicles', [VehicleController::class, 'index'])->middleware('ensure.permission:customers.view');
     Route::get('warehouses', [WarehouseController::class, 'index'])->middleware('ensure.permission:stock.view');

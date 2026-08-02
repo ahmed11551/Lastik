@@ -11,16 +11,21 @@ declare(strict_types=1);
 use Autometria\Jobs\ProcessCommerceMLCatalogJob;
 use Autometria\Jobs\ProcessCommerceMLOffersJob;
 use Autometria\Models\Category;
+use Autometria\Models\Customer;
 use Autometria\Models\OneCSyncLog;
+use Autometria\Models\Order;
+use Autometria\Models\OrderItem;
+use Autometria\Models\Payment;
 use Autometria\Models\Price;
 use Autometria\Models\ProductService;
 use Autometria\Models\Stock;
 use Autometria\Models\Warehouse;
+use Autometria\Services\CommerceML\CommerceMLExportService;
 use Autometria\Services\CommerceML\CommerceMLStreamParser;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
-use function Pest\Laravel\get;
-use function Pest\Laravel\post;
+use Tests\Support\AcceptanceFixture;
+use function Pest\Laravel\actingAs;
 
 beforeEach(function (): void {
     Config::set('services.one_c.login', '1c_user');
@@ -235,5 +240,130 @@ XML;
     }
 
     expect($leaked)->toBeFalse();
+});
+
+/**
+ * Sprint B: CommerceML 2.09 export — orders.xml + offers.xml + OneCSyncLog.
+ */
+it('exports orders and offers as valid CommerceML2 xml with sync logs', function (): void {
+    $fx = AcceptanceFixture::make('cml-export');
+    set_current_tenant_id($fx->tenant->id);
+
+    $customer = Customer::query()->withoutGlobalScopes()->forceCreate([
+        'tenant_id' => $fx->tenant->id,
+        'type' => Customer::TYPE_LEGAL,
+        'name' => 'ООО Тест',
+        'legal_name' => 'ООО Тест',
+        'inn' => '7701234567',
+        'phone' => '+79001112233',
+    ]);
+
+    $order = Order::query()->withoutGlobalScopes()->forceCreate([
+        'tenant_id' => $fx->tenant->id,
+        'customer_id' => $customer->id,
+        'location_id' => $fx->location->id,
+        'number' => 'ORD-CML-1',
+        'status' => 'created',
+        'payment_status' => 'paid',
+        'total' => 4200.0,
+        'created_by' => $fx->user->id,
+    ]);
+
+    OrderItem::query()->withoutGlobalScopes()->forceCreate([
+        'tenant_id' => $fx->tenant->id,
+        'order_id' => $order->id,
+        'type' => 'product',
+        'product_id' => $fx->product->id,
+        'snapshot' => ['name' => $fx->product->name],
+        'qty' => 1,
+        'price' => 4200,
+        'discount' => 0,
+    ]);
+
+    Payment::query()->withoutGlobalScopes()->forceCreate([
+        'tenant_id' => $fx->tenant->id,
+        'order_id' => $order->id,
+        'method' => 'cash',
+        'type' => 'sale',
+        'status' => 'completed',
+        'amount' => 4200,
+        'created_by' => $fx->user->id,
+    ]);
+
+    $export = app(CommerceMLExportService::class);
+    $orders = $export->exportOrders($fx->tenant->id, null, 'test_export');
+    $offers = $export->exportOffers($fx->tenant->id, 'test_export');
+
+    expect($orders['count'])->toBeGreaterThanOrEqual(1);
+    expect($orders['xml'])->toContain('КоммерческаяИнформация');
+    expect($orders['xml'])->toContain('ВерсияСхемы="2.09"');
+    expect($orders['xml'])->toContain('Документ');
+    expect($orders['xml'])->toContain('ORD-'.$order->id);
+    expect($orders['xml'])->toContain('Статус заказа');
+    expect($orders['xml'])->toContain('Контрагент');
+
+    expect($offers['xml'])->toContain('ПакетПредложений');
+    expect($offers['xml'])->toContain('Предложение');
+    expect($offers['xml'])->toContain('Остатки');
+
+    $logOrders = OneCSyncLog::query()->withoutGlobalScopes()->find($orders['log']->id);
+    $logOffers = OneCSyncLog::query()->withoutGlobalScopes()->find($offers['log']->id);
+    expect($logOrders)->not->toBeNull();
+    expect($logOrders->direction)->toBe('outbound');
+    expect($logOrders->status)->toBe('done');
+    expect((int) $logOrders->payload_size)->toBeGreaterThan(0);
+    expect($logOffers->status)->toBe('done');
+});
+
+it('pushes and pulls via api and writes OneCSyncLog', function (): void {
+    $this->withoutMiddleware();
+
+    $fx = AcceptanceFixture::make('cml-api');
+    set_current_tenant_id($fx->tenant->id);
+
+    $push = actingAs($fx->user)->postJson('/api/v1/1c/push');
+    $push->assertOk();
+    expect((int) $push->json('data.orders.log_id'))->toBeGreaterThan(0);
+    expect((int) $push->json('data.offers.log_id'))->toBeGreaterThan(0);
+
+    expect(
+        OneCSyncLog::query()->withoutGlobalScopes()
+            ->where('tenant_id', $fx->tenant->id)
+            ->where('direction', 'outbound')
+            ->where('status', 'done')
+            ->count()
+    )->toBeGreaterThanOrEqual(2);
+
+    $pull = actingAs($fx->user)->postJson('/api/v1/1c/pull');
+    $pull->assertOk();
+    $pull->assertJsonPath('data.ready', true);
+    $pullLogId = (int) $pull->json('data.log_id');
+    expect($pullLogId)->toBeGreaterThan(0);
+    expect(
+        OneCSyncLog::query()->withoutGlobalScopes()->where('id', $pullLogId)->value('direction')
+    )->toBe('inbound');
+
+    $xml = actingAs($fx->user)->get('/api/v1/1c/export/orders');
+    $xml->assertOk();
+    expect($xml->headers->get('Content-Type'))->toContain('xml');
+    expect($xml->getContent())->toContain('КоммерческаяИнформация');
+
+    $jsonPush = actingAs($fx->user)->postJson('/api/v1/1c/json/push');
+    $jsonPush->assertOk();
+    expect((int) $jsonPush->json('data.log_id'))->toBeGreaterThan(0);
+
+    $opts = actingAs($fx->user)->putJson('/api/v1/1c/options', [
+        'update_stocks' => true,
+        'update_prices' => false,
+        'create_products' => true,
+        'sync_mode' => 'auto',
+        'remote_url' => 'https://1c.example/hs/exchange',
+    ]);
+    $opts->assertOk();
+    $opts->assertJsonPath('data.options.sync_mode', 'auto');
+
+    $logs = actingAs($fx->user)->getJson('/api/v1/1c/sync-logs');
+    $logs->assertOk();
+    expect($logs->json('data'))->toBeArray();
 });
 
