@@ -54,6 +54,9 @@ export const useOfflineStore = defineStore('offline', {
           warehouse_id: p.warehouse_id ?? null,
           vat_rate: p.vat_rate || 'none',
           category: p.category || 'all',
+          is_marked: Boolean(p.is_marked),
+          marking_type: p.marking_type ?? null,
+          is_egais: Boolean(p.is_egais),
           updated_at: new Date().toISOString(),
         }))
         await db.cachedProducts.clear()
@@ -100,6 +103,7 @@ export const useOfflineStore = defineStore('offline', {
       amount_tendered?: number
       payment_type: LocalPaymentType
       payment_parts?: Array<{ method: string; amount: number }>
+      requires_fiscal_marking?: boolean
     }): Promise<LocalReceipt> {
       const receipt: LocalReceipt = {
         uuid: createReceiptUuid(),
@@ -111,6 +115,7 @@ export const useOfflineStore = defineStore('offline', {
         amount_tendered: input.amount_tendered,
         payment_type: input.payment_type,
         payment_parts: input.payment_parts,
+        requires_fiscal_marking: Boolean(input.requires_fiscal_marking),
         status: 'PENDING_SYNC',
         created_at: new Date().toISOString(),
         synced_at: null,

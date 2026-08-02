@@ -18,6 +18,7 @@ import ProductCatalog from '@/components/pos/ProductCatalog.vue'
 import PaymentModal from '@/components/pos/PaymentModal.vue'
 import ShiftControlModal from '@/components/pos/ShiftControlModal.vue'
 import ReceiptTemplate from '@/components/pos/ReceiptTemplate.vue'
+import MarkingScanModal from '@/components/pos/MarkingScanModal.vue'
 import { createReceiptPrinter } from '@/services/printer/ReceiptPrinterService'
 import type { PosReceipt } from '@/services/printer/types'
 
@@ -51,6 +52,8 @@ const catalogRef = ref<InstanceType<typeof ProductCatalog> | null>(null)
 const payOpen = ref(false)
 const shiftModalOpen = ref(false)
 const shiftMode = ref<'open' | 'close'>('open')
+const markingOpen = ref(false)
+const markingPending = ref<CachedProduct | null>(null)
 
 const user = getStoredUser() as { name?: string; full_name?: string } | null
 const cashierName = computed(() => user?.full_name || user?.name || 'Кассир')
@@ -65,7 +68,7 @@ const shiftAgeHours = computed(() => {
 const shiftExpired = computed(() => shiftOpen.value && shiftAgeHours.value >= 24)
 const salesBlocked = computed(() => !shiftOpen.value || shiftExpired.value)
 
-const anyModal = computed(() => payOpen.value || shiftModalOpen.value)
+const anyModal = computed(() => payOpen.value || shiftModalOpen.value || markingOpen.value)
 
 const filteredProducts = computed(() => pos.filteredCatalog)
 
@@ -75,6 +78,33 @@ let scannerTimer: ReturnType<typeof setTimeout> | null = null
 
 function focusSearch(): void {
   catalogRef.value?.focus?.()
+}
+
+function requestMarking(p: CachedProduct): void {
+  markingPending.value = p
+  markingOpen.value = true
+}
+
+function onCatalogAdd(p: CachedProduct): void {
+  const res = pos.addProduct(p)
+  if (res && 'reason' in res && res.reason === 'needs_marking') {
+    requestMarking(p)
+  }
+}
+
+function onMarkingConfirm(code: string): void {
+  if (!markingPending.value) return
+  const res = pos.addProduct(markingPending.value, 1, code)
+  if (res?.ok) {
+    markingOpen.value = false
+    markingPending.value = null
+    toast.success('Марка принята', 'Честный Знак')
+    focusSearch()
+  }
+}
+
+function onMarkingCancel(): void {
+  markingPending.value = null
 }
 
 function requestPay(): void {
@@ -175,6 +205,7 @@ function onHotkey(e: KeyboardEvent): void {
       e.preventDefault()
       payOpen.value = false
       shiftModalOpen.value = false
+      markingOpen.value = false
     }
     return
   }
@@ -209,7 +240,12 @@ function onHotkey(e: KeyboardEvent): void {
     e.preventDefault()
     const code = scannerBuf
     scannerBuf = ''
-    pos.addByBarcode(code)
+    void (async () => {
+      const res = await pos.addByBarcode(code)
+      if (res && 'reason' in res && res.reason === 'needs_marking' && res.product) {
+        requestMarking(res.product)
+      }
+    })()
   }
 }
 
@@ -345,8 +381,13 @@ onUnmounted(() => {
         :loading="loadingCatalog"
         @update:query="(v) => (searchQuery = v)"
         @update:active-category="(v) => (activeCategory = v)"
-        @add="(p: CachedProduct) => pos.addProduct(p)"
-        @scan="(code) => pos.addByBarcode(code)"
+        @add="onCatalogAdd"
+        @scan="async (code) => {
+          const res = await pos.addByBarcode(code)
+          if (res && 'reason' in res && res.reason === 'needs_marking' && res.product) {
+            requestMarking(res.product)
+          }
+        }"
       />
     </div>
 
@@ -395,6 +436,12 @@ onUnmounted(() => {
       :expected-cash="expectedCash"
       :shift-age-hours="shiftAgeHours"
       @confirm="onShiftConfirm"
+    />
+    <MarkingScanModal
+      v-model:open="markingOpen"
+      :product-title="markingPending?.title"
+      @confirm="onMarkingConfirm"
+      @cancel="onMarkingCancel"
     />
     <ReceiptTemplate :register-host="true" />
   </div>
