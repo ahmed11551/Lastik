@@ -46,6 +46,7 @@ class Booking extends TenantModel
 
     protected $fillable = [
         'post_id',
+        'customer_id',
         'customer_name',
         'customer_phone',
         'start_time',
