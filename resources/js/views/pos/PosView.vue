@@ -19,6 +19,7 @@ import PaymentModal from '@/components/pos/PaymentModal.vue'
 import ShiftControlModal from '@/components/pos/ShiftControlModal.vue'
 import ReceiptTemplate from '@/components/pos/ReceiptTemplate.vue'
 import MarkingScanModal from '@/components/pos/MarkingScanModal.vue'
+import RefundModal from '@/components/pos/RefundModal.vue'
 import { createReceiptPrinter } from '@/services/printer/ReceiptPrinterService'
 import type { PosReceipt } from '@/services/printer/types'
 
@@ -46,7 +47,7 @@ const {
   lastOp,
 } = storeToRefs(pos)
 
-const { online, pendingCount, failedCount, syncing } = storeToRefs(offline)
+const { online, pendingCount, failedCount, pendingRefundCount, syncing } = storeToRefs(offline)
 
 const catalogRef = ref<InstanceType<typeof ProductCatalog> | null>(null)
 const payOpen = ref(false)
@@ -54,6 +55,7 @@ const shiftModalOpen = ref(false)
 const shiftMode = ref<'open' | 'close'>('open')
 const markingOpen = ref(false)
 const markingPending = ref<CachedProduct | null>(null)
+const refundOpen = ref(false)
 
 const user = getStoredUser() as { name?: string; full_name?: string } | null
 const cashierName = computed(() => user?.full_name || user?.name || 'Кассир')
@@ -68,7 +70,9 @@ const shiftAgeHours = computed(() => {
 const shiftExpired = computed(() => shiftOpen.value && shiftAgeHours.value >= 24)
 const salesBlocked = computed(() => !shiftOpen.value || shiftExpired.value)
 
-const anyModal = computed(() => payOpen.value || shiftModalOpen.value || markingOpen.value)
+const anyModal = computed(
+  () => payOpen.value || shiftModalOpen.value || markingOpen.value || refundOpen.value,
+)
 
 const filteredProducts = computed(() => pos.filteredCatalog)
 
@@ -105,6 +109,10 @@ function onMarkingConfirm(code: string): void {
 
 function onMarkingCancel(): void {
   markingPending.value = null
+}
+
+function onRefundDone(): void {
+  toast.success('Возврат обработан', 'POS')
 }
 
 function requestPay(): void {
@@ -206,6 +214,7 @@ function onHotkey(e: KeyboardEvent): void {
       payOpen.value = false
       shiftModalOpen.value = false
       markingOpen.value = false
+      refundOpen.value = false
     }
     return
   }
@@ -310,11 +319,11 @@ onUnmounted(() => {
           {{ online ? 'ONLINE' : 'OFFLINE' }}
         </span>
         <span
-          v-if="pendingCount || failedCount || syncing"
+          v-if="pendingCount || pendingRefundCount || failedCount || syncing"
           class="border px-2 py-1 font-mono text-[10px]"
           style="border-color: #1f2937; color: #f59e0b; border-radius: 4px"
         >
-          {{ syncing ? 'Sync…' : `Queue ${pendingCount}` }}
+          {{ syncing ? 'Sync…' : `Queue ${pendingCount + pendingRefundCount}` }}
           <span v-if="failedCount"> · fail {{ failedCount }}</span>
         </span>
         <button
@@ -415,6 +424,16 @@ onUnmounted(() => {
       </button>
       <button
         type="button"
+        class="h-12 min-w-[120px] flex-1 border px-3 font-mono text-xs sm:flex-none"
+        style="border-color: #ef4444; color: #fca5a5; border-radius: 4px; background: #0b0d10"
+        data-testid="pos-refund-open"
+        :disabled="!shiftOpen"
+        @click="refundOpen = true"
+      >
+        Возврат
+      </button>
+      <button
+        type="button"
         class="h-12 min-w-[100px] flex-1 border px-3 font-mono text-xs sm:flex-none"
         style="border-color: #374151; color: #9ca3af; border-radius: 4px; background: #0b0d10"
         @click="pos.clearCart()"
@@ -442,6 +461,11 @@ onUnmounted(() => {
       :product-title="markingPending?.title"
       @confirm="onMarkingConfirm"
       @cancel="onMarkingCancel"
+    />
+    <RefundModal
+      v-model:open="refundOpen"
+      :shift-id="shiftId"
+      @done="onRefundDone"
     />
     <ReceiptTemplate :register-host="true" />
   </div>

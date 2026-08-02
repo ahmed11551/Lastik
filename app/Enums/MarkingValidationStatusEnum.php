@@ -16,4 +16,6 @@ enum MarkingValidationStatusEnum: string
     case INVALID = 'INVALID';
     case EXPIRED = 'EXPIRED';
     case SOLD = 'SOLD';
+    /** Марка раскреплена при возврате. */
+    case UNBOUND = 'UNBOUND';
 }

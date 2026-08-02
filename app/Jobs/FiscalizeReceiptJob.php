@@ -82,7 +82,9 @@ class FiscalizeReceiptJob implements ShouldQueue
 
         try {
             // 2) HTTP к драйверу ВНЕ транзакции.
-            $result = $service->driver()->sell($receipt);
+            $result = $receipt->operation === \Autometria\Enums\FiscalReceiptType::SELL_REFUND
+                ? $service->driver()->refund($receipt)
+                : $service->driver()->sell($receipt);
         } catch (FiscalNetworkTimeoutException $e) {
             // Сетевой таймаут → NEEDS_RECONCILE (НЕ retryable-sell!). Планируем сверку.
             $this->markNeedsReconcile($receipt, $e->getMessage());

@@ -30,5 +30,6 @@ interface FiscalDriverInterface
 
     public function checkStatus(string $driverRequestId): FiscalResultDto;
 
-    public function refund(FiscalReceipt $receipt): bool;
+    /** Возврат прихода (sell_refund) — тот же контракт результата, что и sell(). */
+    public function refund(FiscalReceipt $receipt): FiscalResultDto;
 }

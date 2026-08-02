@@ -29,6 +29,7 @@ use Autometria\Http\Controllers\OrderController;
 use Autometria\Http\Controllers\PaymentController;
 use Autometria\Http\Controllers\PosController;
 use Autometria\Http\Controllers\ProductController;
+use Autometria\Http\Controllers\RefundController;
 use Autometria\Http\Controllers\SearchController;
 use Autometria\Http\Controllers\SettingController;
 use Autometria\Http\Controllers\StockBatchController;
@@ -88,6 +89,8 @@ Route::middleware([RateLimitAuth::class, 'auth:sanctum', EnsureTenant::class, En
     Route::post('pos/offline-receipts', [PosController::class, 'offlineReceipts'])->middleware('ensure.permission:payments.create');
     // Alias per Offline Sync TZ (Block 3.1)
     Route::post('fiscal/receipts', [PosController::class, 'offlineReceipts'])->middleware('ensure.permission:payments.create');
+    Route::post('pos/refunds', [RefundController::class, 'store'])->middleware('ensure.permission:payments.create');
+    Route::post('orders/{order}/refunds', [RefundController::class, 'store'])->middleware('ensure.permission:payments.create');
 
     Route::get('fiscal-receipts', [FiscalReceiptController::class, 'index'])->middleware('ensure.permission:payments.create');
     Route::post('fiscal-receipts', [FiscalReceiptController::class, 'store'])->middleware('ensure.permission:payments.create');

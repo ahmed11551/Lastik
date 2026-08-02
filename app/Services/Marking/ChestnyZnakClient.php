@@ -90,4 +90,29 @@ class ChestnyZnakClient
             'MARKING_INVALID',
         );
     }
+
+    /**
+     * Раскрепление марки при возврате (mock / future GIS MT withdrawal).
+     *
+     * @return array{status: MarkingValidationStatusEnum, payload: array<string, mixed>}
+     */
+    public function unbind(string $markingCode, string $gtin = '00000000000000'): array
+    {
+        if ($this->mockMode) {
+            return [
+                'status' => MarkingValidationStatusEnum::UNBOUND,
+                'payload' => [
+                    'source' => 'mock',
+                    'reason' => 'UNBOUND',
+                    'gtin' => $gtin,
+                    'marking_code' => $markingCode,
+                ],
+            ];
+        }
+
+        throw new InvalidMarkingCodeException(
+            'Живой контур раскрепления Честного Знака не сконфигурирован',
+            'MARKING_UNBIND_UNAVAILABLE',
+        );
+    }
 }

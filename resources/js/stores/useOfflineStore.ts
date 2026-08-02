@@ -9,6 +9,8 @@ import {
   type LocalPaymentType,
   type LocalReceipt,
   type LocalReceiptItem,
+  type LocalRefund,
+  type LocalRefundItem,
 } from '../services/offlineDb'
 
 export const useOfflineStore = defineStore('offline', {
@@ -16,6 +18,7 @@ export const useOfflineStore = defineStore('offline', {
     online: typeof navigator !== 'undefined' ? navigator.onLine : true,
     pendingCount: 0,
     failedCount: 0,
+    pendingRefundCount: 0,
     caching: false,
     lastCacheAt: null as string | null,
     syncing: false,
@@ -23,7 +26,7 @@ export const useOfflineStore = defineStore('offline', {
   }),
 
   getters: {
-    hasPending: (s) => s.pendingCount > 0,
+    hasPending: (s) => s.pendingCount > 0 || s.pendingRefundCount > 0,
   },
 
   actions: {
@@ -34,6 +37,7 @@ export const useOfflineStore = defineStore('offline', {
     async refreshCounts() {
       this.pendingCount = await db.localReceipts.where('status').equals('PENDING_SYNC').count()
       this.failedCount = await db.localReceipts.where('status').equals('FAILED').count()
+      this.pendingRefundCount = await db.localRefunds.where('status').equals('PENDING_SYNC').count()
     },
 
     /**
@@ -155,6 +159,62 @@ export const useOfflineStore = defineStore('offline', {
           await db.localReceipts.update(r.id, { status: 'PENDING_SYNC', last_error: null })
         }
       }
+      const failedRefunds = await db.localRefunds.where('status').equals('FAILED').toArray()
+      for (const r of failedRefunds) {
+        if (r.id != null) {
+          await db.localRefunds.update(r.id, { status: 'PENDING_SYNC', last_error: null })
+        }
+      }
+      await this.refreshCounts()
+    },
+
+    async saveLocalRefund(input: {
+      tenant_id: number
+      order_id: number
+      cashier_id: number
+      shift_id?: number | null
+      reason?: string | null
+      items: LocalRefundItem[]
+      total_amount: number
+    }): Promise<LocalRefund> {
+      const row: LocalRefund = {
+        uuid: createReceiptUuid(),
+        tenant_id: input.tenant_id,
+        order_id: input.order_id,
+        shift_id: input.shift_id ?? null,
+        cashier_id: input.cashier_id,
+        reason: input.reason ?? null,
+        items: input.items,
+        total_amount: input.total_amount,
+        status: 'PENDING_SYNC',
+        created_at: new Date().toISOString(),
+        synced_at: null,
+        last_error: null,
+      }
+      const id = await db.localRefunds.add(row)
+      row.id = id
+      await this.refreshCounts()
+      return row
+    },
+
+    async listPendingRefunds(): Promise<LocalRefund[]> {
+      return db.localRefunds.where('status').equals('PENDING_SYNC').sortBy('created_at')
+    },
+
+    async markRefundSynced(id: number) {
+      await db.localRefunds.update(id, {
+        status: 'SYNCED',
+        synced_at: new Date().toISOString(),
+        last_error: null,
+      })
+      await this.refreshCounts()
+    },
+
+    async markRefundFailed(id: number, error: string) {
+      await db.localRefunds.update(id, {
+        status: 'FAILED',
+        last_error: error,
+      })
       await this.refreshCounts()
     },
   },

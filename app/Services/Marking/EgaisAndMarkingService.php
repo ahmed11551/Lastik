@@ -93,6 +93,34 @@ class EgaisAndMarkingService
     }
 
     /**
+     * Раскрепить марку (возврат товара) и записать аудит в marking_validations.
+     */
+    public function unbindMarking(int $tenantId, string $markingCode, ?string $gtin = null): void
+    {
+        $code = trim($markingCode);
+        if ($code === '') {
+            return;
+        }
+
+        $resolvedGtin = $gtin ?: '00000000000000';
+        try {
+            $parsed = $this->parser->parse($code);
+            $resolvedGtin = $parsed['gtin'];
+        } catch (InvalidMarkingCodeException) {
+            // still log unbind with placeholder GTIN
+        }
+
+        $result = $this->chestnyZnak->unbind($code, $resolvedGtin);
+        $this->logValidation(
+            $tenantId,
+            $code,
+            $resolvedGtin,
+            $result['status'],
+            $result['payload'],
+        );
+    }
+
+    /**
      * @param  array<string, mixed>  $payload
      */
     private function logValidation(

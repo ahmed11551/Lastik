@@ -31,6 +31,10 @@ enum OrderStatusEnum: string
     /** Offline-чек проведён с техническим овердрафтом склада. */
     case COMPLETED_WITH_OVERDRAFT = 'completed_with_overdraft';
 
+    /** Возврат (полный / частичный). */
+    case REFUNDED = 'refunded';
+    case PARTIALLY_REFUNDED = 'partially_refunded';
+
     /** UI list filter tokens (query param `status`). */
     public const FILTER_IN_PROGRESS = 'in_progress';
     public const FILTER_READY = 'ready';
@@ -94,6 +98,8 @@ enum OrderStatusEnum: string
             self::IN_PROGRESS => 'Under Review',
             self::COMPLETED => 'Accepted',
             self::COMPLETED_WITH_OVERDRAFT => 'Completed (overdraft)',
+            self::REFUNDED => 'Refunded',
+            self::PARTIALLY_REFUNDED => 'Partially refunded',
             self::CANCELLED => 'Rejected',
             self::CREATED => 'Created',
             self::READY => 'Ready',
@@ -116,6 +122,7 @@ enum OrderStatusEnum: string
             self::READY, self::ISSUED => 'open',
             self::CLOSED => 'success',
             self::CREATED => 'neutral',
+            self::REFUNDED, self::PARTIALLY_REFUNDED => 'warning',
         };
     }
 }
