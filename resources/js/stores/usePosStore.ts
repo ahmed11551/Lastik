@@ -41,6 +41,17 @@ export const usePosStore = defineStore('pos', {
     checkingOut: false,
     loadingCatalog: false,
     lastOp: { status: 'pending' as string, label: 'Готов к работе' },
+    // CRM / Loyalty (Block 4.3)
+    selectedCustomer: null as null | {
+      id: number
+      name: string
+      phone: string
+      discount_card_number: string | null
+      bonus_balance: number
+      tier: string | null
+    },
+    bonusSpend: 0,
+    bonusError: '' as string,
   }),
 
   getters: {
@@ -50,6 +61,25 @@ export const usePosStore = defineStore('pos', {
       const sub = s.cart.reduce((n, r) => n + Number(r.line || 0), 0)
       const d = Math.min(100, Math.max(0, Number(s.discountPercent || 0)))
       return Math.round(sub * (1 - d / 100) * 100) / 100
+    },
+    /** Итог к оплате с учётом списания бонусов (Block 4.3). */
+    payableAmount(s): number {
+      const due = (() => {
+        const sub = s.cart.reduce((n, r) => n + Number(r.line || 0), 0)
+        const d = Math.min(100, Math.max(0, Number(s.discountPercent || 0)))
+        return Math.round(sub * (1 - d / 100) * 100) / 100
+      })()
+      const spend = Math.min(Number(s.bonusSpend || 0), due)
+      return Math.round((due - spend) * 100) / 100
+    },
+    maxBonusSpend(s): number {
+      const due = (() => {
+        const sub = s.cart.reduce((n, r) => n + Number(r.line || 0), 0)
+        const d = Math.min(100, Math.max(0, Number(s.discountPercent || 0)))
+        return Math.round(sub * (1 - d / 100) * 100) / 100
+      })()
+      const balance = Number(s.selectedCustomer?.bonus_balance || 0)
+      return Math.min(balance, Math.round(due * 0.5 * 100) / 100)
     },
     filteredCatalog(s): CachedProduct[] {
       const q = String(s.searchQuery || '').trim().toLowerCase()
@@ -227,6 +257,70 @@ export const usePosStore = defineStore('pos', {
       this.cart = []
       this.discountPercent = 0
       this.promoCode = ''
+      this.selectedCustomer = null
+      this.bonusSpend = 0
+      this.bonusError = ''
+    },
+
+    /** Block 4.3 — select existing customer from search result. */
+    selectCustomer(c: {
+      id: number
+      name: string
+      phone: string
+      discount_card_number?: string | null
+      bonus_balance?: number
+      tier?: string | null
+    }) {
+      this.selectedCustomer = {
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        discount_card_number: c.discount_card_number ?? null,
+        bonus_balance: Number(c.bonus_balance || 0),
+        tier: c.tier ?? null,
+      }
+      this.bonusSpend = 0
+      this.bonusError = ''
+    },
+
+    clearCustomer() {
+      this.selectedCustomer = null
+      this.bonusSpend = 0
+      this.bonusError = ''
+    },
+
+    /**
+     * Block 4.3 — set bonus redemption with validation:
+     * must not exceed available balance nor 50% of the payable amount.
+     */
+    setBonusSpend(value: number) {
+      const requested = Math.max(0, Number(value) || 0)
+      const max = this.maxBonusSpend
+      this.bonusSpend = Math.min(requested, Number(this.selectedCustomer?.bonus_balance || 0), Math.round(this.totalDue * 0.5 * 100) / 100)
+      if (requested > this.bonusSpend) {
+        this.bonusError =
+          requested > (this.selectedCustomer?.bonus_balance || 0)
+            ? 'Превышен баланс бонусов'
+            : 'Не более 50% суммы чека'
+      } else {
+        this.bonusError = ''
+      }
+      return this.bonusSpend
+    },
+
+    /** Block 4.3 — quick register a new customer (name + phone). */
+    async registerCustomer(payload: { name: string; phone: string }) {
+      const resp = await apiPost('/customers', payload, { silent: true })
+      const c = resp?.data ?? resp
+      this.selectCustomer({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        discount_card_number: c.discount_card_number ?? null,
+        bonus_balance: Number(c.bonus_balance || 0),
+        tier: c.tier ?? null,
+      })
+      return c
     },
 
     applyPromo(code: string) {
@@ -280,6 +374,9 @@ export const usePosStore = defineStore('pos', {
         is_marked: Boolean(r.is_marked),
       }))
 
+      const customerId = this.selectedCustomer?.id ?? null
+      const bonusSpend = customerId ? Math.min(this.bonusSpend, this.maxBonusSpend) : 0
+
       this.checkingOut = true
       try {
         const local = await offline.saveLocalReceipt({
@@ -287,11 +384,13 @@ export const usePosStore = defineStore('pos', {
           shift_id: payload.shift_id,
           cashier_id: cashierId,
           items,
-          total_amount: this.totalDue,
+          total_amount: this.payableAmount,
           amount_tendered: payload.amount_tendered,
           payment_type: payload.payment_type,
           payment_parts: payload.payment_parts,
           requires_fiscal_marking: items.some((i) => Boolean(i.marking_code || i.markingCode)),
+          customer_id: customerId ?? undefined,
+          bonus_spend: bonusSpend || undefined,
         })
 
         if (offline.online) {
@@ -310,7 +409,7 @@ export const usePosStore = defineStore('pos', {
                 shift_id: payload.shift_id,
                 payment_type: payload.payment_type,
                 amount_tendered: payload.amount_tendered,
-                total_amount: this.totalDue,
+                total_amount: this.payableAmount,
                 items: items.map((i) => ({
                   product_id: i.product_id,
                   qty: i.qty,
@@ -322,6 +421,8 @@ export const usePosStore = defineStore('pos', {
                 })),
                 method,
                 payment_parts: payload.payment_parts,
+                customer_id: customerId ?? undefined,
+                bonus_spend: bonusSpend || undefined,
               },
               {
                 headers: { 'X-Idempotency-Key': local.uuid },

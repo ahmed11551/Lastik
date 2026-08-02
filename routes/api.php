@@ -16,6 +16,7 @@ use Autometria\Http\Controllers\BulkStockController;
 use Autometria\Http\Controllers\CashShiftController;
 use Autometria\Http\Controllers\CommerceMLImportController;
 use Autometria\Http\Controllers\CustomerController;
+use Autometria\Http\Controllers\LoyaltyController;
 use Autometria\Http\Controllers\CustomerImportController;
 use Autometria\Http\Controllers\CustomerMergeController;
 use Autometria\Http\Controllers\DictionaryController;
@@ -112,6 +113,10 @@ Route::middleware([RateLimitAuth::class, 'auth:sanctum', EnsureTenant::class, En
     Route::put('users/{user}', [UserController::class, 'update'])->middleware('ensure.permission:users.update');
 
     Route::get('customers', [CustomerController::class, 'index'])->middleware('ensure.permission:customers.view');
+    Route::post('customers', [CustomerController::class, 'store'])->middleware('ensure.permission:customers.create');
+    Route::get('customers/{id}/transactions', [CustomerController::class, 'transactions'])->middleware('ensure.permission:customers.view');
+    Route::get('loyalty/transactions', [LoyaltyController::class, 'transactions'])->middleware('ensure.permission:customers.view');
+    Route::post('loyalty/calculate', [LoyaltyController::class, 'calculate'])->middleware('ensure.permission:payments.create');
     Route::post('customers/import', [CustomerImportController::class, 'store'])->middleware('ensure.permission:customers.create');
     Route::post('customers/merge', [CustomerMergeController::class, 'store'])->middleware('ensure.permission:customers.update');
 
