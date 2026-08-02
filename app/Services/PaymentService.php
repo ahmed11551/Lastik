@@ -165,6 +165,8 @@ final class PaymentService
             return $created;
         });
 
+        app(\Autometria\Services\Analytics\AnalyticsCacheService::class)->invalidateTenant($tenantId);
+
         // 54-ФЗ: после успешного проведения оплаты ставим фискальный чек в очередь.
         // Выполняется ВНЕ транзакции accept() — при QUEUE_CONNECTION=sync Job
         // фискализует чек немедленно (NullFiscalDriver в dev/test).

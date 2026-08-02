@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Autometria\Http\Controllers;
 
+use Autometria\Services\Analytics\AnalyticsCacheService;
 use Autometria\Services\Analytics\AnalyticsReportService;
 use Illuminate\Http\Request;
 
@@ -26,6 +27,7 @@ final class AnalyticsController
 {
     public function __construct(
         private readonly AnalyticsReportService $service,
+        private readonly AnalyticsCacheService $cache,
     ) {}
 
     /**
@@ -36,7 +38,7 @@ final class AnalyticsController
         [$from, $to, $warehouseId] = $this->periodFilters($request);
         $topLimit = max(1, min(50, (int) ($request->query('top') ?? 10)));
 
-        $data = $this->service->getDashboard(
+        $data = $this->cache->getDashboard(
             $this->tenantId(),
             $from,
             $to,
@@ -50,7 +52,7 @@ final class AnalyticsController
     public function dashboardSummary(Request $request): \Illuminate\Http\JsonResponse
     {
         [$from, $to, $warehouseId] = $this->periodFilters($request);
-        $data = $this->service->getDashboardSummary(
+        $data = $this->cache->getDashboardSummary(
             $this->tenantId(),
             $from,
             $to,
@@ -76,7 +78,7 @@ final class AnalyticsController
     public function abcXyz(Request $request): \Illuminate\Http\JsonResponse
     {
         [$from, $to, $warehouseId] = $this->periodFilters($request);
-        $data = $this->service->getAbcXyzAnalysis(
+        $data = $this->cache->getAbcXyzAnalysis(
             $this->tenantId(),
             $from,
             $to,

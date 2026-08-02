@@ -36,8 +36,21 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       emptyOutDir: true,
+      chunkSizeWarningLimit: 900,
       rollupOptions: {
         input: path.resolve(__dirname, 'index.html'),
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('chart.js') || id.includes('vue-chartjs')) return 'vendor-charts'
+              if (id.includes('dexie')) return 'vendor-dexie'
+              if (id.includes('lucide')) return 'vendor-icons'
+              if (id.includes('@inertiajs')) return 'vendor-inertia'
+              if (id.includes('vue') || id.includes('pinia')) return 'vendor-vue'
+              return 'vendor'
+            }
+          },
+        },
       },
     },
   }

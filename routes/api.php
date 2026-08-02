@@ -47,14 +47,15 @@ use Autometria\Http\Middleware\RateLimitAuth;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
-    Route::post('auth/login', [AuthController::class, 'login'])->middleware(RateLimitAuth::class);
+    Route::post('auth/login', [AuthController::class, 'login'])
+        ->middleware([RateLimitAuth::class, 'throttle:auth-api']);
 
     // CommerceML 2.10 exchange — HTTP Basic Auth (no Sanctum)
     Route::match(['GET', 'POST'], '1c/exchange', OneCExchangeController::class)
-        ->middleware(RateLimitAuth::class);
+        ->middleware([RateLimitAuth::class, 'throttle:auth-api']);
 });
 
-Route::middleware([RateLimitAuth::class, 'auth:sanctum', EnsureTenant::class, EnforceLocationAccess::class])->prefix('v1')->group(function (): void {
+Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::class])->prefix('v1')->group(function (): void {
     Route::get('orders/{order}', [OrderController::class, 'show'])->middleware('ensure.permission:orders.view');
     Route::get('orders', [OrderController::class, 'index'])->middleware('ensure.permission:orders.view');
     Route::post('orders', [OrderController::class, 'store'])->middleware('ensure.permission:orders.create');
@@ -88,12 +89,12 @@ Route::middleware([RateLimitAuth::class, 'auth:sanctum', EnsureTenant::class, En
     Route::post('shifts', [CashShiftController::class, 'store'])->middleware('ensure.permission:shifts.create');
     Route::get('shifts', [CashShiftController::class, 'index'])->middleware('ensure.permission:shifts.create');
 
-    Route::post('pos/checkout', [PosController::class, 'checkout'])->middleware('ensure.permission:payments.create');
-    Route::post('pos/offline-receipts', [PosController::class, 'offlineReceipts'])->middleware('ensure.permission:payments.create');
+    Route::post('pos/checkout', [PosController::class, 'checkout'])->middleware(['ensure.permission:payments.create', 'throttle:pos-api']);
+    Route::post('pos/offline-receipts', [PosController::class, 'offlineReceipts'])->middleware(['ensure.permission:payments.create', 'throttle:pos-api']);
     // Alias per Offline Sync TZ (Block 3.1)
-    Route::post('fiscal/receipts', [PosController::class, 'offlineReceipts'])->middleware('ensure.permission:payments.create');
-    Route::post('pos/refunds', [RefundController::class, 'store'])->middleware('ensure.permission:payments.create');
-    Route::post('orders/{order}/refunds', [RefundController::class, 'store'])->middleware('ensure.permission:payments.create');
+    Route::post('fiscal/receipts', [PosController::class, 'offlineReceipts'])->middleware(['ensure.permission:payments.create', 'throttle:pos-api']);
+    Route::post('pos/refunds', [RefundController::class, 'store'])->middleware(['ensure.permission:payments.create', 'throttle:pos-api']);
+    Route::post('orders/{order}/refunds', [RefundController::class, 'store'])->middleware(['ensure.permission:payments.create', 'throttle:pos-api']);
 
     Route::get('fiscal-receipts', [FiscalReceiptController::class, 'index'])->middleware('ensure.permission:payments.create');
     Route::post('fiscal-receipts', [FiscalReceiptController::class, 'store'])->middleware('ensure.permission:payments.create');
