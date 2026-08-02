@@ -93,6 +93,7 @@ enum OrderStatusEnum: string
             self::PENDING => 'In Negotiation',
             self::IN_PROGRESS => 'Under Review',
             self::COMPLETED => 'Accepted',
+            self::COMPLETED_WITH_OVERDRAFT => 'Completed (overdraft)',
             self::CANCELLED => 'Rejected',
             self::CREATED => 'Created',
             self::READY => 'Ready',
@@ -107,7 +108,7 @@ enum OrderStatusEnum: string
     public function variant(): string
     {
         return match ($this) {
-            self::COMPLETED => 'success',
+            self::COMPLETED, self::COMPLETED_WITH_OVERDRAFT => 'success',
             self::CANCELLED => 'danger',
             self::IN_PROGRESS => 'warning',
             self::PENDING => 'pending',

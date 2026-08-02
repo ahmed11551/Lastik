@@ -17,6 +17,9 @@ import CartPanel from '@/components/pos/CartPanel.vue'
 import ProductCatalog from '@/components/pos/ProductCatalog.vue'
 import PaymentModal from '@/components/pos/PaymentModal.vue'
 import ShiftControlModal from '@/components/pos/ShiftControlModal.vue'
+import ReceiptTemplate from '@/components/pos/ReceiptTemplate.vue'
+import { createReceiptPrinter } from '@/services/printer/ReceiptPrinterService'
+import type { PosReceipt } from '@/services/printer/types'
 
 const shiftStore = useShiftStore()
 const pos = usePosStore()
@@ -107,6 +110,14 @@ async function onPayConfirm(payload: {
     return
   }
   try {
+    const cartSnapshot = cart.value.map((r) => ({
+      title: r.title,
+      qty: r.qty,
+      price: r.price,
+      sum: r.line,
+      vat_rate: r.vat_rate || 'none',
+    }))
+    const totalSnapshot = pos.totalDue
     const res = await pos.completeSale({
       ...payload,
       shift_id: Number(shiftId.value),
@@ -114,6 +125,23 @@ async function onPayConfirm(payload: {
     if (res) {
       payOpen.value = false
       await shiftStore.fetchCurrent().catch(() => {})
+      const printer = createReceiptPrinter()
+      const receipt: PosReceipt = {
+        organization_name: 'AUTOMETRIA',
+        inn: '—',
+        kkt_address: 'Адрес расчётов',
+        shift_number: shiftId.value || '—',
+        receipt_number: res.uuid?.slice(0, 8) || '—',
+        cashier_name: cashierName.value,
+        datetime: new Date().toLocaleString('ru-RU'),
+        items: cartSnapshot,
+        total: Number(res.total || totalSnapshot),
+        cash_amount: payload.payment_type === 'CARD' ? 0 : Number(payload.amount_tendered || totalSnapshot),
+        card_amount: payload.payment_type === 'CASH' ? 0 : Number(res.total || totalSnapshot),
+        change: Math.max(0, Number(payload.amount_tendered || 0) - Number(res.total || totalSnapshot)),
+        paper_mm: 80,
+      }
+      await printer.printReceipt(receipt).catch(() => false)
       focusSearch()
     }
   } catch {
@@ -368,5 +396,6 @@ onUnmounted(() => {
       :shift-age-hours="shiftAgeHours"
       @confirm="onShiftConfirm"
     />
+    <ReceiptTemplate :register-host="true" />
   </div>
 </template>

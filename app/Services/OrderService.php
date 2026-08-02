@@ -170,31 +170,51 @@ final class OrderService
                 ]);
 
                 if ($type === 'product') {
+                    $warehouseId = isset($itemPayload['warehouse_id'])
+                        ? (int) $itemPayload['warehouse_id']
+                        : null;
+
                     $stock = Stock::query()
                         ->withoutGlobalScopes()
                         ->where('tenant_id', $dto->tenantId)
                         ->where('product_id', $product->id)
                         ->when(
-                            isset($itemPayload['warehouse_id']),
-                            fn ($q) => $q->where('warehouse_id', (int) $itemPayload['warehouse_id'])
+                            $warehouseId !== null,
+                            fn ($q) => $q->where('warehouse_id', $warehouseId)
                         )
                         ->orderByDesc('available')
                         ->lockForUpdate()
                         ->first();
 
-                    if ($stock === null || (float) $stock->available < $qty) {
-                        throw new InsufficientStockException('available_less_than_qty');
+                    if ($dto->allowOverdraft) {
+                        // Offline / fiscal priority: skip reservation, ensure warehouse on snapshot.
+                        if ($stock === null && $warehouseId !== null) {
+                            $stock = Stock::query()->withoutGlobalScopes()->forceCreate([
+                                'tenant_id' => $dto->tenantId,
+                                'warehouse_id' => $warehouseId,
+                                'product_id' => $product->id,
+                                'actual' => 0,
+                                'reserved' => 0,
+                                'available' => 0,
+                            ]);
+                        }
+                        $snapshot['warehouse_id'] = $stock?->warehouse_id ?? $warehouseId;
+                        $orderItem->update(['snapshot' => $snapshot]);
+                    } else {
+                        if ($stock === null || (float) $stock->available < $qty) {
+                            throw new InsufficientStockException('available_less_than_qty');
+                        }
+
+                        $this->reservations->reserve(
+                            (int) $stock->id,
+                            $dto->tenantId,
+                            $qty,
+                            (int) $orderItem->id,
+                        );
+
+                        $snapshot['warehouse_id'] = $stock->warehouse_id;
+                        $orderItem->update(['snapshot' => $snapshot]);
                     }
-
-                    $this->reservations->reserve(
-                        (int) $stock->id,
-                        $dto->tenantId,
-                        $qty,
-                        (int) $orderItem->id,
-                    );
-
-                    $snapshot['warehouse_id'] = $stock->warehouse_id;
-                    $orderItem->update(['snapshot' => $snapshot]);
                 }
 
                 $total += $lineSum;
