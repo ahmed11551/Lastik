@@ -115,3 +115,30 @@ Accept: application/json
 Архитектура: XMLReader stream → batch DTO (1000) → `ON CONFLICT` upsert + `lockForUpdate` reserve check → `stock_conflicts` при `actual < reserved`.
 
 См. также: [CommerceML batch architecture](./commerceml-batch-architecture.md).
+
+---
+
+## 6. История расширений (Sprint A → G)
+
+Ядро v1.0.0 было дополнено модулями без переделки базовой архитектуры:
+
+- **Sprint A — Финализация под приёмку:** TV-Board UI-дашборд, PWA offline service worker, чек-лист приёмки (21 пункт), ErrorBoundary, NetworkStatus.
+- **Sprint B — Интеграции:** двусторонняя CommerceML 2.09 (export), JSON Exchange API, UI настроек 1С.
+- **Sprint C — Документация/Deploy:** Deployment Runbook, Architecture Overview, prod-скрипты.
+- **Sprint D — Складские документы:** инвентаризация, оприходование/списание, FIFO-post, AuditLog на документы.
+- **Sprint E — Регуляторика (углублённая):** Честный Знак (выбытие кодов), ЕГАИС (вскрытие тары), теги 1162/1163 Атол, POS-верификация марок.
+- **Sprint F — Многоскладовость:** `StockTransfer` (перемещения с FIFO), филиальные цены `WarehouseProductPrice`, CRUD филиалов.
+- **Sprint G — Производство/BOM:** `ProductService.is_composite`, рецептуры ТТК, автосписание сырья при выпуске, расчёт себестоимости ГП.
+
+## 7. Статус v1.x (верифицировано 2026-08-02)
+
+- **Backend:** `php artisan test` → **176 passed / 786 assertions** (PostgreSQL 16).
+- **Frontend:** `npm run lint` (tsc --noEmit) → 0 errors / 0 warnings; `npm run build` → SUCCESS.
+- **Инфраструктура:** Docker Compose (app/fpm + nginx + queue-worker + scheduler + postgres + redis), все контейнеры healthy.
+- **Сдаточный пакет:** [DELIVERY_PACKAGE.md](./DELIVERY_PACKAGE.md), Акт [DELIVERY_ACT.md](./DELIVERY_ACT.md).
+
+## 8. Greenfield-дорожная карта (отдельные модули)
+
+1. 🛒 **Закупки (Supplier Orders)** — в разработке (`feature/module-purchases`): заказы поставщикам, приход партиями в `StockBatch`, планирование пополнения по min/max.
+2. 💳 **Зарплаты / Payroll** — ведомости, удержания, сетка начислений поверх `KpiRule`/`Earning`.
+3. 🌐 **Клиентский Кабинет / PWA B2B** — портал оптовых клиентов + запись на сервис.
