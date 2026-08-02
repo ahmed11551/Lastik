@@ -62,6 +62,8 @@ const sections = [
       { id: 'vehicles', label: 'Автомобили' },
       { id: 'warehouse', label: 'Склад и остатки' },
       { id: 'inventory', label: 'Инвентаризация' },
+      { id: 'warehouse_prices', label: 'Цены по складам' },
+      { id: 'branches', label: 'Филиалы' },
       { id: 'regulatory', label: 'Маркировка (ЧЗ)' },
       { id: 'egais', label: 'ЕГАИС' },
       { id: 'integrations', label: 'Интеграции 1С' },

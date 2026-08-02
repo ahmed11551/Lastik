@@ -241,13 +241,15 @@ class CashShiftController extends Controller
 
     public function store(Request $request): JsonResponse|RedirectResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'tenant_id' => ['prohibited'],
             'location_id' => ['prohibited'],
             'created_by' => ['prohibited'],
             'updated_by' => ['prohibited'],
             'opening_amount' => ['nullable', 'numeric', 'min:0'],
             'note' => ['nullable', 'string', 'max:500'],
+            'branch_id' => ['nullable', 'integer'],
+            'warehouse_id' => ['nullable', 'integer'],
         ]);
 
         $user = $request->user();
@@ -267,7 +269,9 @@ class CashShiftController extends Controller
                 $tenantId,
                 $locationId,
                 (int) $user->id,
-                (float) $request->input('opening_amount', 0),
+                (float) ($data['opening_amount'] ?? 0),
+                isset($data['branch_id']) ? (int) $data['branch_id'] : null,
+                isset($data['warehouse_id']) ? (int) $data['warehouse_id'] : null,
             );
 
             if ($request->filled('opening_amount') || $request->filled('note')) {

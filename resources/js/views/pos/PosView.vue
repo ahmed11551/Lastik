@@ -19,6 +19,7 @@ import PaymentModal from '@/components/pos/PaymentModal.vue'
 import ShiftControlModal from '@/components/pos/ShiftControlModal.vue'
 import ReceiptTemplate from '@/components/pos/ReceiptTemplate.vue'
 import MarkingScanModal from '@/components/pos/MarkingScanModal.vue'
+import BranchSelector from '@/Pages/POS/Partials/BranchSelector.vue'
 import RefundModal from '@/components/pos/RefundModal.vue'
 import { createReceiptPrinter } from '@/services/printer/ReceiptPrinterService'
 import type { PosReceipt } from '@/services/printer/types'
@@ -296,6 +297,10 @@ onUnmounted(() => {
         </span>
         <span>·</span>
         <span>Cashier: {{ cashierName }}</span>
+        <span class="hidden sm:inline">·</span>
+        <div class="min-w-[12rem] max-w-xs">
+          <BranchSelector />
+        </div>
         <span
           v-if="shiftExpired"
           class="border px-1.5 py-0.5"

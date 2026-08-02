@@ -52,6 +52,9 @@ export const usePosStore = defineStore('pos', {
     },
     bonusSpend: 0,
     bonusError: '' as string,
+    // Block 4.4 — active branch / warehouse for the shift
+    activeWarehouseId: null as number | null,
+    activeLocationId: null as number | null,
   }),
 
   getters: {
@@ -104,7 +107,11 @@ export const usePosStore = defineStore('pos', {
       try {
         let rows: CachedProduct[] = []
         try {
-          const payload = await apiGet('/stock', { params: { per_page: 80 }, silent: true })
+          const params: Record<string, unknown> = { per_page: 80 }
+          if (this.activeWarehouseId != null) {
+            params.warehouse_id = this.activeWarehouseId
+          }
+          const payload = await apiGet('/stock', { params, silent: true })
           const list = Array.isArray(payload?.data) ? payload.data : []
           rows = list.map((r: Record<string, unknown>) => ({
             id: Number(r.product_id || r.id),
@@ -115,7 +122,7 @@ export const usePosStore = defineStore('pos', {
             title: String(r.name || r.title || ''),
             price: Number(r.price || 0),
             available: r.available != null ? Number(r.available) : null,
-            warehouse_id: r.warehouse_id != null ? Number(r.warehouse_id) : null,
+            warehouse_id: r.warehouse_id != null ? Number(r.warehouse_id) : this.activeWarehouseId,
             vat_rate: 'none',
             category: 'popular',
             is_marked: Boolean(r.is_marked),
@@ -287,6 +294,13 @@ export const usePosStore = defineStore('pos', {
       this.selectedCustomer = null
       this.bonusSpend = 0
       this.bonusError = ''
+    },
+
+    /** Block 4.4 — set the active branch/warehouse for the current shift. */
+    setActiveWarehouse(warehouseId: number | null, locationId: number | null = null) {
+      this.activeWarehouseId = warehouseId
+      this.activeLocationId = locationId
+      void this.loadCatalog()
     },
 
     /**

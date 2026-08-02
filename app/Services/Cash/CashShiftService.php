@@ -51,9 +51,17 @@ class CashShiftService
 {
     public const MAX_SHIFT_DURATION_HOURS = 24;
 
-    public function open(int $tenantId, int $locationId, int $userId, float $initialBalance = 0.0): CashShift
-    {
-        return DB::transaction(function () use ($tenantId, $locationId, $userId, $initialBalance): CashShift {
+    public function open(
+        int $tenantId,
+        int $locationId,
+        int $userId,
+        float $initialBalance = 0.0,
+        ?int $branchId = null,
+        ?int $warehouseId = null,
+    ): CashShift {
+        return DB::transaction(function () use (
+            $tenantId, $locationId, $userId, $initialBalance, $branchId, $warehouseId
+        ): CashShift {
             $now = now();
 
             /** @var CashShift|null $opened */
@@ -67,12 +75,21 @@ class CashShiftService
                 ->first();
 
             if ($opened !== null) {
-                return $opened;
+                if ($branchId !== null || $warehouseId !== null) {
+                    $opened->forceFill([
+                        'branch_id' => $branchId ?? $opened->branch_id,
+                        'warehouse_id' => $warehouseId ?? $opened->warehouse_id,
+                    ])->save();
+                }
+
+                return $opened->fresh() ?? $opened;
             }
 
             $shift = CashShift::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $tenantId,
                 'location_id' => $locationId,
+                'branch_id' => $branchId,
+                'warehouse_id' => $warehouseId,
                 'user_id' => $userId,
                 'opened_by' => $userId,
                 'status' => ShiftStatusEnum::OPENED->value,
@@ -93,7 +110,11 @@ class CashShiftService
             ]);
 
             AuditLog::write($tenantId, $userId, 'cash_shift.open', CashShift::class, (int) $shift->id,
-                [], ['opening_amount' => round($initialBalance, 2)]);
+                [], [
+                    'opening_amount' => round($initialBalance, 2),
+                    'branch_id' => $branchId,
+                    'warehouse_id' => $warehouseId,
+                ]);
 
             return $shift;
         });
