@@ -48,7 +48,7 @@ Route::prefix('v1')->group(function (): void {
     Route::post('auth/login', [AuthController::class, 'login'])->middleware(RateLimitAuth::class);
 
     // CommerceML 2.10 exchange — HTTP Basic Auth (no Sanctum)
-    Route::match(['GET', 'POST'], '1c/exchange', [OneCExchangeController::class, 'handle'])
+    Route::match(['GET', 'POST'], '1c/exchange', OneCExchangeController::class)
         ->middleware(RateLimitAuth::class);
 });
 
