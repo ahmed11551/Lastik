@@ -6,6 +6,8 @@
     <meta name="theme-color" content="#F59E0B" />
     <meta name="description" content="AUTOMETRIA ERP — Industrial Amber / High-Density B2B" />
     <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,16 +19,5 @@
   <body style="margin:0;background:#0B0D10;color:#E5E7EB">
     <div id="app"></div>
     <script type="module" src="/resources/js/autometria/main.js"></script>
-    <script>
-      // Drop legacy LASTIK React service worker / caches
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((regs) => {
-          regs.forEach((r) => r.unregister())
-        })
-      }
-      if (window.caches) {
-        caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)))
-      }
-    </script>
   </body>
 </html>

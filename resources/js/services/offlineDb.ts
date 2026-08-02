@@ -94,10 +94,25 @@ export interface CachedProduct {
   is_egais?: boolean
 }
 
+/** In-progress POS cart snapshot persisted on network loss */
+export interface CartDraft {
+  id?: number
+  key: string
+  tenant_id: number
+  shift_id: number
+  cashier_id: number
+  items: LocalReceiptItem[]
+  total_amount: number
+  customer_id?: number
+  bonus_spend?: number
+  updated_at: string
+}
+
 export class PosDatabase extends Dexie {
   localReceipts!: Table<LocalReceipt, number>
   cachedProducts!: Table<CachedProduct, number>
   localRefunds!: Table<LocalRefund, number>
+  cartDrafts!: Table<CartDraft, number>
 
   constructor() {
     super('PosDatabase')
@@ -115,6 +130,13 @@ export class PosDatabase extends Dexie {
       localReceipts: '++id, uuid, status, created_at, shift_id',
       cachedProducts: 'id, product_id, sku, barcode, title',
       localRefunds: '++id, uuid, order_id, status, created_at',
+    })
+    // v4: Sprint A — cart drafts on connection loss
+    this.version(4).stores({
+      localReceipts: '++id, uuid, status, created_at, shift_id',
+      cachedProducts: 'id, product_id, sku, barcode, title',
+      localRefunds: '++id, uuid, order_id, status, created_at',
+      cartDrafts: '++id, key, updated_at, shift_id',
     })
   }
 }

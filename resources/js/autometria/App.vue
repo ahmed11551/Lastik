@@ -16,6 +16,7 @@ import LoginView from '@/autometria/views/LoginView.vue'
 import SystemModuleView from '@/autometria/views/SystemModuleView.vue'
 import OneCSyncSettingsView from '@/autometria/views/OneCSyncSettingsView.vue'
 import PosView from '@/views/pos/PosView.vue'
+import TvBoardIndex from '@/Pages/TvBoard/Index.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
 import { getToken } from '@/autometria/api/client'
@@ -151,6 +152,11 @@ function onLoginSuccess() {
     <LoginView
       v-if="view === 'login'"
       @success="onLoginSuccess"
+    />
+
+    <TvBoardIndex
+      v-else-if="view === 'tv_display'"
+      kiosk
     />
 
     <AutometriaLayout
