@@ -44,6 +44,35 @@ export interface LocalReceipt {
   last_error?: string | null
 }
 
+export type LocalRefundStatus = 'PENDING_SYNC' | 'SYNCED' | 'FAILED'
+
+export type LocalRefundItem = {
+  order_item_id: number
+  product_id?: number | null
+  title?: string
+  qty: number
+  max_qty?: number
+  price?: number
+  marking_code?: string | null
+}
+
+/** Offline-queued return (sell_refund) until ERP accepts POST /pos/refunds */
+export interface LocalRefund {
+  id?: number
+  uuid: string
+  tenant_id: number
+  order_id: number
+  shift_id?: number | null
+  cashier_id: number
+  reason?: string | null
+  items: LocalRefundItem[]
+  total_amount: number
+  status: LocalRefundStatus
+  created_at: string
+  synced_at?: string | null
+  last_error?: string | null
+}
+
 export interface CachedProduct {
   id: number
   product_id: number
@@ -65,6 +94,7 @@ export interface CachedProduct {
 export class PosDatabase extends Dexie {
   localReceipts!: Table<LocalReceipt, number>
   cachedProducts!: Table<CachedProduct, number>
+  localRefunds!: Table<LocalRefund, number>
 
   constructor() {
     super('PosDatabase')
@@ -76,6 +106,12 @@ export class PosDatabase extends Dexie {
     this.version(2).stores({
       localReceipts: '++id, uuid, status, created_at, shift_id',
       cachedProducts: 'id, product_id, sku, barcode, title',
+    })
+    // v3: Block 3.4 offline refunds queue
+    this.version(3).stores({
+      localReceipts: '++id, uuid, status, created_at, shift_id',
+      cachedProducts: 'id, product_id, sku, barcode, title',
+      localRefunds: '++id, uuid, order_id, status, created_at',
     })
   }
 }

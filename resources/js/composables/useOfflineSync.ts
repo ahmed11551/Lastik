@@ -1,5 +1,5 @@
 /**
- * AUTOMETRIA ERP — Offline receipt sync worker (idempotent)
+ * AUTOMETRIA ERP — Offline receipt + refund sync worker (idempotent)
  */
 import { apiPost } from '../autometria/api/client'
 import { toast } from '../autometria/api/toast'
@@ -15,8 +15,58 @@ function mapMethod(receipt: LocalReceipt): string {
   return 'cash'
 }
 
+async function syncPendingRefundsInternal(
+  offline: ReturnType<typeof useOfflineStore>,
+): Promise<{ synced: number; failed: number }> {
+  let synced = 0
+  let failed = 0
+  const pending = await offline.listPendingRefunds()
+  for (const refund of pending) {
+    if (refund.id == null) continue
+    try {
+      await apiPost(
+        '/pos/refunds',
+        {
+          order_id: refund.order_id,
+          reason: refund.reason || undefined,
+          cash_shift_id: refund.shift_id || undefined,
+          items: (refund.items || []).map((i) => ({
+            order_item_id: i.order_item_id,
+            qty: i.qty,
+          })),
+        },
+        {
+          headers: { 'X-Idempotency-Key': refund.uuid },
+          silent: true,
+        },
+      )
+      await offline.markRefundSynced(refund.id)
+      synced += 1
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (status === 200 || status === 201 || status === 409) {
+        await offline.markRefundSynced(refund.id)
+        synced += 1
+        continue
+      }
+      const msg =
+        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data
+          ?.message ||
+        (err as { message?: string })?.message ||
+        'refund sync failed'
+      console.error('Refund sync failed:', refund.uuid, err)
+      offline.lastSyncError = msg
+      if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
+        await offline.markRefundFailed(refund.id, msg)
+        failed += 1
+      }
+    }
+  }
+  return { synced, failed }
+}
+
 /**
- * Flush PENDING_SYNC receipts to ERP with X-Idempotency-Key = uuid.
+ * Flush PENDING_SYNC receipts (+ refunds) to ERP with X-Idempotency-Key = uuid.
  */
 export async function syncPendingReceipts(): Promise<{ synced: number; failed: number }> {
   if (syncing) return { synced: 0, failed: 0 }
@@ -67,7 +117,6 @@ export async function syncPendingReceipts(): Promise<{ synced: number; failed: n
         synced += 1
       } catch (err: unknown) {
         const status = (err as { response?: { status?: number } })?.response?.status
-        // Already accepted (idempotent replay)
         if (status === 200 || status === 201 || status === 409) {
           await offline.markSynced(receipt.id)
           synced += 1
@@ -80,7 +129,6 @@ export async function syncPendingReceipts(): Promise<{ synced: number; failed: n
           'sync failed'
         console.error('Sync failed for receipt:', receipt.uuid, err)
         offline.lastSyncError = msg
-        // Keep PENDING_SYNC for transient errors; mark FAILED after hard 4xx (except 409)
         if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
           await offline.markFailed(receipt.id, msg)
           failed += 1
@@ -88,8 +136,12 @@ export async function syncPendingReceipts(): Promise<{ synced: number; failed: n
       }
     }
 
+    const refundResult = await syncPendingRefundsInternal(offline)
+    synced += refundResult.synced
+    failed += refundResult.failed
+
     if (synced > 0) {
-      toast.success(`Синхронизировано чеков: ${synced}`, 'POS Sync')
+      toast.success(`Синхронизировано: ${synced}`, 'POS Sync')
     }
   } finally {
     syncing = false
@@ -98,6 +150,14 @@ export async function syncPendingReceipts(): Promise<{ synced: number; failed: n
   }
 
   return { synced, failed }
+}
+
+export async function syncPendingRefunds(): Promise<{ synced: number; failed: number }> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return { synced: 0, failed: 0 }
+  }
+  const offline = useOfflineStore()
+  return syncPendingRefundsInternal(offline)
 }
 
 /** Bind online/offline listeners once (call from PosView onMounted). */

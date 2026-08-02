@@ -160,7 +160,7 @@ class OrderController extends Controller
         $this->authorize('view', $order);
 
         $order->load([
-            'orderItems:id,order_id,product_id,type,qty,price,discount,snapshot,kpi_percent,kpi_amount',
+            'orderItems:id,order_id,product_id,type,qty,price,discount,snapshot,kpi_percent,kpi_amount,marking_code,gtin,serial_number',
             'payments:id,order_id,method,amount,status,payee_id',
             'customer:id,phone,type,legal_name,name',
             'vehicle:id,plate,brand,model',

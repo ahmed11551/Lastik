@@ -12,18 +12,18 @@ use Autometria\Enums\OrderStatusEnum;
 use Autometria\Models\InventoryAlert;
 use Autometria\Models\Order;
 use Autometria\Models\OrderItem;
+use Autometria\Models\Price;
 use Autometria\Models\ProductService;
 use Autometria\Models\StockBatch;
 use Autometria\Services\Cash\CashShiftService;
 use Autometria\Services\StockBatchService;
 use Tests\Support\AcceptanceFixture;
+
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\postJson;
 
 beforeEach(function (): void {
-    // Exclude 500s from Redis throttle / license middleware in feature tests.
     $this->withoutMiddleware();
-    // Тестовое окружение: кэш в array (redis-расширение недоступно в контейнере тестов).
     config(['cache.default' => 'array']);
 
     $this->fx = AcceptanceFixture::make('refund-'.uniqid());
@@ -38,48 +38,18 @@ beforeEach(function (): void {
     );
 });
 
-/**
- * Helper: sell a product via offline receipt, returns the created Order.
- */
-function sellViaOfflineReceipt(
-    string $productId,
-    float $qty,
-    string $warehouseId,
-    string $uuid,
-): array {
-    $payload = [
-        'method' => 'cash',
-        'amount_tendered' => 99999.0,
-        'items' => [
-            [
-                'product_id' => $productId,
-                'qty' => $qty,
-                'warehouse_id' => $warehouseId,
-                'type' => 'product',
-            ],
-        ],
-    ];
-
-    $response = postJson('/api/v1/pos/offline-receipts', $payload, ['X-Idempotency-Key' => $uuid]);
-    $response->assertStatus(201);
-    $orderId = (int) ($response->json('data.order.id') ?? $response->json('data.id'));
-
-    return ['order_id' => $orderId];
-}
-
-function makeProductWithPrice(string $article, float $price): ProductService
+function makeProductWithPrice(object $fx, string $article, float $price): ProductService
 {
-    $tenantId = tenant_id() ?? 0;
     $p = ProductService::query()->forceCreate([
-        'tenant_id' => $tenantId,
+        'tenant_id' => $fx->tenant->id,
         'type' => 'product',
         'name' => 'Шина '.$article,
         'article' => $article,
         'base_price' => $price,
         'is_active' => true,
     ]);
-    \Autometria\Models\Price::query()->withoutGlobalScopes()->forceCreate([
-        'tenant_id' => $p->tenant_id,
+    Price::query()->withoutGlobalScopes()->forceCreate([
+        'tenant_id' => $fx->tenant->id,
         'product_id' => $p->id,
         'type' => 'retail',
         'price' => $price,
@@ -90,9 +60,35 @@ function makeProductWithPrice(string $article, float $price): ProductService
     return $p;
 }
 
+function sellViaOfflineReceipt(object $fx, int $productId, float $qty): array
+{
+    $payload = [
+        'method' => 'cash',
+        'amount_tendered' => 99999.0,
+        'shift_id' => $fx->shiftId ?? null,
+        'items' => [
+            [
+                'product_id' => $productId,
+                'qty' => $qty,
+                'warehouse_id' => $fx->warehouse->id,
+                'type' => 'product',
+            ],
+        ],
+    ];
+
+    $response = postJson(
+        '/api/v1/pos/offline-receipts',
+        $payload,
+        ['X-Idempotency-Key' => (string) \Illuminate\Support\Str::uuid()],
+    );
+    $response->assertStatus(201);
+    $orderId = (int) ($response->json('data.order.id') ?? $response->json('data.id'));
+
+    return ['order_id' => $orderId];
+}
+
 it('full refund restocks fifo and updates order status to refunded', function (): void {
-    // Seed a stock batch so the sale writes a deduction.
-    $product = makeProductWithPrice('RFD-F-1', 1000.0);
+    $product = makeProductWithPrice($this->fx, 'RFD-F-1', 1000.0);
     app(StockBatchService::class)->ingress(
         $this->fx->tenant->id,
         (int) $this->fx->warehouse->id,
@@ -103,12 +99,7 @@ it('full refund restocks fifo and updates order status to refunded', function ()
         (int) $this->fx->user->id,
     );
 
-    $sale = sellViaOfflineReceipt(
-        (string) $product->id,
-        2.0,
-        (string) $this->fx->warehouse->id,
-        (string) \Illuminate\Support\Str::uuid(),
-    );
+    $sale = sellViaOfflineReceipt($this->fx, (int) $product->id, 2.0);
     $order = Order::query()->withoutGlobalScopes()->find($sale['order_id']);
     expect($order)->not->toBeNull();
     $orderItem = OrderItem::query()->withoutGlobalScopes()
@@ -118,33 +109,29 @@ it('full refund restocks fifo and updates order status to refunded', function ()
     $batchBefore = StockBatch::query()->withoutGlobalScopes()
         ->where('tenant_id', $this->fx->tenant->id)
         ->where('product_id', $product->id)
+        ->where('batch_number', 'BATCH-RFD-F')
         ->first();
     $remainingBefore = (float) $batchBefore->remaining_qty;
 
-    // Full refund.
-    $refundPayload = [
+    $resp = postJson('/api/v1/pos/refunds', [
         'order_id' => $order->id,
         'items' => [
             ['order_item_id' => $orderItem->id, 'qty' => 2.0],
         ],
-    ];
-    $resp = postJson('/api/v1/pos/refunds', $refundPayload);
+    ]);
     $resp->assertStatus(201);
 
-    // Order status updated to REFUNDED.
     $order->refresh();
     expect($order->status)->toBe(OrderStatusEnum::REFUNDED->value);
 
-    // Stock restored (FIFO: same batch +2).
     $batchAfter = StockBatch::query()->withoutGlobalScopes()
-        ->where('tenant_id', $this->fx->tenant->id)
-        ->where('product_id', $product->id)
+        ->whereKey($batchBefore->id)
         ->first();
     expect((float) $batchAfter->remaining_qty)->toBe(round($remainingBefore + 2.0, 3));
 });
 
 it('partial refund updates order status to partially_refunded', function (): void {
-    $product = makeProductWithPrice('RFD-P-1', 1000.0);
+    $product = makeProductWithPrice($this->fx, 'RFD-P-1', 1000.0);
     app(StockBatchService::class)->ingress(
         $this->fx->tenant->id,
         (int) $this->fx->warehouse->id,
@@ -155,51 +142,36 @@ it('partial refund updates order status to partially_refunded', function (): voi
         (int) $this->fx->user->id,
     );
 
-    $sale = sellViaOfflineReceipt(
-        (string) $product->id,
-        3.0,
-        (string) $this->fx->warehouse->id,
-        (string) \Illuminate\Support\Str::uuid(),
-    );
+    $sale = sellViaOfflineReceipt($this->fx, (int) $product->id, 3.0);
     $order = Order::query()->withoutGlobalScopes()->find($sale['order_id']);
     $orderItem = OrderItem::query()->withoutGlobalScopes()
         ->where('order_id', $order->id)->first();
 
-    // Refund only 1 of 3.
-    $refundPayload = [
+    $resp = postJson('/api/v1/pos/refunds', [
         'order_id' => $order->id,
         'items' => [
             ['order_item_id' => $orderItem->id, 'qty' => 1.0],
         ],
-    ];
-    $resp = postJson('/api/v1/pos/refunds', $refundPayload);
+    ]);
     $resp->assertStatus(201);
-
     $order->refresh();
     expect($order->status)->toBe(OrderStatusEnum::PARTIALLY_REFUNDED->value);
 
-    // Second partial refund of the remaining 2 -> full.
-    $refundPayload2 = [
+    $resp2 = postJson('/api/v1/pos/refunds', [
         'order_id' => $order->id,
         'items' => [
             ['order_item_id' => $orderItem->id, 'qty' => 2.0],
         ],
-    ];
-    $resp2 = postJson('/api/v1/pos/refunds', $refundPayload2);
+    ]);
     $resp2->assertStatus(201);
     $order->refresh();
     expect($order->status)->toBe(OrderStatusEnum::REFUNDED->value);
 });
 
 it('refund resolves inventory overdraft alerts', function (): void {
-    $product = makeProductWithPrice('RFD-O-1', 1000.0);
-    // No stock batch -> offline sale creates an overdraft batch + alert.
-    $sale = sellViaOfflineReceipt(
-        (string) $product->id,
-        2.0,
-        (string) $this->fx->warehouse->id,
-        (string) \Illuminate\Support\Str::uuid(),
-    );
+    $product = makeProductWithPrice($this->fx, 'RFD-O-1', 1000.0);
+    // No stock → offline sale creates overdraft batch + alert.
+    $sale = sellViaOfflineReceipt($this->fx, (int) $product->id, 2.0);
     $order = Order::query()->withoutGlobalScopes()->find($sale['order_id']);
     $orderItem = OrderItem::query()->withoutGlobalScopes()
         ->where('order_id', $order->id)->first();
@@ -210,16 +182,14 @@ it('refund resolves inventory overdraft alerts', function (): void {
         ->latest('id')->first();
     expect($alert)->not->toBeNull();
 
-    $refundPayload = [
+    $resp = postJson('/api/v1/pos/refunds', [
         'order_id' => $order->id,
         'items' => [
             ['order_item_id' => $orderItem->id, 'qty' => 2.0],
         ],
-    ];
-    $resp = postJson('/api/v1/pos/refunds', $refundPayload);
+    ]);
     $resp->assertStatus(201);
 
-    // Overdraft batch moved toward zero (less negative).
     $overdraft = StockBatch::query()->withoutGlobalScopes()
         ->where('tenant_id', $this->fx->tenant->id)
         ->where('product_id', $product->id)
