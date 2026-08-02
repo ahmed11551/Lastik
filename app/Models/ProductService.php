@@ -90,4 +90,9 @@ class ProductService extends TenantModel
     {
         return $this->hasMany(Price::class, 'product_id');
     }
+
+    public function stockLotDeductions(): HasMany
+    {
+        return $this->hasMany(StockLotDeduction::class, 'product_id');
+    }
 }
