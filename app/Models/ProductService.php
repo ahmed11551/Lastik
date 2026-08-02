@@ -60,6 +60,9 @@ class ProductService extends TenantModel
         'category',
         'category_id',
         'base_price',
+        'min_stock',
+        'max_stock',
+        'reorder_point',
         'radius_modifier',
         'is_active',
         'is_marked',
@@ -73,6 +76,9 @@ class ProductService extends TenantModel
         'is_marked' => 'boolean',
         'is_egais' => 'boolean',
         'base_price' => 'decimal:2',
+        'min_stock' => 'decimal:3',
+        'max_stock' => 'decimal:3',
+        'reorder_point' => 'decimal:3',
         'radius_modifier' => 'array',
     ];
 

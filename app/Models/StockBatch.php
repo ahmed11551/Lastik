@@ -22,6 +22,7 @@ class StockBatch extends TenantModel
     protected $fillable = [
         'warehouse_id',
         'product_id',
+        'supplier_order_id',
         'batch_number',
         'qty',
         'remaining_qty',

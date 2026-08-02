@@ -25,6 +25,9 @@ import BranchesIndex from '@/Pages/Settings/Branches/Index.vue'
 import WarehousePrices from '@/Pages/Inventory/WarehousePrices.vue'
 import ProductionIndex from '@/Pages/Production/Index.vue'
 import AnalyticsDashboard from '@/Pages/Dashboard.vue'
+import PurchasesIndex from '@/Pages/Purchases/Index.vue'
+import SupplierOrderForm from '@/Pages/Purchases/SupplierOrderForm.vue'
+import ReplenishmentPlan from '@/Pages/Purchases/ReplenishmentPlan.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
 import { getToken } from '@/autometria/api/client'
@@ -44,6 +47,9 @@ const VIEW_TITLES = {
   inventory: 'Инвентаризация',
   inventory_create: 'Складской документ',
   warehouse_prices: 'Цены по складам',
+  purchases: 'Закупки',
+  purchase_form: 'Заказ поставщику',
+  replenishment: 'План пополнения',
   production: 'Производство / BOM',
   branches: 'Филиалы',
   regulatory: 'Маркировка (Честный Знак)',
@@ -68,6 +74,7 @@ function normalizeView(raw) {
   if (raw === 'stock') return 'warehouse'
   if (raw === 'shifts') return 'cashier'
   if (raw === '1c' || raw === 'onec') return 'integrations'
+  if (String(raw).startsWith('purchase_form')) return 'purchase_form'
   return VIEW_TITLES[raw] ? raw : 'dashboard'
 }
 
@@ -76,7 +83,14 @@ function readHash() {
   return normalizeView(raw)
 }
 
+function purchaseOrderIdFromHash() {
+  const raw = location.hash.replace(/^#\/?/, '')
+  const m = raw.match(/^purchase_form:(\d+)/)
+  return m ? Number(m[1]) : null
+}
+
 const view = ref(readHash())
+const purchaseOrderId = ref(purchaseOrderIdFromHash())
 const shiftStore = useShiftStore()
 const {
   open: shiftOpen,
@@ -126,12 +140,21 @@ const breadcrumbs = computed(() => {
 })
 
 watch(view, (v) => {
+  if (v === 'purchase_form' && purchaseOrderId.value) {
+    const next = `#/purchase_form:${purchaseOrderId.value}`
+    if (location.hash !== next) location.hash = next
+    return
+  }
   const next = `#/${v}`
-  if (location.hash !== next) location.hash = next
+  if (v !== 'purchase_form' && location.hash !== next) location.hash = next
+  if (v === 'purchase_form' && !purchaseOrderId.value && location.hash !== next) {
+    location.hash = next
+  }
 })
 
 function onHashChange() {
   view.value = readHash()
+  purchaseOrderId.value = purchaseOrderIdFromHash()
 }
 
 onMounted(() => {
@@ -149,9 +172,22 @@ onUnmounted(() => {
 })
 
 function onNavigate(item) {
-  if (!item?.id) return
-  const id = normalizeView(item.id)
-  if (VIEW_TITLES[id]) view.value = id
+  const raw = typeof item === 'string' ? item : item?.id
+  if (!raw) return
+  const id = normalizeView(String(raw))
+  if (String(raw).startsWith('purchase_form:')) {
+    purchaseOrderId.value = purchaseOrderIdFromHash() || Number(String(raw).split(':')[1]) || null
+    view.value = 'purchase_form'
+    location.hash = `#/${raw}`
+    return
+  }
+  if (id === 'purchase_form') {
+    purchaseOrderId.value = null
+  }
+  if (VIEW_TITLES[id]) {
+    view.value = id
+    location.hash = `#/${id}`
+  }
 }
 
 function onOpenShift() {
@@ -274,6 +310,25 @@ function onLoginSuccess() {
       <WarehousePrices
         v-else-if="view === 'warehouse_prices'"
         embedded
+      />
+
+      <PurchasesIndex
+        v-else-if="view === 'purchases'"
+        embedded
+        @navigate="onNavigate"
+      />
+
+      <SupplierOrderForm
+        v-else-if="view === 'purchase_form'"
+        embedded
+        :order-id="purchaseOrderId"
+        @navigate="onNavigate"
+      />
+
+      <ReplenishmentPlan
+        v-else-if="view === 'replenishment'"
+        embedded
+        @navigate="onNavigate"
       />
 
       <ProductionIndex

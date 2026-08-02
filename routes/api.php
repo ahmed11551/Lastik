@@ -37,6 +37,8 @@ use Autometria\Http\Controllers\PaymentController;
 use Autometria\Http\Controllers\PosController;
 use Autometria\Http\Controllers\ProductController;
 use Autometria\Http\Controllers\ProductionController;
+use Autometria\Http\Controllers\Purchasing\SupplierController;
+use Autometria\Http\Controllers\Purchasing\SupplierOrderController;
 use Autometria\Http\Controllers\RecipeController;
 use Autometria\Http\Controllers\RefundController;
 use Autometria\Http\Controllers\SearchController;
@@ -176,6 +178,14 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
     Route::put('recipes/{id}', [RecipeController::class, 'update'])->middleware('ensure.permission:stock.transfer');
     Route::get('production/orders', [ProductionController::class, 'index'])->middleware('ensure.permission:stock.view');
     Route::post('production/produce', [ProductionController::class, 'produce'])->middleware('ensure.permission:stock.transfer');
+
+    Route::get('suppliers', [SupplierController::class, 'index'])->middleware('ensure.permission:stock.view');
+    Route::post('suppliers', [SupplierController::class, 'store'])->middleware('ensure.permission:stock.transfer');
+    Route::get('supplier-orders', [SupplierOrderController::class, 'index'])->middleware('ensure.permission:stock.view');
+    Route::post('supplier-orders', [SupplierOrderController::class, 'store'])->middleware('ensure.permission:stock.transfer');
+    Route::post('supplier-orders/{id}/confirm', [SupplierOrderController::class, 'confirm'])->middleware('ensure.permission:stock.transfer');
+    Route::post('supplier-orders/{id}/receive', [SupplierOrderController::class, 'receive'])->middleware('ensure.permission:stock.transfer');
+    Route::get('purchases/replenishment-plan', [SupplierOrderController::class, 'replenishmentPlan'])->middleware('ensure.permission:stock.view');
 
     Route::get('modules', [ModuleController::class, 'index'])->middleware('ensure.permission:modules.view');
     Route::post('modules/{slug}/enable', [ModuleController::class, 'enable'])->middleware('ensure.permission:modules.update');
