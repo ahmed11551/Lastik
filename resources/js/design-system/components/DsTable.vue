@@ -276,6 +276,7 @@ defineExpose({ clearSelection, selectedCount })
                 :row="row"
                 :col="col"
                 :value="row[col.key]"
+                :index="index"
               >
                 {{ row[col.key] }}
               </slot>

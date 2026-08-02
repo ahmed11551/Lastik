@@ -64,6 +64,8 @@ const sections = [
       { id: 'warehouse', label: 'Склад и остатки' },
       { id: 'inventory', label: 'Инвентаризация' },
       { id: 'warehouse_prices', label: 'Цены по складам' },
+      { id: 'purchases', label: 'Закупки' },
+      { id: 'replenishment', label: 'План пополнения' },
       { id: 'production', label: 'Производство / BOM' },
       { id: 'branches', label: 'Филиалы' },
       { id: 'regulatory', label: 'Маркировка (ЧЗ)' },
