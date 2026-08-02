@@ -62,26 +62,39 @@ onMounted(async () => {
           }
     "
   >
-    <div class="mb-4 flex flex-wrap items-center gap-2">
-      <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" @click="emit('navigate', 'purchases')">← Заказы</button>
-      <select v-model="warehouseId" class="ds-input h-9" data-testid="replenish-warehouse" @change="reload">
-        <option :value="null">Склад</option>
-        <option v-for="w in whStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</option>
-      </select>
-      <button type="button" class="ds-btn ds-btn-sm" :disabled="loading" data-testid="replenish-reload" @click="reload">
-        Обновить
-      </button>
-      <button type="button" class="ds-btn ds-btn-primary ds-btn-sm" data-testid="replenish-to-order" @click="emit('navigate', 'purchase_form')">
-        Создать заказ
-      </button>
+    <div class="ds-toolbar">
+      <div class="ds-toolbar__filters">
+        <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" @click="emit('navigate', 'purchases')">← Заказы</button>
+        <select v-model="warehouseId" class="ds-input h-9" data-testid="replenish-warehouse" @change="reload">
+          <option :value="null">Склад</option>
+          <option v-for="w in whStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</option>
+        </select>
+      </div>
+      <div class="ds-toolbar__actions">
+        <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" :disabled="loading" data-testid="replenish-reload" @click="reload">
+          Обновить
+        </button>
+        <button type="button" class="ds-btn ds-btn-primary ds-btn-sm" data-testid="replenish-to-order" @click="emit('navigate', 'purchase_form')">
+          Создать заказ
+        </button>
+      </div>
     </div>
 
-    <div v-if="loading" class="ds-surface mb-4 p-3">Загрузка…</div>
+    <div v-if="loading" class="ds-skeleton" aria-busy="true" aria-label="Загрузка">
+      <div class="ds-skeleton__row" />
+      <div class="ds-skeleton__row" />
+      <div class="ds-skeleton__row" />
+    </div>
     <div v-if="error" class="ds-surface mb-4 p-3" style="color: var(--color-danger)">{{ error }}</div>
-    <div v-if="!loading && !replenishment.length" class="ds-surface mb-4 p-3" style="color: var(--color-text-secondary)">
-      Нет товаров ниже min_stock на выбранном складе.
-    </div>
 
-    <DsTable :columns="columns" :rows="replenishment" density="compact" sticky-header />
+    <DsTable
+      v-if="!loading"
+      :columns="columns"
+      :rows="replenishment"
+      density="compact"
+      sticky-header
+      empty-text="Всё в норме"
+      empty-hint="Нет товаров ниже min_stock на выбранном складе"
+    />
   </component>
 </template>

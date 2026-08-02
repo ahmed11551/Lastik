@@ -49,37 +49,62 @@ function onToggleTheme() {
   syncThemeLabel()
 }
 
-/** Ported from React Orbital Sidebar — Industrial Amber labels */
+/** Grouped nav — Industrial Amber */
 const sections = [
   {
-    title: 'Системное меню',
+    id: 'overview',
+    title: 'Обзор',
     items: [
       { id: 'dashboard', label: 'Дашборд' },
       { id: 'analytics', label: 'Аналитика' },
-      { id: 'crm', label: 'Business Partner CRM' },
+      { id: 'tasks', label: 'Задачи' },
+      { id: 'kpi', label: 'Выработка & KPI' },
+    ],
+  },
+  {
+    id: 'sales',
+    title: 'Продажи',
+    items: [
       { id: 'orders', label: 'Заказы и продажи' },
       { id: 'new_order', label: 'Создать заказ', highlight: true },
+      { id: 'crm', label: 'Business Partner CRM' },
       { id: 'customers', label: 'Покупатели & Импорт' },
       { id: 'vehicles', label: 'Автомобили' },
+      { id: 'cashier', label: 'Касса и смены' },
+      { id: 'pos', label: 'POS Терминал', highlight: true },
+      { id: 'tv_display', label: 'TV-Экран очереди' },
+    ],
+  },
+  {
+    id: 'warehouse',
+    title: 'Склад',
+    items: [
       { id: 'warehouse', label: 'Склад и остатки' },
       { id: 'inventory', label: 'Инвентаризация' },
       { id: 'warehouse_prices', label: 'Цены по складам' },
       { id: 'purchases', label: 'Закупки' },
       { id: 'replenishment', label: 'План пополнения' },
       { id: 'production', label: 'Производство / BOM' },
-      { id: 'branches', label: 'Филиалы' },
+    ],
+  },
+  {
+    id: 'regulatory',
+    title: 'Регуляторика',
+    items: [
       { id: 'regulatory', label: 'Маркировка (ЧЗ)' },
       { id: 'egais', label: 'ЕГАИС' },
       { id: 'integrations', label: 'Интеграции 1С' },
-      { id: 'cashier', label: 'Касса и смены' },
-      { id: 'pos', label: 'POS Терминал', highlight: true },
-      { id: 'kpi', label: 'Выработка & KPI' },
-      { id: 'tasks', label: 'Задачи' },
-      { id: 'audit', label: 'Журнал действий' },
+    ],
+  },
+  {
+    id: 'system',
+    title: 'Система',
+    items: [
+      { id: 'branches', label: 'Филиалы' },
       { id: 'users', label: 'Пользователи & Устройства' },
       { id: 'tenants', label: 'Организации & Точки' },
       { id: 'modules', label: 'Модули' },
-      { id: 'tv_display', label: 'TV-Экран очереди' },
+      { id: 'audit', label: 'Журнал действий' },
     ],
   },
 ]
@@ -191,18 +216,19 @@ function onQuickSearchKeydown(e) {
           <div class="min-w-0">
             <nav
               v-if="breadcrumbs.length"
-              class="mb-0.5 flex flex-wrap items-center gap-1 text-[13px] font-normal text-[#9CA3AF]"
+              class="mb-0.5 flex flex-wrap items-center gap-1 text-[12px] font-normal"
+              style="color: var(--color-text-secondary)"
               aria-label="Breadcrumb"
             >
               <template
                 v-for="(crumb, i) in breadcrumbs"
                 :key="crumb.href || crumb.label"
               >
-                <span v-if="i > 0" class="text-[#9CA3AF]/opacity-60">/</span>
-                <span class="font-normal text-[#9CA3AF]">{{ crumb.label }}</span>
+                <span v-if="i > 0" style="opacity: 0.55">/</span>
+                <span>{{ crumb.label }}</span>
               </template>
             </nav>
-            <h1 class="truncate text-sm font-semibold" style="color: var(--color-text-primary)">
+            <h1 class="truncate text-[15px] font-semibold tracking-[-0.01em]" style="color: var(--color-text-primary)">
               {{ title }}
             </h1>
           </div>

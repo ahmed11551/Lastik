@@ -3,7 +3,7 @@
  * AUTOMETRIA ERP — Inventory documents list (Sprint D)
  */
 import AutometriaLayout from '@/Layouts/AutometriaLayout.vue'
-import { DsTable } from '@/design-system'
+import { DsTable, DsBadge } from '@/design-system'
 import { computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useInventoryDocumentsStore, DOC_TYPES, DOC_STATUSES } from '@/autometria/stores/useInventoryDocumentsStore'
@@ -27,9 +27,9 @@ const typeLabel: Record<string, string> = {
   INVENTORY: 'Инвентаризация',
 }
 
-const statusClass: Record<string, string> = {
-  DRAFT: 'ds-badge--warning',
-  POSTED: 'ds-badge--success',
+const statusLabel: Record<string, string> = {
+  DRAFT: 'Черновик',
+  POSTED: 'Проведён',
 }
 
 const columns = [
@@ -84,31 +84,47 @@ onMounted(() => {
       breadcrumbs: [{ label: 'Склад' }, { label: 'Документы' }],
     }"
   >
-    <div class="mb-4 flex flex-wrap items-center gap-2">
-      <select v-model="filters.type" class="ds-input h-9" data-testid="filter-type" @change="applyFilters">
-        <option value="">Все типы</option>
-        <option v-for="t in DOC_TYPES" :key="t" :value="t">{{ typeLabel[t] }}</option>
-      </select>
-      <select v-model="filters.status" class="ds-input h-9" data-testid="filter-status" @change="applyFilters">
-        <option value="">Все статусы</option>
-        <option v-for="s in DOC_STATUSES" :key="s" :value="s">{{ s }}</option>
-      </select>
-      <input v-model="filters.date_from" type="date" class="ds-input h-9" data-testid="filter-date-from" @change="applyFilters" />
-      <input v-model="filters.date_to" type="date" class="ds-input h-9" data-testid="filter-date-to" @change="applyFilters" />
-      <button type="button" class="ds-btn ds-btn-primary ds-btn-sm ml-auto" data-testid="create-doc" @click="goCreate">
-        + Создать документ
-      </button>
-      <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" :disabled="loading" @click="store.fetchAll()">
-        Обновить
-      </button>
+    <div class="ds-toolbar">
+      <div class="ds-toolbar__filters">
+        <select v-model="filters.type" class="ds-input h-9" data-testid="filter-type" @change="applyFilters">
+          <option value="">Все типы</option>
+          <option v-for="t in DOC_TYPES" :key="t" :value="t">{{ typeLabel[t] }}</option>
+        </select>
+        <select v-model="filters.status" class="ds-input h-9" data-testid="filter-status" @change="applyFilters">
+          <option value="">Все статусы</option>
+          <option v-for="s in DOC_STATUSES" :key="s" :value="s">{{ statusLabel[s] || s }}</option>
+        </select>
+        <input v-model="filters.date_from" type="date" class="ds-input h-9" data-testid="filter-date-from" @change="applyFilters" />
+        <input v-model="filters.date_to" type="date" class="ds-input h-9" data-testid="filter-date-to" @change="applyFilters" />
+      </div>
+      <div class="ds-toolbar__actions">
+        <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" :disabled="loading" @click="store.fetchAll()">
+          Обновить
+        </button>
+        <button type="button" class="ds-btn ds-btn-primary ds-btn-sm" data-testid="create-doc" @click="goCreate">
+          + Создать документ
+        </button>
+      </div>
     </div>
 
-    <div v-if="loading" class="ds-surface mb-4 p-3">Загрузка…</div>
+    <div v-if="loading" class="ds-skeleton" aria-busy="true" aria-label="Загрузка">
+      <div class="ds-skeleton__row" />
+      <div class="ds-skeleton__row" />
+      <div class="ds-skeleton__row" />
+    </div>
     <div v-if="error" class="ds-surface mb-4 p-3" style="color: var(--color-danger)">{{ error }}</div>
 
-    <DsTable :columns="columns" :rows="rows" density="compact" sticky-header>
+    <DsTable
+      v-if="!loading"
+      :columns="columns"
+      :rows="rows"
+      density="compact"
+      sticky-header
+      empty-text="Документов пока нет"
+      empty-hint="Создайте приход, списание или перемещение"
+    >
       <template #status="{ value }">
-        <span class="ds-badge" :class="statusClass[value] || 'ds-badge--neutral'">{{ value }}</span>
+        <DsBadge :status="String(value || '')" dot />
       </template>
     </DsTable>
   </component>

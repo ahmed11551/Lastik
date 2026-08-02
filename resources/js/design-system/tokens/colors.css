@@ -40,13 +40,18 @@
   --ds-row-comfortable: 48px;
   --ds-sidebar-width: 260px;
 
-  /* Table chrome (B2B CRM reverse-eng) */
-  --ds-table-surface: #1f2937;
-  --ds-row-selected: #1e1b4b;
-  --ds-row-hover: #374151;
+  /* Table chrome — amber-aligned (no indigo) */
+  --ds-table-surface: color-mix(in srgb, var(--color-surface-elevated) 82%, #1f2937);
+  --ds-row-selected: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface));
+  --ds-row-hover: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface-elevated));
+  --ds-row-accent: var(--color-primary);
+
+  --ds-sidebar-active-bg: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  --ds-sidebar-active-fg: var(--color-primary);
+  --ds-sidebar-hover: color-mix(in srgb, var(--color-primary) 6%, transparent);
 
   --ds-zebra: rgba(255, 255, 255, 0.02);
-  --ds-hover-tint: #374151;
+  --ds-hover-tint: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface-elevated));
 }
 
 [data-theme="light"] {
@@ -75,11 +80,16 @@
   --color-status-review: #6366f1;
 
   --ds-table-surface: #e2e8f0;
-  --ds-row-selected: #e0e7ff;
-  --ds-row-hover: #f1f5f9;
+  --ds-row-selected: color-mix(in srgb, var(--color-primary) 12%, #ffffff);
+  --ds-row-hover: color-mix(in srgb, var(--color-primary) 6%, #ffffff);
+  --ds-row-accent: var(--color-primary);
+
+  --ds-sidebar-active-bg: color-mix(in srgb, var(--color-primary) 10%, #ffffff);
+  --ds-sidebar-active-fg: var(--color-primary);
+  --ds-sidebar-hover: color-mix(in srgb, var(--color-primary) 5%, transparent);
 
   --ds-zebra: rgba(15, 23, 42, 0.03);
-  --ds-hover-tint: #f1f5f9;
+  --ds-hover-tint: color-mix(in srgb, var(--color-primary) 6%, #ffffff);
 }
 
 @media (prefers-color-scheme: light) {
@@ -101,9 +111,13 @@
     --color-status-rejected: #dc2626;
     --color-status-review: #6366f1;
     --ds-table-surface: #e2e8f0;
-    --ds-row-selected: #e0e7ff;
-    --ds-row-hover: #f1f5f9;
+    --ds-row-selected: color-mix(in srgb, var(--color-primary) 12%, #ffffff);
+    --ds-row-hover: color-mix(in srgb, var(--color-primary) 6%, #ffffff);
+    --ds-row-accent: var(--color-primary);
+    --ds-sidebar-active-bg: color-mix(in srgb, var(--color-primary) 10%, #ffffff);
+    --ds-sidebar-active-fg: var(--color-primary);
+    --ds-sidebar-hover: color-mix(in srgb, var(--color-primary) 5%, transparent);
     --ds-zebra: rgba(15, 23, 42, 0.03);
-    --ds-hover-tint: #f1f5f9;
+    --ds-hover-tint: color-mix(in srgb, var(--color-primary) 6%, #ffffff);
   }
 }

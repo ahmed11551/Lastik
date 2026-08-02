@@ -255,13 +255,13 @@ test.describe('Purchases flow', () => {
     await page.getByTestId('po-price').fill('100')
     await page.getByTestId('po-save').click()
 
-    await expect(page.getByTestId('po-status')).toContainText('DRAFT')
+    await expect(page.getByTestId('po-status')).toContainText('Черновик')
     await page.getByTestId('po-confirm').click()
-    await expect(page.getByTestId('po-status')).toContainText('CONFIRMED')
+    await expect(page.getByTestId('po-status')).toContainText('Подтверждён')
 
     await page.getByTestId('po-receive-qty').fill('7')
     await page.getByTestId('po-receive').click()
-    await expect(page.getByTestId('po-status')).toContainText('PARTIALLY_RECEIVED')
+    await expect(page.getByTestId('po-status')).toContainText('Частично')
 
     // Stock growth via mocked /stock after receive (2 + 7)
     expect(state.available).toBe(9)

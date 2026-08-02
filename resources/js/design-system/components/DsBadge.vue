@@ -1,8 +1,7 @@
 <script setup>
 /**
- * AUTOMETRIA ERP — B2B status badges
+ * AUTOMETRIA ERP — B2B status badges (RU-first labels)
  * Dot + Badge: 6px indicator + label
- * Statuses: Accepted | Negotiation | Rejected | Review + legacy variants
  */
 import { computed } from 'vue'
 
@@ -44,29 +43,45 @@ const props = defineProps({
 })
 
 const STATUS_MAP = {
-  active: { variant: 'active', label: 'Active' },
-  pending: { variant: 'pending', label: 'Pending' },
-  suspended: { variant: 'suspended', label: 'Suspended' },
-  open: { variant: 'open', label: 'Open' },
-  closed: { variant: 'closed', label: 'Closed' },
+  // Generic
+  active: { variant: 'active', label: 'Активен' },
+  pending: { variant: 'pending', label: 'Ожидание' },
+  suspended: { variant: 'suspended', label: 'Заблокирован' },
+  open: { variant: 'open', label: 'Открыта' },
+  closed: { variant: 'closed', label: 'Закрыта' },
   success: { variant: 'success', label: 'OK' },
-  danger: { variant: 'danger', label: 'Error' },
-  warning: { variant: 'warning', label: 'Warning' },
-  negotiation: { variant: 'negotiation', label: 'In Negotiation' },
-  rejected: { variant: 'rejected', label: 'Rejected' },
-  review: { variant: 'review', label: 'Under Review' },
-  accepted: { variant: 'accepted', label: 'Accepted' },
-  prospective: { variant: 'neutral', label: 'Prospective' },
+  danger: { variant: 'danger', label: 'Ошибка' },
+  warning: { variant: 'warning', label: 'Внимание' },
+  negotiation: { variant: 'negotiation', label: 'Переговоры' },
+  rejected: { variant: 'rejected', label: 'Отклонён' },
+  review: { variant: 'review', label: 'На проверке' },
+  accepted: { variant: 'accepted', label: 'Принят' },
+  prospective: { variant: 'neutral', label: 'Потенциальный' },
+
+  // Purchasing / inventory / ops enums
+  draft: { variant: 'neutral', label: 'Черновик' },
+  confirmed: { variant: 'warning', label: 'Подтверждён' },
+  partially_received: { variant: 'warning', label: 'Частично' },
+  received: { variant: 'success', label: 'Принят' },
+  cancelled: { variant: 'danger', label: 'Отменён' },
+  canceled: { variant: 'danger', label: 'Отменён' },
+  posted: { variant: 'success', label: 'Проведён' },
+  new: { variant: 'neutral', label: 'Новый' },
+
   // RU aliases
-  активен: { variant: 'active', label: 'Active' },
-  ожидание: { variant: 'pending', label: 'Pending' },
-  заблокирован: { variant: 'suspended', label: 'Suspended' },
-  открыта: { variant: 'open', label: 'Open' },
-  закрыта: { variant: 'closed', label: 'Closed' },
+  активен: { variant: 'active', label: 'Активен' },
+  ожидание: { variant: 'pending', label: 'Ожидание' },
+  заблокирован: { variant: 'suspended', label: 'Заблокирован' },
+  открыта: { variant: 'open', label: 'Открыта' },
+  закрыта: { variant: 'closed', label: 'Закрыта' },
+  черновик: { variant: 'neutral', label: 'Черновик' },
 }
 
 const resolved = computed(() => {
-  const key = String(props.status || '').toLowerCase().trim()
+  const key = String(props.status || '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '_')
   const mapped = STATUS_MAP[key]
   return {
     variant: props.variant || mapped?.variant || 'neutral',

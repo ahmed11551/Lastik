@@ -29,14 +29,6 @@ const statuses = [
   { value: 'CANCELLED', label: 'Отменён' },
 ]
 
-const statusClass: Record<string, string> = {
-  DRAFT: 'ds-badge--neutral',
-  CONFIRMED: 'ds-badge--warning',
-  PARTIALLY_RECEIVED: 'ds-badge--warning',
-  RECEIVED: 'ds-badge--success',
-  CANCELLED: 'ds-badge--danger',
-}
-
 const columns = [
   { key: 'id', label: '№' },
   { key: 'supplier_name', label: 'Поставщик' },
@@ -81,33 +73,66 @@ onMounted(() => {
           }
     "
   >
-    <div class="mb-4 flex flex-wrap items-center gap-2">
-      <select
-        v-model="statusFilter"
-        class="ds-input h-9"
-        data-testid="purchase-status-filter"
-        @change="reload"
-      >
-        <option v-for="s in statuses" :key="s.value || 'all'" :value="s.value">{{ s.label }}</option>
-      </select>
-      <button type="button" class="ds-btn ds-btn-primary ds-btn-sm" data-testid="purchase-create" @click="emit('navigate', 'purchase_form')">
-        + Заказ
-      </button>
-      <button type="button" class="ds-btn ds-btn-sm" data-testid="purchase-replenishment" @click="emit('navigate', 'replenishment')">
-        План пополнения
-      </button>
-      <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" :disabled="loading" @click="reload">Обновить</button>
+    <div class="ds-toolbar">
+      <div class="ds-toolbar__filters">
+        <select
+          v-model="statusFilter"
+          class="ds-input h-9"
+          data-testid="purchase-status-filter"
+          @change="reload"
+        >
+          <option v-for="s in statuses" :key="s.value || 'all'" :value="s.value">{{ s.label }}</option>
+        </select>
+      </div>
+      <div class="ds-toolbar__actions">
+        <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" :disabled="loading" @click="reload">
+          Обновить
+        </button>
+        <button
+          type="button"
+          class="ds-btn ds-btn-sm"
+          data-testid="purchase-replenishment"
+          @click="emit('navigate', 'replenishment')"
+        >
+          План пополнения
+        </button>
+        <button
+          type="button"
+          class="ds-btn ds-btn-primary ds-btn-sm"
+          data-testid="purchase-create"
+          @click="emit('navigate', 'purchase_form')"
+        >
+          + Заказ
+        </button>
+      </div>
     </div>
 
-    <div v-if="loading" class="ds-surface mb-4 p-3">Загрузка…</div>
+    <div v-if="loading" class="ds-skeleton" aria-busy="true" aria-label="Загрузка">
+      <div class="ds-skeleton__row" />
+      <div class="ds-skeleton__row" />
+      <div class="ds-skeleton__row" />
+    </div>
     <div v-if="error" class="ds-surface mb-4 p-3" style="color: var(--color-danger)">{{ error }}</div>
 
-    <DsTable :columns="columns" :rows="rows" density="compact" sticky-header>
+    <DsTable
+      v-if="!loading"
+      :columns="columns"
+      :rows="rows"
+      density="compact"
+      sticky-header
+      empty-text="Заказов пока нет"
+      empty-hint="Создайте первый заказ поставщику"
+    >
       <template #status="{ value }">
-        <DsBadge :class="statusClass[value] || 'ds-badge--neutral'">{{ value }}</DsBadge>
+        <DsBadge :status="String(value || '')" dot />
       </template>
       <template #id="{ value }">
-        <button type="button" class="ds-link" data-testid="purchase-open" @click="emit('navigate', 'purchase_form:' + value)">
+        <button
+          type="button"
+          class="ds-link"
+          data-testid="purchase-open"
+          @click="emit('navigate', 'purchase_form:' + value)"
+        >
           #{{ value }}
         </button>
       </template>
