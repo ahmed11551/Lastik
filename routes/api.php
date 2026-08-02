@@ -36,6 +36,8 @@ use Autometria\Http\Controllers\OrderController;
 use Autometria\Http\Controllers\PaymentController;
 use Autometria\Http\Controllers\PosController;
 use Autometria\Http\Controllers\ProductController;
+use Autometria\Http\Controllers\ProductionController;
+use Autometria\Http\Controllers\RecipeController;
 use Autometria\Http\Controllers\RefundController;
 use Autometria\Http\Controllers\SearchController;
 use Autometria\Http\Controllers\SettingController;
@@ -167,6 +169,13 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
     Route::post('inventory/reservations/release-expired', [StockReservationController::class, 'releaseExpired'])->middleware('ensure.permission:stock.transfer');
     Route::post('stock/transfers', [StockTransferController::class, 'store'])->middleware('ensure.permission:stock.transfer');
     Route::get('products', [ProductController::class, 'index'])->middleware('ensure.permission:products.view');
+    Route::get('products/{id}/cost-breakdown', [RecipeController::class, 'costBreakdown'])->middleware('ensure.permission:products.view');
+
+    Route::get('recipes', [RecipeController::class, 'index'])->middleware('ensure.permission:products.view');
+    Route::post('recipes', [RecipeController::class, 'store'])->middleware('ensure.permission:stock.transfer');
+    Route::put('recipes/{id}', [RecipeController::class, 'update'])->middleware('ensure.permission:stock.transfer');
+    Route::get('production/orders', [ProductionController::class, 'index'])->middleware('ensure.permission:stock.view');
+    Route::post('production/produce', [ProductionController::class, 'produce'])->middleware('ensure.permission:stock.transfer');
 
     Route::get('modules', [ModuleController::class, 'index'])->middleware('ensure.permission:modules.view');
     Route::post('modules/{slug}/enable', [ModuleController::class, 'enable'])->middleware('ensure.permission:modules.update');
