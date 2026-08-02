@@ -63,10 +63,12 @@ Route::middleware([RateLimitAuth::class, 'auth:sanctum', EnsureTenant::class, En
     Route::delete('order-items/{item}', [OrderController::class, 'destroyItem'])->middleware('ensure.permission:orders.update');
 
     Route::post('issuances', [IssuanceController::class, 'store'])->middleware('ensure.permission:orders.update');
+    Route::get('analytics/dashboard', [AnalyticsController::class, 'dashboard'])->middleware('ensure.permission:admin.dashboard');
     Route::get('analytics/dashboard-summary', [AnalyticsController::class, 'dashboardSummary'])->middleware('ensure.permission:admin.dashboard');
     Route::get('analytics/cogs-breakdown', [AnalyticsController::class, 'cogsBreakdown'])->middleware('ensure.permission:admin.dashboard');
     Route::get('analytics/abc-xyz', [AnalyticsController::class, 'abcXyz'])->middleware('ensure.permission:admin.dashboard');
     Route::get('analytics/turnover', [AnalyticsController::class, 'turnover'])->middleware('ensure.permission:admin.dashboard');
+    Route::get('analytics/sales-series', [AnalyticsController::class, 'salesSeries'])->middleware('ensure.permission:admin.dashboard');
     Route::get('stock/batches', [StockBatchController::class, 'index'])->middleware('ensure.permission:stock.view');
     Route::post('stock/inventory-adjust', [StockBatchController::class, 'adjust'])->middleware('ensure.permission:stock.transfer');
     Route::get('stock', [StockController::class, 'index'])->middleware('ensure.permission:stock.view');

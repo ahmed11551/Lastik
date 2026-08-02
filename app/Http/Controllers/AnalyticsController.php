@@ -20,7 +20,7 @@ use Illuminate\Http\Request;
  * REST API аналитики и отчётов COGS (FIFO).
  *
  * Все эндпоинты фильтруют по tenant_id (через EnsureTenant middleware),
- * а также по date_from, date_to, warehouse_id.
+ * а также по from/to (или date_from/date_to) и warehouse_id.
  */
 final class AnalyticsController
 {
@@ -28,14 +28,33 @@ final class AnalyticsController
         private readonly AnalyticsReportService $service,
     ) {}
 
+    /**
+     * GET /api/v1/analytics/dashboard — сводный отчёт Block 4.1.
+     */
+    public function dashboard(Request $request): \Illuminate\Http\JsonResponse
+    {
+        [$from, $to, $warehouseId] = $this->periodFilters($request);
+        $topLimit = max(1, min(50, (int) ($request->query('top') ?? 10)));
+
+        $data = $this->service->getDashboard(
+            $this->tenantId(),
+            $from,
+            $to,
+            $warehouseId,
+            $topLimit,
+        );
+
+        return response()->json(['data' => $data]);
+    }
+
     public function dashboardSummary(Request $request): \Illuminate\Http\JsonResponse
     {
-        $tenantId = $this->tenantId();
+        [$from, $to, $warehouseId] = $this->periodFilters($request);
         $data = $this->service->getDashboardSummary(
-            $tenantId,
-            $request->query('date_from'),
-            $request->query('date_to'),
-            $request->query('warehouse_id') ? (int) $request->query('warehouse_id') : null,
+            $this->tenantId(),
+            $from,
+            $to,
+            $warehouseId,
         );
 
         return response()->json($data);
@@ -43,12 +62,12 @@ final class AnalyticsController
 
     public function cogsBreakdown(Request $request): \Illuminate\Http\JsonResponse
     {
-        $tenantId = $this->tenantId();
+        [$from, $to, $warehouseId] = $this->periodFilters($request);
         $data = $this->service->getCogsBreakdown(
-            $tenantId,
-            $request->query('date_from'),
-            $request->query('date_to'),
-            $request->query('warehouse_id') ? (int) $request->query('warehouse_id') : null,
+            $this->tenantId(),
+            $from,
+            $to,
+            $warehouseId,
         );
 
         return response()->json($data);
@@ -56,12 +75,12 @@ final class AnalyticsController
 
     public function abcXyz(Request $request): \Illuminate\Http\JsonResponse
     {
-        $tenantId = $this->tenantId();
+        [$from, $to, $warehouseId] = $this->periodFilters($request);
         $data = $this->service->getAbcXyzAnalysis(
-            $tenantId,
-            $request->query('date_from'),
-            $request->query('date_to'),
-            $request->query('warehouse_id') ? (int) $request->query('warehouse_id') : null,
+            $this->tenantId(),
+            $from,
+            $to,
+            $warehouseId,
         );
 
         return response()->json($data);
@@ -69,15 +88,44 @@ final class AnalyticsController
 
     public function turnover(Request $request): \Illuminate\Http\JsonResponse
     {
-        $tenantId = $this->tenantId();
+        [$from, $to, $warehouseId] = $this->periodFilters($request);
         $data = $this->service->getInventoryTurnover(
-            $tenantId,
-            $request->query('date_from'),
-            $request->query('date_to'),
-            $request->query('warehouse_id') ? (int) $request->query('warehouse_id') : null,
+            $this->tenantId(),
+            $from,
+            $to,
+            $warehouseId,
         );
 
         return response()->json($data);
+    }
+
+    public function salesSeries(Request $request): \Illuminate\Http\JsonResponse
+    {
+        [$from, $to, $warehouseId] = $this->periodFilters($request);
+        $data = $this->service->getSalesSeries(
+            $this->tenantId(),
+            $from,
+            $to,
+            $warehouseId,
+        );
+
+        return response()->json(['data' => $data]);
+    }
+
+    /**
+     * @return array{0: ?string, 1: ?string, 2: ?int}
+     */
+    private function periodFilters(Request $request): array
+    {
+        $from = $request->query('from') ?? $request->query('date_from');
+        $to = $request->query('to') ?? $request->query('date_to');
+        $warehouseId = $request->query('warehouse_id');
+
+        return [
+            $from !== null && $from !== '' ? (string) $from : null,
+            $to !== null && $to !== '' ? (string) $to : null,
+            $warehouseId !== null && $warehouseId !== '' ? (int) $warehouseId : null,
+        ];
     }
 
     private function tenantId(): int
