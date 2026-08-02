@@ -61,6 +61,7 @@ const sections = [
       { id: 'customers', label: 'Покупатели & Импорт' },
       { id: 'vehicles', label: 'Автомобили' },
       { id: 'warehouse', label: 'Склад и остатки' },
+      { id: 'inventory', label: 'Инвентаризация' },
       { id: 'integrations', label: 'Интеграции 1С' },
       { id: 'cashier', label: 'Касса и смены' },
       { id: 'pos', label: 'POS Терминал', highlight: true },

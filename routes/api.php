@@ -37,6 +37,7 @@ use Autometria\Http\Controllers\SearchController;
 use Autometria\Http\Controllers\SettingController;
 use Autometria\Http\Controllers\StockBatchController;
 use Autometria\Http\Controllers\StockController;
+use Autometria\Http\Controllers\InventoryDocumentController;
 use Autometria\Http\Controllers\StockTransferController;
 use Autometria\Http\Controllers\TaskController;
 use Autometria\Http\Controllers\TvBoardController;
@@ -76,6 +77,10 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
     Route::get('stock/batches', [StockBatchController::class, 'index'])->middleware('ensure.permission:stock.view');
     Route::post('stock/inventory-adjust', [StockBatchController::class, 'adjust'])->middleware('ensure.permission:stock.transfer');
     Route::get('stock', [StockController::class, 'index'])->middleware('ensure.permission:stock.view');
+
+    Route::get('inventory/documents', [InventoryDocumentController::class, 'index'])->middleware('ensure.permission:stock.view');
+    Route::post('inventory/documents', [InventoryDocumentController::class, 'store'])->middleware('ensure.permission:stock.transfer');
+    Route::post('inventory/documents/{id}/post', [InventoryDocumentController::class, 'post'])->middleware('ensure.permission:stock.transfer');
 
     Route::get('audit-logs', [AuditLogController::class, 'index'])->middleware('ensure.permission:admin.dashboard');
     Route::get('kpi/summary', [KpiController::class, 'summary'])->middleware('ensure.permission:admin.dashboard');
