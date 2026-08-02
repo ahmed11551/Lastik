@@ -29,6 +29,5 @@ Route::middleware(['web', 'auth'])->group(function (): void {
     Route::post('/cash-shifts/{shift}/close', [CashShiftController::class, 'close'])->name('cash-shifts.close');
 });
 
-Route::prefix('api')->middleware('throttle:60,1')->group(function () {
-    require base_path('routes/api.php');
-});
+// API routes are registered once via bootstrap/app.php → routes/api.php (api middleware group).
+// Do NOT require api.php here — that would wrap /api/* in the web stack (CSRF) and break clients/tests.

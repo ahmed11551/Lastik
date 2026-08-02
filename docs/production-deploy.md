@@ -1,5 +1,9 @@
 # AUTOMETRIA ERP — Production Deploy (Client)
 
+> **Полный runbook для заказчика:** [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md)  
+> Архитектура (RLS / tenancy / audit): [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)  
+> Автоматизация: `./scripts/deploy/prod-setup.sh` или `make prod-setup`
+
 ## 0. Preconditions
 
 - Docker Engine + Compose v2

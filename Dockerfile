@@ -1,13 +1,17 @@
 FROM php:8.4-fpm-alpine
 
 RUN apk add --no-cache \
+    $PHPIZE_DEPS \
     postgresql-dev \
     libpng-dev \
     libzip-dev \
     zip \
     unzip \
     git \
-    curl
+    curl \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del $PHPIZE_DEPS
 
 RUN docker-php-ext-install pdo_pgsql bcmath zip opcache
 

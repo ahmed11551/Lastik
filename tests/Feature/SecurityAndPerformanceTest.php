@@ -219,9 +219,9 @@ it('avoids N+1 when rendering orders movement registry', function (): void {
 });
 
 it('rate-limits auth login after burst of failures', function (): void {
-    RateLimiter::clear($this->fx->user->email !== null ? request()->ip() : 'x');
-    // Clear auth-api keyed by IP
     $ip = '127.0.0.1';
+    // RateLimitAuth keys by raw IP; Laravel throttle uses auth-api:{ip}
+    RateLimiter::clear($ip);
     RateLimiter::clear('auth-api:'.$ip);
 
     $hit429 = false;
