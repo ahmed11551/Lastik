@@ -25,6 +25,13 @@ export const useAnalyticsStore = defineStore('analytics', {
   }),
   getters: {
     hasData: (s) => s.summary != null,
+    topProductsByProfit: (s) => (Array.isArray(s.topProducts) ? s.topProducts : []),
+    stockValue: (s) => Number(s.turnover?.average_inventory_value ?? 0),
+    turnoverDays: (s) => {
+      const ratio = Number(s.turnover?.turnover_ratio || 0)
+      if (ratio <= 0) return null
+      return Math.round(30 / ratio)
+    },
   },
   actions: {
     setRange(dateFrom, dateTo) {

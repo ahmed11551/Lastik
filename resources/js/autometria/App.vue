@@ -24,6 +24,7 @@ import RegulatoryEgaisIndex from '@/Pages/Regulatory/Egais/Index.vue'
 import BranchesIndex from '@/Pages/Settings/Branches/Index.vue'
 import WarehousePrices from '@/Pages/Inventory/WarehousePrices.vue'
 import ProductionIndex from '@/Pages/Production/Index.vue'
+import AnalyticsDashboard from '@/Pages/Dashboard.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
 import { getToken } from '@/autometria/api/client'
@@ -32,6 +33,7 @@ import { useShiftStore } from '@/autometria/stores/cashierStore'
 const VIEW_TITLES = {
   login: 'Вход',
   dashboard: 'Дашборд',
+  analytics: 'Аналитика',
   crm: 'Business Partner CRM',
   orders: 'Заказы и продажи',
   new_order: 'Создать заказ',
@@ -248,6 +250,11 @@ function onLoginSuccess() {
         :shift-revenue="shiftRevenue"
         @navigate="onNavigate"
         @create-order="view = 'new_order'"
+      />
+
+      <AnalyticsDashboard
+        v-else-if="view === 'analytics'"
+        embedded
       />
 
       <WarehouseView v-else-if="view === 'warehouse'" />

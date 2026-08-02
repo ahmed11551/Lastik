@@ -1,37 +1,65 @@
 import { test, expect, type Page, type Route } from '@playwright/test'
 
 /**
- * Analytics & Executive Dashboard E2E — real auth + widget load + date-range reactivity.
- * Backend analytics endpoints are mocked so the test focuses on the UI shell.
+ * Analytics & Executive Dashboard E2E — SPA hash route + mocked analytics API.
  */
 
-function summaryFixture() {
+function dashboardFixture() {
   return {
-    revenue: 1250000,
-    cogs: 820000,
-    gross_profit: 430000,
-    margin_pct: 34.4,
-    avg_check: 5400,
-    orders_count: 231,
-    revenue_delta_pct: 12.5,
-  }
-}
-
-function cogsFixture() {
-  return [
-    { product_id: 1, product_name: 'Шина 195/65 R15', sku: 'TYRE-195', qty: 120, revenue: 540000, cogs: 360000, gross_profit: 180000, margin_pct: 33.3 },
-    { product_id: 2, product_name: 'Диск 15x6.5', sku: 'DISK-15', qty: 80, revenue: 256000, cogs: 180000, gross_profit: 76000, margin_pct: 29.7 },
-    { product_id: 3, product_name: 'Шина 205/55 R16', sku: 'TYRE-205', qty: 60, revenue: 360000, cogs: 240000, gross_profit: 120000, margin_pct: 33.3 },
-  ]
-}
-
-function turnoverFixture() {
-  return {
-    cogs_period: 820000,
-    average_inventory_value: 410000,
-    inventory_value_basis: 'current',
-    turnover_ratio: 2.0,
-    deadstock: [],
+    data: {
+      net_revenue: 1250000,
+      revenue: 1250000,
+      cogs: 820000,
+      gross_profit: 430000,
+      margin_pct: 34.4,
+      avg_check: 5400,
+      orders_count: 231,
+      revenue_delta_pct: 12.5,
+      turnover_rate: 2.0,
+      stock_value: 410000,
+      top_products: [
+        {
+          product_id: 1,
+          product_name: 'Шина 195/65 R15',
+          sku: 'TYRE-195',
+          qty: 120,
+          revenue: 540000,
+          cogs: 360000,
+          gross_profit: 180000,
+          margin_pct: 33.3,
+        },
+        {
+          product_id: 2,
+          product_name: 'Диск 15x6.5',
+          sku: 'DISK-15',
+          qty: 80,
+          revenue: 256000,
+          cogs: 180000,
+          gross_profit: 76000,
+          margin_pct: 29.7,
+        },
+        {
+          product_id: 3,
+          product_name: 'Шина 205/55 R16',
+          sku: 'TYRE-205',
+          qty: 60,
+          revenue: 360000,
+          cogs: 240000,
+          gross_profit: 120000,
+          margin_pct: 33.3,
+        },
+      ],
+      abc_xyz: {
+        abc: { '1': { abc: 'A', gross_profit: 180000 } },
+        xyz: { '1': 'X' },
+        rows: [
+          { product_id: 1, product_name: 'Шина 195/65 R15', sku: 'TYRE-195', gross_profit: 180000, abc: 'A', xyz: 'X' },
+          { product_id: 2, product_name: 'Диск 15x6.5', sku: 'DISK-15', gross_profit: 76000, abc: 'B', xyz: 'Y' },
+          { product_id: 3, product_name: 'Шина 205/55 R16', sku: 'TYRE-205', gross_profit: 120000, abc: 'A', xyz: 'Z' },
+        ],
+      },
+      deadstock: [],
+    },
   }
 }
 
@@ -47,19 +75,7 @@ function seriesFixture() {
       gross_profit: 14000 + i * 500,
     })
   }
-  return out
-}
-
-function abcFixture() {
-  return {
-    abc: { '1': { abc: 'A', gross_profit: 180000 } },
-    xyz: { '1': 'X' },
-    rows: [
-      { product_id: 1, product_name: 'Шина 195/65 R15', sku: 'TYRE-195', gross_profit: 180000, abc: 'A', xyz: 'X' },
-      { product_id: 2, product_name: 'Диск 15x6.5', sku: 'DISK-15', gross_profit: 76000, abc: 'B', xyz: 'Y' },
-      { product_id: 3, product_name: 'Шина 205/55 R16', sku: 'TYRE-205', gross_profit: 120000, abc: 'A', xyz: 'Z' },
-    ],
-  }
+  return { data: out }
 }
 
 async function mockAnalytics(page: Page): Promise<void> {
@@ -76,61 +92,46 @@ async function mockAnalytics(page: Page): Promise<void> {
         }),
       })
     }
-    if (url.includes('/analytics/dashboard-summary')) {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(summaryFixture()) })
-    }
-    if (url.includes('/analytics/cogs-breakdown')) {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(cogsFixture()) })
-    }
-    if (url.includes('/analytics/turnover')) {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(turnoverFixture()) })
+    if (url.includes('/analytics/dashboard')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(dashboardFixture()),
+      })
     }
     if (url.includes('/analytics/sales-series')) {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: seriesFixture() }) })
-    }
-    if (url.includes('/analytics/abc-xyz')) {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(abcFixture()) })
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(seriesFixture()),
+      })
     }
 
-    return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [] }) })
   })
 }
 
-test('analytics dashboard loads widgets and reacts to date range', async ({ page, context }) => {
+test('analytics dashboard loads widgets and reacts to date range', async ({ page }) => {
   await mockAnalytics(page)
 
-  // Authenticate via API, then seed token into localStorage (frontend reads it).
-  await page.goto('/')
-  const loginResp = await page.request.post('/api/v1/auth/login', {
-    data: { email: 'admin@lastik.local', password: 'password' },
+  await page.addInitScript(() => {
+    localStorage.setItem('autometria_token', 'e2e-test-token')
+    localStorage.setItem(
+      'autometria_user',
+      JSON.stringify({ id: 7, tenant_id: 1, name: 'Админ E2E', email: 'admin@lastik.local', role: 'admin' }),
+    )
   })
-  const loginBody = (await loginResp.json()) as { token?: string; user?: { id: number; tenant_id: number } }
-  await page.addInitScript(
-    ({ token, user }) => {
-      localStorage.setItem('autometria_token', token)
-      localStorage.setItem('autometria_user', JSON.stringify(user))
-    },
-    { token: loginBody.token ?? 'e2e-test-token', user: loginBody.user ?? { id: 7, tenant_id: 1 } },
-  )
 
-  // Step 2: open dashboard (Inertia page, requires auth)
-  await page.goto('/dashboard')
-  await expect(page).toHaveURL(/dashboard/)
+  await page.goto('/#/analytics')
+  await expect(page).toHaveURL(/#\/analytics/)
 
-  // Step 3: summary cards
   const cards = page.getByTestId('summary-card')
   await expect(cards).toHaveCount(5, { timeout: 20_000 })
   await expect(cards.first()).toContainText('Net Revenue')
 
-  // Step 4: charts
   await expect(page.locator('canvas')).toHaveCount(2, { timeout: 10_000 })
-
-  // Step 5: ABC/XYZ table
   await expect(page.getByText('Матрица ABC / XYZ')).toBeVisible()
 
-  // Step 6: switch range → refetch, no crash
   await page.getByTestId('range-7d').click()
   await expect(cards.first()).toContainText('Net Revenue')
-
-  await context.clearCookies()
 })

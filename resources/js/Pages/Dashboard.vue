@@ -1,7 +1,9 @@
 <script setup lang="ts">
+/**
+ * AUTOMETRIA ERP — Executive analytics dashboard
+ */
 import AutometriaLayout from '@/Layouts/AutometriaLayout.vue'
 import { DsTable } from '@/design-system'
-import { Head } from '@inertiajs/vue3'
 import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAnalyticsStore } from '@/autometria/stores/analyticsStore'
@@ -27,17 +29,18 @@ ChartJS.register(
   Legend,
 )
 
-defineProps({
+const props = defineProps({
   currentShiftOpen: { type: Boolean, default: true },
   shiftStartedAt: {
     type: [String, Number, Date],
     default: () => new Date(Date.now() - 3_600_000 * 2.5).toISOString(),
   },
   shiftRevenue: { type: [Number, String], default: 0 },
+  embedded: { type: Boolean, default: false },
 })
 
 const store = useAnalyticsStore()
-const { summary, turnover, salesSeries, topProductsByProfit, abcXyz, loading, dateFrom, dateTo, warehouseId } =
+const { summary, turnover, salesSeries, topProductsByProfit, abcXyz, loading, dateFrom, dateTo } =
   storeToRefs(store)
 
 const money = (v: number | null | undefined) =>
@@ -120,11 +123,11 @@ const lineData = computed(() => ({
 }))
 
 const barData = computed(() => ({
-  labels: topProductsByProfit.value.map((r: any) => r.product_name || r.sku || `#${r.product_id}`),
+  labels: (topProductsByProfit.value || []).map((r: any) => r.product_name || r.sku || `#${r.product_id}`),
   datasets: [
     {
       label: 'Валовая прибыль',
-      data: topProductsByProfit.value.map((r: any) => Number(r.gross_profit) || 0),
+      data: (topProductsByProfit.value || []).map((r: any) => Number(r.gross_profit) || 0),
       backgroundColor: '#F59E0B',
     },
   ],
@@ -150,25 +153,30 @@ const abcColumns = [
 
 const abcRows = computed(() => (abcXyz.value?.rows ? abcXyz.value.rows.slice(0, 15) : []))
 
-onMounted(reload)
+onMounted(() => {
+  if (typeof document !== 'undefined') {
+    document.title = 'Аналитика · AUTOMETRIA'
+  }
+  reload()
+})
 </script>
 
 <template>
-  <Head title="Дашборд" />
-
-  <AutometriaLayout
-    title="Аналитика"
-    active-nav="dashboard"
-    :current-shift-open="currentShiftOpen"
-    :shift-started-at="shiftStartedAt"
-    :shift-revenue="shiftRevenue"
-    :breadcrumbs="[{ label: 'Основное' }, { label: 'Аналитика' }]"
+  <component
+    :is="embedded ? 'div' : AutometriaLayout"
+    v-bind="
+      embedded
+        ? {}
+        : {
+            title: 'Аналитика',
+            'active-nav': 'analytics',
+            'current-shift-open': currentShiftOpen,
+            'shift-started-at': shiftStartedAt,
+            'shift-revenue': shiftRevenue,
+            breadcrumbs: [{ label: 'Основное' }, { label: 'Аналитика' }],
+          }
+    "
   >
-    <template #header-meta>
-      <span class="ds-badge ds-badge--success">● Live</span>
-    </template>
-
-    <!-- Filter Bar -->
     <div class="mb-4 flex flex-wrap items-center gap-2">
       <button
         v-for="p in presets"
@@ -187,7 +195,6 @@ onMounted(reload)
       <span v-if="loading" class="ds-badge ds-badge--warning">Загрузка…</span>
     </div>
 
-    <!-- Summary Cards -->
     <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
       <div v-for="c in summaryCards" :key="c.label" class="ds-surface p-4" data-testid="summary-card">
         <div class="font-mono text-2xl font-semibold">{{ c.value }}</div>
@@ -202,7 +209,6 @@ onMounted(reload)
       Ошибка загрузки аналитики: {{ store.error }}
     </div>
 
-    <!-- Charts -->
     <div class="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
       <div class="ds-surface p-4">
         <h2 class="mb-2 text-sm font-semibold">Динамика продаж и прибыли</h2>
@@ -218,11 +224,10 @@ onMounted(reload)
       </div>
     </div>
 
-    <!-- ABC/XYZ -->
     <div class="mb-3 flex items-center justify-between gap-3">
       <h2 class="text-sm font-semibold">Матрица ABC / XYZ</h2>
       <span class="text-[11px]" style="color: var(--color-text-secondary)">Группа A — генераторы прибыли</span>
     </div>
     <DsTable :columns="abcColumns" :rows="abcRows" density="compact" sticky-header />
-  </AutometriaLayout>
+  </component>
 </template>

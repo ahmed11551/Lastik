@@ -147,15 +147,24 @@ test.describe('POS refund flow', () => {
 
     await page.addInitScript(() => {
       window.print = () => undefined
+      localStorage.setItem('autometria_token', 'e2e-refund-token')
+      localStorage.setItem(
+        'autometria_user',
+        JSON.stringify({
+          id: 7,
+          tenant_id: 1,
+          name: 'Кассир E2E',
+          full_name: 'Кассир E2E',
+          email: 'cashier@autometria.test',
+          role: 'cashier',
+        }),
+      )
     })
 
-    await page.goto('/#/login')
-    await page.locator('input[type="email"]').fill('cashier@autometria.test')
-    await page.locator('input[type="password"]').fill('password')
-    await page.getByRole('button', { name: /войти/i }).click()
-
     await page.goto('/#/pos')
+    await expect(page.getByText('Шина 195/65 R15').first()).toBeVisible({ timeout: 20_000 })
     await expect(page.getByTestId('pos-refund-open')).toBeVisible({ timeout: 20_000 })
+    await page.getByTestId('pos-refund-open').scrollIntoViewIfNeeded()
     await page.getByTestId('pos-refund-open').click()
     await expect(page.getByTestId('refund-modal')).toBeVisible()
 

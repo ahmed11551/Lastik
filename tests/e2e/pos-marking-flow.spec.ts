@@ -86,6 +86,22 @@ async function mockApis(page: Page): Promise<{ lastCheckout: { body: Record<stri
       })
     }
 
+    if (url.includes('/regulatory/marking/verify') && method === 'POST') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            valid: true,
+            gtin: '04600439000014',
+            serial: 'sN&<3!',
+            chestny_znak: 'VALID',
+            status: 'EMITTED',
+          },
+        }),
+      })
+    }
+
     if (
       (url.includes('/pos/offline-receipts') || url.includes('/pos/checkout')) &&
       method === 'POST'
@@ -118,12 +134,19 @@ test.describe('POS marking flow', () => {
     await page.addInitScript(() => {
       window.print = () => undefined
       localStorage.setItem('autometria_pos_printer_mode', 'browser')
+      localStorage.setItem('autometria_token', 'e2e-marking-token')
+      localStorage.setItem(
+        'autometria_user',
+        JSON.stringify({
+          id: 7,
+          tenant_id: 1,
+          name: 'Кассир E2E',
+          full_name: 'Кассир E2E',
+          email: 'cashier@autometria.test',
+          role: 'cashier',
+        }),
+      )
     })
-
-    await page.goto('/#/login')
-    await page.locator('input[type="email"]').fill('cashier@autometria.test')
-    await page.locator('input[type="password"]').fill('password')
-    await page.getByRole('button', { name: /войти/i }).click()
 
     await page.goto('/#/pos')
     await expect(page.getByText('Кроссовки маркированные')).toBeVisible({ timeout: 20_000 })

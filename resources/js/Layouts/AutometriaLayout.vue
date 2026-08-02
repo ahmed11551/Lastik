@@ -55,6 +55,7 @@ const sections = [
     title: 'Системное меню',
     items: [
       { id: 'dashboard', label: 'Дашборд' },
+      { id: 'analytics', label: 'Аналитика' },
       { id: 'crm', label: 'Business Partner CRM' },
       { id: 'orders', label: 'Заказы и продажи' },
       { id: 'new_order', label: 'Создать заказ', highlight: true },
