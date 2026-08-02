@@ -4,6 +4,7 @@
 import { apiGet, apiPost, apiPut, apiUpload } from './client'
 import type {
   OneCCredentials,
+  OneCExchangeLog,
   OneCLogsMeta,
   OneCSyncLog,
   OneCSyncOptions,
@@ -64,4 +65,50 @@ export async function apiUploadOneCXml(
     },
   })
   return (payload?.data || payload) as OneCSyncLog
+}
+
+export async function apiFetchOneCSyncLogs(
+  page = 1,
+  filters: { status?: string; direction?: string; per_page?: number } = {},
+): Promise<{ data: OneCExchangeLog[]; meta: OneCLogsMeta }> {
+  const payload = await apiGet('/1c/sync-logs', {
+    params: {
+      page,
+      per_page: filters.per_page ?? 30,
+      status: filters.status || undefined,
+      direction: filters.direction || undefined,
+    },
+    silent: true,
+  })
+  return {
+    data: Array.isArray(payload?.data) ? payload.data : [],
+    meta: payload?.meta || {
+      current_page: page,
+      last_page: 1,
+      per_page: filters.per_page ?? 30,
+      total: 0,
+    },
+  }
+}
+
+export async function apiOneCPush(): Promise<{
+  orders: { count: number; log_id: number; bytes: number }
+  offers: { count: number; log_id: number; bytes: number }
+}> {
+  const payload = await apiPost('/1c/push', {})
+  return (payload?.data || payload) as {
+    orders: { count: number; log_id: number; bytes: number }
+    offers: { count: number; log_id: number; bytes: number }
+  }
+}
+
+export async function apiOneCPull(file?: File): Promise<Record<string, unknown>> {
+  if (file) {
+    const fd = new FormData()
+    fd.append('file', file)
+    const payload = await apiUpload('/1c/pull', fd)
+    return (payload?.data || payload) as Record<string, unknown>
+  }
+  const payload = await apiPost('/1c/pull', {})
+  return (payload?.data || payload) as Record<string, unknown>
 }

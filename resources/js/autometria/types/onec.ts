@@ -12,6 +12,8 @@ export type OneCSyncOptions = {
   update_stocks: boolean
   update_prices: boolean
   create_products: boolean
+  sync_mode?: 'manual' | 'auto'
+  remote_url?: string | null
 }
 
 export type OneCCredentials = {
@@ -21,7 +23,24 @@ export type OneCCredentials = {
   /** Returned only once after reset */
   password?: string | null
   exchange_url: string
+  export_orders_url?: string
+  export_offers_url?: string
+  json_push_url?: string
   options: OneCSyncOptions
+}
+
+export type OneCExchangeLog = {
+  id: number
+  direction: 'inbound' | 'outbound' | string
+  channel: string
+  file_name?: string | null
+  status: string
+  processed_count: number
+  payload_size: number
+  errors?: string | null
+  details?: Record<string, unknown>
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export type OneCSyncObjects = {

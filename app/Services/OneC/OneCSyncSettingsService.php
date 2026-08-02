@@ -29,7 +29,7 @@ final class OneCSyncSettingsService
      *   password_set: bool,
      *   password_hint: string|null,
      *   exchange_url: string,
-     *   options: array{update_stocks: bool, update_prices: bool, create_products: bool}
+     *   options: array{update_stocks: bool, update_prices: bool, create_products: bool, sync_mode: string, remote_url: string|null}
      * }
      */
     public function getPublicCredentials(int $tenantId): array
@@ -41,10 +41,15 @@ final class OneCSyncSettingsService
             'password_set' => ! empty($cfg['password_hash']),
             'password_hint' => isset($cfg['password_hint']) ? (string) $cfg['password_hint'] : null,
             'exchange_url' => $this->exchangeUrl(),
+            'export_orders_url' => $this->exportOrdersUrl(),
+            'export_offers_url' => $this->exportOffersUrl(),
+            'json_push_url' => $this->jsonPushUrl(),
             'options' => [
                 'update_stocks' => (bool) ($cfg['options']['update_stocks'] ?? true),
                 'update_prices' => (bool) ($cfg['options']['update_prices'] ?? true),
                 'create_products' => (bool) ($cfg['options']['create_products'] ?? true),
+                'sync_mode' => (string) ($cfg['options']['sync_mode'] ?? 'manual'),
+                'remote_url' => isset($cfg['options']['remote_url']) ? (string) $cfg['options']['remote_url'] : null,
             ],
         ];
     }
@@ -78,16 +83,24 @@ final class OneCSyncSettingsService
     }
 
     /**
-     * @param  array{update_stocks?: bool, update_prices?: bool, create_products?: bool}  $options
-     * @return array{update_stocks: bool, update_prices: bool, create_products: bool}
+     * @param  array{update_stocks?: bool, update_prices?: bool, create_products?: bool, sync_mode?: string, remote_url?: string|null}  $options
+     * @return array{update_stocks: bool, update_prices: bool, create_products: bool, sync_mode: string, remote_url: string|null}
      */
     public function updateOptions(int $tenantId, array $options): array
     {
         $cfg = $this->load($tenantId);
+        $mode = (string) ($options['sync_mode'] ?? $cfg['options']['sync_mode'] ?? 'manual');
+        if (! in_array($mode, ['manual', 'auto'], true)) {
+            $mode = 'manual';
+        }
         $cfg['options'] = [
             'update_stocks' => (bool) ($options['update_stocks'] ?? $cfg['options']['update_stocks'] ?? true),
             'update_prices' => (bool) ($options['update_prices'] ?? $cfg['options']['update_prices'] ?? true),
             'create_products' => (bool) ($options['create_products'] ?? $cfg['options']['create_products'] ?? true),
+            'sync_mode' => $mode,
+            'remote_url' => array_key_exists('remote_url', $options)
+                ? ($options['remote_url'] !== null && $options['remote_url'] !== '' ? (string) $options['remote_url'] : null)
+                : ($cfg['options']['remote_url'] ?? null),
         ];
         if (empty($cfg['login'])) {
             $cfg['login'] = '1c_exchange';
@@ -131,9 +144,27 @@ final class OneCSyncSettingsService
 
     public function exchangeUrl(): string
     {
-        $base = rtrim((string) config('app.url', 'https://your-domain.com'), '/');
+        return $this->apiBase().'/1c/exchange';
+    }
 
-        return $base.'/api/v1/1c/exchange';
+    public function exportOrdersUrl(): string
+    {
+        return $this->apiBase().'/1c/export/orders';
+    }
+
+    public function exportOffersUrl(): string
+    {
+        return $this->apiBase().'/1c/export/offers';
+    }
+
+    public function jsonPushUrl(): string
+    {
+        return $this->apiBase().'/1c/json/push';
+    }
+
+    private function apiBase(): string
+    {
+        return rtrim((string) config('app.url', 'https://your-domain.com'), '/').'/api/v1';
     }
 
     /**
@@ -157,6 +188,8 @@ final class OneCSyncSettingsService
                 'update_stocks' => true,
                 'update_prices' => true,
                 'create_products' => true,
+                'sync_mode' => 'manual',
+                'remote_url' => null,
             ],
         ], $value);
     }

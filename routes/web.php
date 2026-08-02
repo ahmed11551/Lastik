@@ -9,6 +9,7 @@
 
 use Autometria\Http\Controllers\CashShiftController;
 use Autometria\Http\Controllers\DashboardController;
+use Autometria\Http\Controllers\IntegrationsPageController;
 use Autometria\Http\Controllers\OrderController;
 use Autometria\Http\Controllers\TvBoardPageController;
 use Autometria\Http\Controllers\UserManagementController;
@@ -18,6 +19,7 @@ Route::middleware(['web', 'auth'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/users', UserManagementController::class)->name('users.index');
     Route::get('/tv-board', TvBoardPageController::class)->name('tv-board');
+    Route::get('/settings/integrations', IntegrationsPageController::class)->name('settings.integrations');
 
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');

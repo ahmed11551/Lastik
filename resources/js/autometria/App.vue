@@ -14,9 +14,9 @@ import OrdersView from '@/autometria/views/OrdersView.vue'
 import AuditView from '@/autometria/views/AuditView.vue'
 import LoginView from '@/autometria/views/LoginView.vue'
 import SystemModuleView from '@/autometria/views/SystemModuleView.vue'
-import OneCSyncSettingsView from '@/autometria/views/OneCSyncSettingsView.vue'
 import PosView from '@/views/pos/PosView.vue'
 import TvBoardIndex from '@/Pages/TvBoard/Index.vue'
+import IntegrationsIndex from '@/Pages/Settings/Integrations/Index.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
 import { getToken } from '@/autometria/api/client'
@@ -34,6 +34,7 @@ const VIEW_TITLES = {
   stock: 'Склад и остатки',
   onec: 'Синхронизация 1С',
   '1c': 'Синхронизация 1С',
+  integrations: 'Интеграции 1С / CommerceML',
   cashier: 'Касса и смены',
   shifts: 'Касса и смены',
   pos: 'POS Терминал',
@@ -50,7 +51,7 @@ const VIEW_TITLES = {
 function normalizeView(raw) {
   if (raw === 'stock') return 'warehouse'
   if (raw === 'shifts') return 'cashier'
-  if (raw === '1c') return 'onec'
+  if (raw === '1c' || raw === 'onec') return 'integrations'
   return VIEW_TITLES[raw] ? raw : 'dashboard'
 }
 
@@ -72,7 +73,7 @@ const breadcrumbs = computed(() => {
   if (view.value === 'warehouse') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Остатки' }]
   }
-  if (view.value === 'onec') {
+  if (view.value === 'integrations') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Интеграции' }, { label: '1С CommerceML' }]
   }
   if (view.value === 'cashier') {
@@ -186,7 +187,7 @@ function onLoginSuccess() {
           class="ds-badge ds-badge--warning"
         >Warehouse</span>
         <span
-          v-else-if="view === 'onec'"
+          v-else-if="view === 'integrations'"
           class="ds-badge ds-badge--warning"
         >1C Sync</span>
         <span
@@ -221,7 +222,10 @@ function onLoginSuccess() {
 
       <WarehouseView v-else-if="view === 'warehouse'" />
 
-      <OneCSyncSettingsView v-else-if="view === 'onec'" />
+      <IntegrationsIndex
+        v-else-if="view === 'integrations'"
+        embedded
+      />
 
       <OrdersView
         v-else-if="view === 'orders' || view === 'new_order'"
