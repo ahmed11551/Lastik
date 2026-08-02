@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace Autometria\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductService extends TenantModel
@@ -49,6 +50,7 @@ class ProductService extends TenantModel
     protected $table = 'products_services';
 
     protected $fillable = [
+        'tenant_id',
         'type',
         'article',
         'external_id',
@@ -56,6 +58,7 @@ class ProductService extends TenantModel
         'brand',
         'unit',
         'category',
+        'category_id',
         'base_price',
         'radius_modifier',
         'is_active',
@@ -70,6 +73,11 @@ class ProductService extends TenantModel
     public function stocks(): HasMany
     {
         return $this->hasMany(Stock::class, 'product_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function prices(): HasMany
