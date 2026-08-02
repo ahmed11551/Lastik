@@ -1,13 +1,16 @@
 <script setup lang="ts">
 /**
- * POS Marking — scan GS1 DataMatrix (Честный Знак) before cart add
+ * POS Marking — scan GS1 DataMatrix (Честный Знак) before cart add.
+ * Live verify via POST /api/v1/regulatory/marking/verify
  */
 import { nextTick, ref, watch } from 'vue'
 import { looksLikeDataMatrix } from '@/services/marking/dataMatrix'
+import { apiPost } from '@/autometria/api/client'
 
 const props = defineProps<{
   open: boolean
   productTitle?: string
+  productId?: number | null
   pending?: boolean
 }>()
 
@@ -19,6 +22,8 @@ const emit = defineEmits<{
 
 const code = ref('')
 const error = ref('')
+const validHint = ref('')
+const verifying = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
 
 watch(
@@ -27,6 +32,8 @@ watch(
     if (!v) return
     code.value = ''
     error.value = ''
+    validHint.value = ''
+    verifying.value = false
     await nextTick()
     inputRef.value?.focus()
   },
@@ -37,15 +44,39 @@ function close(): void {
   emit('cancel')
 }
 
-function submit(): void {
+async function submit(): Promise<void> {
   const c = code.value.trim()
   if (!looksLikeDataMatrix(c)) {
     error.value = 'Неверный формат DataMatrix (ожидаются AI 01 + AI 21)'
+    validHint.value = ''
     return
   }
+
+  verifying.value = true
   error.value = ''
-  emit('confirm', c)
-  emit('update:open', false)
+  validHint.value = ''
+  try {
+    const payload = await apiPost('/regulatory/marking/verify', {
+      code: c,
+      product_id: props.productId || undefined,
+    })
+    const data = payload?.data || payload
+    if (!data?.valid) {
+      error.value = payload?.message || 'Марка отклонена'
+      return
+    }
+    validHint.value = `ОК · GTIN ${data.gtin} · ${data.serial} · ${data.chestny_znak || 'VALID'}`
+    emit('confirm', c)
+    emit('update:open', false)
+  } catch (e: any) {
+    error.value =
+      e?.response?.data?.message ||
+      e?.message ||
+      'Марка не прошла проверку Честного Знака'
+    validHint.value = ''
+  } finally {
+    verifying.value = false
+  }
 }
 </script>
 
@@ -81,12 +112,17 @@ function submit(): void {
             autocomplete="off"
             data-testid="marking-code-input"
             class="ds-input mt-1 h-14 w-full font-mono text-sm"
-            style="border-radius: 4px; background: #161b22; border-color: #1f2937"
+            :style="{
+              borderRadius: '4px',
+              background: '#161b22',
+              borderColor: error ? '#f87171' : validHint ? '#34d399' : '#1f2937',
+            }"
             placeholder="01…21…"
             @keydown.enter.prevent="submit"
           >
         </label>
-        <p v-if="error" class="mt-2 text-xs" style="color: #fca5a5">{{ error }}</p>
+        <p v-if="error" class="mt-2 text-xs" style="color: #fca5a5" data-testid="marking-error">{{ error }}</p>
+        <p v-else-if="validHint" class="mt-2 text-xs" style="color: #6ee7b7" data-testid="marking-ok">{{ validHint }}</p>
 
         <div class="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
           <button
@@ -94,16 +130,16 @@ function submit(): void {
             data-testid="marking-confirm"
             class="h-14 flex-1 border font-mono text-sm font-bold uppercase disabled:opacity-50"
             style="background: #f59e0b; color: #0b0d10; border-color: #f59e0b; border-radius: 4px"
-            :disabled="pending"
+            :disabled="pending || verifying"
             @click="submit"
           >
-            {{ pending ? 'Проверка…' : 'Подтвердить марку' }}
+            {{ verifying || pending ? 'Проверка…' : 'Подтвердить марку' }}
           </button>
           <button
             type="button"
             class="h-12 border px-4 font-mono text-xs"
             style="border-color: #1f2937; color: #9ca3af; border-radius: 4px; background: #0b0d10"
-            :disabled="pending"
+            :disabled="pending || verifying"
             @click="close"
           >
             Esc · Отмена

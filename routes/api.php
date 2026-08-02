@@ -20,10 +20,12 @@ use Autometria\Http\Controllers\LoyaltyController;
 use Autometria\Http\Controllers\CustomerImportController;
 use Autometria\Http\Controllers\CustomerMergeController;
 use Autometria\Http\Controllers\DictionaryController;
+use Autometria\Http\Controllers\EgaisController;
 use Autometria\Http\Controllers\FiscalReceiptController;
 use Autometria\Http\Controllers\IssuanceController;
 use Autometria\Http\Controllers\CommerceMLExportController;
 use Autometria\Http\Controllers\JsonExchangeController;
+use Autometria\Http\Controllers\MarkingController;
 use Autometria\Http\Controllers\OneCExchangeController;
 use Autometria\Http\Controllers\OneCSyncController;
 use Autometria\Http\Controllers\KpiController;
@@ -107,6 +109,10 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
     Route::post('fiscal-receipts', [FiscalReceiptController::class, 'store'])->middleware('ensure.permission:payments.create');
     Route::get('fiscal-receipts/{fiscalReceipt}', [FiscalReceiptController::class, 'show'])->middleware('ensure.permission:payments.create');
     Route::post('fiscal-receipts/{fiscalReceipt}/retry', [FiscalReceiptController::class, 'retry'])->middleware('ensure.permission:payments.create');
+
+    Route::post('regulatory/marking/verify', [MarkingController::class, 'verify'])->middleware('ensure.permission:payments.create');
+    Route::get('regulatory/marking/codes', [MarkingController::class, 'codes'])->middleware('ensure.permission:stock.view');
+    Route::post('regulatory/egais/unseal', [EgaisController::class, 'unseal'])->middleware('ensure.permission:stock.transfer');
 
     Route::get('settings', [SettingController::class, 'index'])->middleware('ensure.permission:settings.view');
     Route::put('settings', [SettingController::class, 'update'])->middleware('ensure.permission:settings.update');

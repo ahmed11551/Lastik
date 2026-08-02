@@ -102,8 +102,10 @@ function onMarkingConfirm(code: string): void {
   if (res?.ok) {
     markingOpen.value = false
     markingPending.value = null
-    toast.success('Марка принята', 'Честный Знак')
+    toast.success('Марка принята (КИЗ проверен)', 'Честный Знак')
     focusSearch()
+  } else {
+    toast.error('Не удалось добавить позицию с маркой', 'Честный Знак')
   }
 }
 
@@ -459,6 +461,7 @@ onUnmounted(() => {
     <MarkingScanModal
       v-model:open="markingOpen"
       :product-title="markingPending?.title"
+      :product-id="markingPending?.id ?? null"
       @confirm="onMarkingConfirm"
       @cancel="onMarkingCancel"
     />
