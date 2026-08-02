@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
  *
  * - ingress():  приходная партия (пополнение склада).
  * - writeOff(): списание СТРОГО по FIFO (старые партии first), под lockForUpdate.
+ * - reverseWriteOff(): возврат на исходные партии по StockLotDeduction.
  * - adjust():   инвентаризация (коррекция остатка партии + сверка со Stock.actual).
  */
 final class StockBatchService
@@ -263,6 +264,116 @@ final class StockBatchService
                 'overdraft' => $hasOverdraft,
                 'has_overdraft' => $hasOverdraft,
                 'shortfall' => round($shortfall, 3),
+            ];
+        });
+    }
+
+    /**
+     * Обратное FIFO-списание: возвращает qty на исходные партии по журналу StockLotDeduction.
+     *
+     * @return array{restored: float, cost: float, batches: array<int, float>}
+     */
+    public function reverseWriteOff(
+        int $tenantId,
+        int $orderId,
+        int $orderItemId,
+        float $qty,
+        ?int $createdBy = null,
+    ): array {
+        if ($qty <= 0) {
+            throw new InvalidArgumentException('Reverse qty must be positive');
+        }
+
+        return DB::transaction(function () use ($tenantId, $orderId, $orderItemId, $qty, $createdBy): array {
+            $deductions = \Autometria\Models\StockLotDeduction::query()->withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->where('order_id', $orderId)
+                ->where('order_item_id', $orderItemId)
+                ->orderByDesc('id') // LIFO restore: last deducted first
+                ->lockForUpdate()
+                ->get();
+
+            if ($deductions->isEmpty()) {
+                throw new InsufficientStockException('no_lot_deductions_for_refund');
+            }
+
+            $remaining = round($qty, 3);
+            $restored = 0.0;
+            $cost = 0.0;
+            $batchTrace = [];
+            $warehouseId = (int) $deductions->first()->warehouse_id;
+            $productId = (int) $deductions->first()->product_id;
+
+            $stock = $this->lockStock($tenantId, $warehouseId, $productId);
+
+            foreach ($deductions as $deduction) {
+                if ($remaining <= 0.0001) {
+                    break;
+                }
+
+                $already = (float) ($deduction->refunded_qty ?? 0);
+                $availableToRestore = round((float) $deduction->quantity - $already, 3);
+                if ($availableToRestore <= 0.0001) {
+                    continue;
+                }
+
+                $take = min($availableToRestore, $remaining);
+                $batch = StockBatch::query()->withoutGlobalScopes()
+                    ->whereKey($deduction->stock_batch_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($batch === null) {
+                    continue;
+                }
+
+                if ((bool) $batch->is_overdraft) {
+                    // Overdraft batch: move remaining_qty toward zero (less negative).
+                    $batch->remaining_qty = round((float) $batch->remaining_qty + $take, 3);
+                    $batch->qty = round((float) $batch->qty + $take, 3);
+                } else {
+                    $batch->remaining_qty = round((float) $batch->remaining_qty + $take, 3);
+                }
+                $batch->save();
+
+                $deduction->refunded_qty = round($already + $take, 3);
+                $deduction->save();
+
+                $unitCost = round((float) $deduction->unit_cost, 2);
+                $restored += $take;
+                $cost += round($take * $unitCost, 2);
+                $batchTrace[(int) $batch->id] = round(($batchTrace[(int) $batch->id] ?? 0) + $take, 3);
+                $remaining = round($remaining - $take, 3);
+            }
+
+            if ($remaining > 0.0001) {
+                throw new InsufficientStockException('refund_qty_exceeds_deductions');
+            }
+
+            $stock->actual = (float) $stock->actual + $restored;
+            $stock->available = (float) $stock->actual - (float) $stock->reserved;
+            $stock->save();
+
+            AuditLog::write(
+                $tenantId,
+                $createdBy ?? auth()->id(),
+                'stock.batch.reverse_write_off',
+                Stock::class,
+                (int) $stock->id,
+                [],
+                [
+                    'order_id' => $orderId,
+                    'order_item_id' => $orderItemId,
+                    'qty' => $restored,
+                    'cost' => $cost,
+                    'batches' => $batchTrace,
+                ],
+            );
+
+            return [
+                'restored' => round($restored, 3),
+                'cost' => round($cost, 2),
+                'batches' => $batchTrace,
             ];
         });
     }

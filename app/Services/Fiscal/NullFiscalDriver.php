@@ -59,8 +59,16 @@ final class NullFiscalDriver implements FiscalDriverInterface
         return FiscalResultDto::success($fd, $fn, $fp, $qr, $driverRequestId);
     }
 
-    public function refund(FiscalReceipt $receipt): bool
+    public function refund(FiscalReceipt $receipt): FiscalResultDto
     {
-        return true;
+        // Mirror sell() with a distinct seed namespace for FD uniqueness.
+        $seed = crc32('refund:'.(string) $receipt->driver_request_id);
+
+        $fd = (string) (1000000 + ($seed % 8999999));
+        $fn = (string) (9000000000000000 + ($seed % 999999999));
+        $fp = str_pad((string) ($seed % 1000000000000000), 16, '0', STR_PAD_LEFT);
+        $qr = 'https://null-ofd.local/check?fn='.$fn.'&fd='.$fd.'&fp='.$fp.'&op=sell_refund';
+
+        return FiscalResultDto::success($fd, $fn, $fp, $qr, (string) $receipt->driver_request_id);
     }
 }

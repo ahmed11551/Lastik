@@ -106,7 +106,7 @@ final class AtolOnlineDriver implements FiscalDriverInterface
         );
     }
 
-    public function refund(FiscalReceipt $receipt): bool
+    public function refund(FiscalReceipt $receipt): FiscalResultDto
     {
         $payload = $this->buildRequest($receipt, true);
 
@@ -118,7 +118,24 @@ final class AtolOnlineDriver implements FiscalDriverInterface
             throw new \Autometria\Exceptions\Domain\FiscalNetworkTimeoutException($e->getMessage());
         }
 
-        return $response->successful();
+        if ($response->status() >= 500) {
+            return FiscalResultDto::failure('ATOL HTTP '.$response->status(), needsReconcile: true);
+        }
+
+        if (! $response->successful()) {
+            return FiscalResultDto::failure('ATOL HTTP '.$response->status().': '.$response->body());
+        }
+
+        $data = $response->json() ?? [];
+
+        return new FiscalResultDto(
+            ($data['status'] ?? '') === 'done' || ($data['status'] ?? '') === 'wait',
+            $data['payload']['fiscal_document_number'] ?? null,
+            $data['payload']['fiscal_storage_number'] ?? null,
+            $data['payload']['fiscal_sign'] ?? null,
+            $data['payload']['qr_code_url'] ?? null,
+            (string) $receipt->driver_request_id,
+        );
     }
 
     /**

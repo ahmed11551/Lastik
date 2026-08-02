@@ -108,6 +108,46 @@ final class FiscalReceiptService
         return $receipt;
     }
 
+    /**
+     * Чек возврата прихода (54-ФЗ / ФФД operation = sell_refund).
+     */
+    public function createRefundReceipt(
+        int $tenantId,
+        ?int $cashShiftId,
+        int $orderId,
+        ?int $paymentId,
+        float $refundTotal,
+        array $itemsSnapshot,
+        ?string $idempotencyKey = null,
+    ): FiscalReceipt {
+        $snapshot = [
+            'items' => $itemsSnapshot,
+            'total' => (int) round($refundTotal * 100),
+            'payment_address' => 'https://autometria.local',
+            'operation' => FiscalReceiptType::SELL_REFUND->value,
+        ];
+
+        $receipt = FiscalReceipt::query()->withoutGlobalScopes()->forceCreate([
+            'tenant_id' => $tenantId,
+            'cash_shift_id' => $cashShiftId,
+            'order_id' => $orderId,
+            // Unique (tenant_id, payment_id) — refund чек не делит payment_id с sell-чеком.
+            'payment_id' => null,
+            'operation' => FiscalReceiptType::SELL_REFUND->value,
+            'status' => FiscalReceiptStatus::PENDING->value,
+            'idempotency_key' => $idempotencyKey ?? (string) Str::uuid(),
+            'driver_request_id' => (string) Str::uuid(),
+            'total_amount' => $refundTotal,
+            'payload_snapshot' => array_merge($snapshot, [
+                'source_payment_id' => $paymentId,
+            ]),
+        ]);
+
+        FiscalizeReceiptJob::dispatchSync($receipt->id);
+
+        return $receipt->fresh();
+    }
+
     public function driver(): FiscalDriverInterface
     {
         if ($this->driver !== null) {

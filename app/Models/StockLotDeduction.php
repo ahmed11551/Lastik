@@ -30,10 +30,12 @@ class StockLotDeduction extends TenantModel
         'unit_cost',
         'total_cost',
         'deducted_at',
+        'refunded_qty',
     ];
 
     protected $casts = [
         'quantity' => 'decimal:3',
+        'refunded_qty' => 'decimal:3',
         'unit_cost' => 'decimal:2',
         'total_cost' => 'decimal:2',
         'deducted_at' => 'datetime',
