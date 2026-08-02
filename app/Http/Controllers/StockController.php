@@ -80,6 +80,9 @@ class StockController extends Controller
                 'reserved' => (int) round((float) $stock->reserved),
                 'price' => (float) ($product?->base_price ?? 0),
                 'status' => $status,
+                'is_marked' => (bool) ($product?->is_marked ?? false),
+                'marking_type' => $product?->marking_type,
+                'is_egais' => (bool) ($product?->is_egais ?? false),
             ];
         })->values();
 

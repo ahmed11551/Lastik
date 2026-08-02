@@ -62,10 +62,16 @@ class ProductService extends TenantModel
         'base_price',
         'radius_modifier',
         'is_active',
+        'is_marked',
+        'marking_type',
+        'is_egais',
+        'egais_alcocode',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_marked' => 'boolean',
+        'is_egais' => 'boolean',
         'base_price' => 'decimal:2',
         'radius_modifier' => 'array',
     ];

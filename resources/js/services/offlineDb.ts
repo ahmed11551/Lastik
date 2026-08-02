@@ -17,6 +17,12 @@ export type LocalReceiptItem = {
   price: number
   discount?: number
   vat_rate: string
+  /** Raw GS1 DataMatrix CIS */
+  markingCode?: string | null
+  marking_code?: string | null
+  gtin?: string | null
+  serial_number?: string | null
+  is_marked?: boolean
 }
 
 export interface LocalReceipt {
@@ -31,6 +37,8 @@ export interface LocalReceipt {
   payment_type: LocalPaymentType
   payment_parts?: Array<{ method: string; amount: number }>
   status: LocalReceiptStatus
+  /** Offline receipt contains marking CIS → fiscal marking required on sync */
+  requires_fiscal_marking?: boolean
   created_at: string
   synced_at?: string | null
   last_error?: string | null
@@ -49,6 +57,9 @@ export interface CachedProduct {
   vat_rate?: string
   category?: string
   updated_at?: string
+  is_marked?: boolean
+  marking_type?: string | null
+  is_egais?: boolean
 }
 
 export class PosDatabase extends Dexie {
@@ -58,6 +69,11 @@ export class PosDatabase extends Dexie {
   constructor() {
     super('PosDatabase')
     this.version(1).stores({
+      localReceipts: '++id, uuid, status, created_at, shift_id',
+      cachedProducts: 'id, product_id, sku, barcode, title',
+    })
+    // v2: marking / Честный Знак fields live inside JSON rows (no index change required)
+    this.version(2).stores({
       localReceipts: '++id, uuid, status, created_at, shift_id',
       cachedProducts: 'id, product_id, sku, barcode, title',
     })

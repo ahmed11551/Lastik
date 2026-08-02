@@ -49,6 +49,7 @@ use Autometria\Models\OrderItem;
 use Autometria\Models\Price;
 use Autometria\Models\ProductService;
 use Autometria\Models\Stock;
+use Autometria\Services\Marking\EgaisAndMarkingService;
 use Autometria\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 
@@ -56,6 +57,7 @@ final class OrderService
 {
     public function __construct(
         private readonly StockReservationService $reservations,
+        private readonly EgaisAndMarkingService $marking,
     ) {}
 
     public function create(CreateOrderDTO $dto, int $createdBy): Order
@@ -121,6 +123,12 @@ final class OrderService
                     ->whereKey($productId)
                     ->firstOrFail();
 
+                $markingFields = $this->marking->assertValidMarking(
+                    $dto->tenantId,
+                    $product,
+                    isset($itemPayload['marking_code']) ? (string) $itemPayload['marking_code'] : null,
+                );
+
                 $kpiRule = KpiRule::query()
                     ->withoutGlobalScopes()
                     ->where('tenant_id', $dto->tenantId)
@@ -154,6 +162,11 @@ final class OrderService
                     'assigned_seller_id' => $dto->assignedSellerId ?: null,
                     'master_id' => $dto->masterId ?: null,
                     'added_at' => now()->toIso8601String(),
+                    'marking_code' => $markingFields['marking_code'],
+                    'gtin' => $markingFields['gtin'],
+                    'serial_number' => $markingFields['serial_number'],
+                    'is_marked' => (bool) $product->is_marked,
+                    'is_egais' => (bool) $product->is_egais,
                 ];
 
                 $orderItem = OrderItem::query()->withoutGlobalScopes()->forceCreate([
@@ -167,6 +180,9 @@ final class OrderService
                     'kpi_percent' => $kpiPercent,
                     'kpi_amount' => $kpiAmount,
                     'snapshot' => $snapshot,
+                    'marking_code' => $markingFields['marking_code'],
+                    'gtin' => $markingFields['gtin'],
+                    'serial_number' => $markingFields['serial_number'],
                 ]);
 
                 if ($type === 'product') {

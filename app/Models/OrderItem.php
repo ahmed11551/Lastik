@@ -55,6 +55,9 @@ class OrderItem extends TenantModel
         'discount',
         'kpi_percent',
         'kpi_amount',
+        'marking_code',
+        'gtin',
+        'serial_number',
     ];
 
     protected $casts = [

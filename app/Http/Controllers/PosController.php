@@ -14,6 +14,7 @@ namespace Autometria\Http\Controllers;
 use Autometria\DTOs\CreateOrderDTO;
 use Autometria\Enums\OrderStatusEnum;
 use Autometria\Exceptions\Domain\InsufficientStockException;
+use Autometria\Exceptions\Domain\InvalidMarkingCodeException;
 use Autometria\Exceptions\Domain\NoActiveShiftException;
 use Autometria\Exceptions\Domain\PriceNotFoundException;
 use Autometria\Models\CashShift;
@@ -91,6 +92,9 @@ class PosController extends Controller
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
             'items.*.type' => ['nullable', 'string', 'in:product,service'],
             'items.*.vat_rate' => ['nullable', 'string', 'max:10'],
+            'items.*.marking_code' => ['nullable', 'string', 'max:255'],
+            'items.*.gtin' => ['nullable', 'string', 'max:14'],
+            'items.*.serial_number' => ['nullable', 'string', 'max:64'],
             'uuid' => ['nullable', 'string', 'max:100'],
             'payment_type' => ['nullable', 'string', 'max:20'],
             'shift_id' => ['nullable', 'integer'],
@@ -148,6 +152,18 @@ class PosController extends Controller
         foreach ($data['items'] as $row) {
             $product = ProductService::query()->find((int) $row['product_id']);
             $type = $row['type'] ?? ($product?->type === 'service' ? 'service' : 'product');
+
+            // Regulatory: marked SKU must carry a CIS (Честный Знак / DataMatrix).
+            if ($product && (bool) $product->is_marked) {
+                $mark = trim((string) ($row['marking_code'] ?? ''));
+                if ($mark === '') {
+                    return response()->json([
+                        'message' => 'Для маркированного товара требуется код DataMatrix (marking_code)',
+                        'code' => 'MARKING_CODE_REQUIRED',
+                    ], 422);
+                }
+            }
+
             $items[] = [
                 'type' => $type,
                 'product_id' => (int) $row['product_id'],
@@ -155,6 +171,7 @@ class PosController extends Controller
                 'discount' => (float) ($row['discount'] ?? 0),
                 'warehouse_id' => isset($row['warehouse_id']) ? (int) $row['warehouse_id'] : null,
                 'worker_id' => $type === 'service' ? (int) $user->id : null,
+                'marking_code' => isset($row['marking_code']) ? (string) $row['marking_code'] : null,
             ];
         }
 
@@ -232,6 +249,11 @@ class PosController extends Controller
             });
         } catch (InsufficientStockException $e) {
             return response()->json(['message' => $e->getMessage(), 'code' => 'InsufficientStockException'], 422);
+        } catch (InvalidMarkingCodeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => $e->errorCode,
+            ], 422);
         } catch (NoActiveShiftException $e) {
             return response()->json(['message' => $e->getMessage(), 'code' => 'NoActiveShiftException'], 422);
         } catch (PriceNotFoundException $e) {

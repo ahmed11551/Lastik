@@ -52,6 +52,7 @@ export async function syncPendingReceipts(): Promise<{ synced: number; failed: n
               warehouse_id: i.warehouse_id || undefined,
               vat_rate: i.vat_rate || 'none',
               type: 'product',
+              marking_code: i.marking_code || i.markingCode || undefined,
             })),
             method: mapMethod(receipt),
             payment_parts: receipt.payment_parts,

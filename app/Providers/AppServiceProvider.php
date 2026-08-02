@@ -38,13 +38,14 @@ declare(strict_types=1);
 
 namespace Autometria\Providers;
 
+use Autometria\Services\Marking\ChestnyZnakClient;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->singleton(ChestnyZnakClient::class, fn () => ChestnyZnakClient::fromConfig());
     }
 
     public function boot(): void

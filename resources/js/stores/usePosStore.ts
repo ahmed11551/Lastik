@@ -19,6 +19,10 @@ export type PosCartLine = {
   discount: number
   vat_rate: string
   line: number
+  is_marked?: boolean
+  marking_code?: string | null
+  gtin?: string | null
+  serial_number?: string | null
 }
 
 function lineSum(price: number, qty: number, discount: number): number {
@@ -84,6 +88,9 @@ export const usePosStore = defineStore('pos', {
             warehouse_id: r.warehouse_id != null ? Number(r.warehouse_id) : null,
             vat_rate: 'none',
             category: 'popular',
+            is_marked: Boolean(r.is_marked),
+            marking_type: r.marking_type ? String(r.marking_type) : null,
+            is_egais: Boolean(r.is_egais),
           }))
         } catch {
           /* fallback products */
@@ -105,6 +112,9 @@ export const usePosStore = defineStore('pos', {
               warehouse_id: null,
               vat_rate: 'none',
               category: 'popular',
+              is_marked: Boolean(p.is_marked),
+              marking_type: p.marking_type ? String(p.marking_type) : null,
+              is_egais: Boolean(p.is_egais),
             }))
           } catch {
             /* offline only */
@@ -123,12 +133,27 @@ export const usePosStore = defineStore('pos', {
       }
     },
 
-    addProduct(p: CachedProduct, qty = 1) {
-      const key = `p-${p.product_id}`
+    /**
+     * Add product to cart. Marked goods require marking_code (qty=1 per CIS).
+     * @returns 'needs_marking' when caller must open MarkingScanModal
+     */
+    addProduct(p: CachedProduct, qty = 1, markingCode?: string | null) {
+      if (p.is_marked && !markingCode) {
+        return { ok: false as const, reason: 'needs_marking' as const, product: p }
+      }
+
+      const markKey = markingCode ? `-m-${markingCode.slice(0, 32)}` : ''
+      const key = `p-${p.product_id}${markKey}`
       const existing = this.cart.find((r) => r.key === key)
-      if (existing) {
+
+      if (existing && !p.is_marked) {
         existing.qty = Number(existing.qty) + qty
         existing.line = lineSum(existing.price, existing.qty, existing.discount)
+      } else if (existing && p.is_marked) {
+        // Same CIS already in cart — ignore duplicate scan
+        this.lastOp = { status: 'warning', label: 'Марка уже в чеке' }
+        toast.warning('Эта марка уже добавлена', 'Честный Знак')
+        return { ok: false as const, reason: 'duplicate_mark' as const, product: p }
       } else {
         this.cart.push({
           key,
@@ -137,14 +162,17 @@ export const usePosStore = defineStore('pos', {
           sku: p.sku,
           barcode: p.barcode,
           title: p.title,
-          qty,
+          qty: p.is_marked ? 1 : qty,
           price: Number(p.price || 0),
           discount: 0,
           vat_rate: p.vat_rate || 'none',
-          line: lineSum(Number(p.price || 0), qty, 0),
+          line: lineSum(Number(p.price || 0), p.is_marked ? 1 : qty, 0),
+          is_marked: Boolean(p.is_marked),
+          marking_code: markingCode || null,
         })
       }
       this.lastOp = { status: 'success', label: `+ ${p.title}` }
+      return { ok: true as const, product: p }
     },
 
     async addByBarcode(raw: string) {
@@ -167,6 +195,10 @@ export const usePosStore = defineStore('pos', {
         this.lastOp = { status: 'warning', label: `Штрихкод ${code} не найден` }
         toast.warning(`Штрихкод ${code} не найден`, 'POS')
         return { ok: false as const, reason: 'not_found', code }
+      }
+
+      if (product.is_marked) {
+        return { ok: false as const, reason: 'needs_marking' as const, product }
       }
 
       this.addProduct(product, 1)
@@ -243,6 +275,9 @@ export const usePosStore = defineStore('pos', {
         price: Math.round(r.price * factor * 100) / 100,
         discount: r.discount,
         vat_rate: r.vat_rate || 'none',
+        markingCode: r.marking_code || null,
+        marking_code: r.marking_code || null,
+        is_marked: Boolean(r.is_marked),
       }))
 
       this.checkingOut = true
@@ -256,6 +291,7 @@ export const usePosStore = defineStore('pos', {
           amount_tendered: payload.amount_tendered,
           payment_type: payload.payment_type,
           payment_parts: payload.payment_parts,
+          requires_fiscal_marking: items.some((i) => Boolean(i.marking_code || i.markingCode)),
         })
 
         if (offline.online) {
@@ -282,6 +318,7 @@ export const usePosStore = defineStore('pos', {
                   warehouse_id: i.warehouse_id || undefined,
                   vat_rate: i.vat_rate,
                   type: 'product',
+                  marking_code: i.marking_code || i.markingCode || undefined,
                 })),
                 method,
                 payment_parts: payload.payment_parts,
