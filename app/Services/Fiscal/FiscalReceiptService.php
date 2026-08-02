@@ -15,61 +15,55 @@ namespace Autometria\Services\Fiscal;
 
 use Autometria\Enums\FiscalReceiptStatus;
 use Autometria\Enums\FiscalReceiptType;
+use Autometria\Exceptions\Domain\FiscalizationValidationException;
 use Autometria\Jobs\FiscalizeReceiptJob;
 use Autometria\Models\FiscalReceipt;
 use Autometria\Models\Order;
 use Autometria\Models\Payment;
+use Illuminate\Support\Str;
 
 /**
- * Создаёт фискальный чек и ставит в очередь его пробитие.
- *
- * Идемпотентность гарантируется уникальным idempotency_key (совпадает с
- * ключом чека), а повторный вызов FiscalizeReceiptJob пропускает уже
- * FISCALIZED записи.
+ * Создаёт фискальный чек (со снимком позиций/НДС и валидацией сходимости копеек)
+ * и ставит в очередь его пробитие.
  */
 final class FiscalReceiptService
 {
-    /**
-     * @param  FiscalDriverInterface|null  $driver  Inject a driver (e.g. a mock in tests).
-     *                                            When null, driver() resolves Null/Atol by env.
-     */
     public function __construct(
         private readonly ?FiscalDriverInterface $driver = null,
+        private readonly FiscalDiscountService $discounts = new FiscalDiscountService,
     ) {}
 
     /**
-     * Построить payload чека продажи из заказа (позиции + НДС + сумма).
+     * Снимок позиций заказа + распределение скидок (тег 1079), с жёстким assert.
      *
-     * @return array<string, mixed>
+     * @return array{items: list<array>, total: int, payment_address: string}
      */
-    public function buildSalePayload(Order $order): array
+    public function buildSaleSnapshot(Order $order, ?float $receiptTotal = null): array
     {
-        $items = [];
-        $total = 0.0;
-
+        $rawItems = [];
         foreach ($order->orderItems as $item) {
             /** @var \Autometria\Models\OrderItem $item */
-            $price = (float) $item->price;
-            $qty = (float) ($item->qty ?? 1);
-            $vat = $item->vat_rate ?? 'none';
-            $sum = round($price * $qty, 2);
-            $total += $sum;
-
             $snapshot = $item->snapshot ?? [];
-            $name = $snapshot['name'] ?? ($item->product?->name ?? ('Позиция #' . $item->id));
-
-            $items[] = [
-                'name' => $name,
-                'price' => $price,
-                'quantity' => $qty,
-                'sum' => $sum,
-                'vat_rate' => $vat,
+            $rawItems[] = [
+                'name' => $snapshot['name'] ?? ($item->product?->name ?? ('Позиция #' . $item->id)),
+                'price' => (float) $item->price,
+                'quantity' => (float) ($item->qty ?? 1),
+                'vat_rate' => $item->vat_rate ?? 'none',
             ];
         }
 
+        $targetTotal = $receiptTotal ?? (float) $order->total;
+        // При построении снимка из заказа валидируем сходимость позиций (line_total),
+        // но НЕ платежей (частичная оплата легитимна — чек пробивается на сумму платежа).
+        // Валидация сходимости платежей доступна отдельно через FiscalDiscountService::allocate().
+        $payments = [];
+
+        // Валидация сходимости копеек (бросит FiscalizationValidationException до ККТ).
+        $allocated = $this->discounts->allocate($rawItems, $targetTotal, $payments);
+
         return [
-            'items' => $items,
-            'total' => round($total, 2),
+            'items' => $allocated['items'],
+            'total' => $allocated['total'],
             'payment_address' => $order->payload['payment_address'] ?? 'https://autometria.local',
         ];
     }
@@ -82,30 +76,38 @@ final class FiscalReceiptService
         ?string $idempotencyKey = null,
     ): FiscalReceipt {
         $order = $orderId !== null ? Order::query()->withoutGlobalScopes()->findOrFail($orderId) : null;
-        $payload = $order !== null ? $this->buildSalePayload($order) : ['items' => [], 'total' => 0];
+        $payment = $paymentId !== null ? Payment::query()->withoutGlobalScopes()->findOrFail($paymentId) : null;
+
+        // Чек фискализируется на сумму ПЛАТЕЖА (не весь заказ — возможна частичная оплата).
+        $receiptTotal = $payment !== null ? (float) $payment->amount : ($order !== null ? (float) $order->total : 0.0);
+
+        // Валидация сходимости копеек ДО создания записи (если заказ задан).
+        $snapshot = $order !== null
+            ? $this->buildSaleSnapshot($order, $receiptTotal)
+            : ['items' => [], 'total' => (int) round($receiptTotal * 100), 'payment_address' => 'https://autometria.local'];
+
+        $totalAmount = $receiptTotal;
 
         $receipt = FiscalReceipt::query()->withoutGlobalScopes()->forceCreate([
             'tenant_id' => $tenantId,
             'cash_shift_id' => $cashShiftId,
             'order_id' => $orderId,
             'payment_id' => $paymentId,
-            'type' => FiscalReceiptType::SELL->value,
+            'operation' => FiscalReceiptType::SELL->value,
             'status' => FiscalReceiptStatus::PENDING->value,
-            'idempotency_key' => $idempotencyKey ?? (string) \Illuminate\Support\Str::uuid(),
-            'payload' => $payload,
+            'idempotency_key' => $idempotencyKey ?? (string) Str::uuid(),
+            'driver_request_id' => (string) Str::uuid(),
+            'total_amount' => $totalAmount,
+            'payload_snapshot' => $snapshot,
         ]);
 
-        // Гарантированная фискализация: ставим задачу в очередь (dispatchSync —
-        // выполняется немедленно в рамках текущего процесса, не зависит от
-        // настроек очереди; при реальном worker можно заменить на dispatch()).
+        // Гарантированная фискализация: dispatchSync — выполняется немедленно
+        // в рамках текущего процесса (Queue=sync). При реальном worker — dispatch().
         FiscalizeReceiptJob::dispatchSync($receipt->id);
 
         return $receipt;
     }
 
-    /**
-     * Фабрика драйвера: в тестах/dev — NullFiscalDriver, в prod — AtolOnlineDriver.
-     */
     public function driver(): FiscalDriverInterface
     {
         if ($this->driver !== null) {

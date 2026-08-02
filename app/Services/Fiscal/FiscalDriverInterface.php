@@ -18,24 +18,17 @@ use Autometria\Models\FiscalReceipt;
 /**
  * Контракт драйвера фискализации (54-ФЗ).
  *
- * Реализации:
- *  - NullFiscalDriver  — тест/dev (симулирует успех без реального ОФД).
- *  - AtolOnlineDriver  — облачный ОФД (Атол Онлайн / ККМ-агент).
+ *  - sell()         — пробить чек продажи/возврата.
+ *  - checkStatus()  — сверка статуса по driver_request_id (для NEEDS_RECONCILE).
+ *  - refund()       — аннулировать/возврат.
+ *
+ * Драйвер НЕ должен делать HTTP внутри транзакции БД (см. FiscalizeReceiptJob).
  */
 interface FiscalDriverInterface
 {
-    /**
-     * Пробить чек. Возвращает результат от ОФД/ККТ.
-     */
-    public function fiscalize(FiscalReceipt $receipt): FiscalResultDto;
+    public function sell(FiscalReceipt $receipt): FiscalResultDto;
 
-    /**
-     * Проверить статус ранее отправленного чека по внешнему id.
-     */
-    public function checkStatus(string $externalId): FiscalResultDto;
+    public function checkStatus(string $driverRequestId): FiscalResultDto;
 
-    /**
-     * Аннулировать/отменить чек (возврат).
-     */
-    public function cancel(FiscalReceipt $receipt): bool;
+    public function refund(FiscalReceipt $receipt): bool;
 }

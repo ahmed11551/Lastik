@@ -14,12 +14,21 @@ declare(strict_types=1);
 namespace Autometria\Enums;
 
 /**
- * Статус фискального чека (жизненный цикл по 54-ФЗ).
+ * Статус фискального чека (жизненный цикл по 54-ФЗ, версия аудита Grok).
+ *
+ *  PENDING          — создан, ожидает фискализации
+ *  IN_PROGRESS      — захвачен воркером (claim), идёт HTTP к ККТ
+ *  FISCALIZED       — успешно пробит, есть ФД/ФН/ФП
+ *  FAILED_RETRYABLE — фатальная ошибка валидации 54-ФЗ (retry по backoff)
+ *  FAILED_FINAL     — необратимая ошибка (не retry)
+ *  NEEDS_RECONCILE  — сетевой таймаут/5xx/unknown — требует сверки через checkStatus
  */
 enum FiscalReceiptStatus: string
 {
-    case PENDING = 'pending';       // Создан, ожидает фискализации
-    case FISCALIZED = 'fiscalized'; // Успешно пробит, получил ФД/ФН/ФП
-    case FAILED = 'failed';         // Ошибка ОФД/драйвера (будет ретрай)
-    case REFUNDED = 'refunded';     // Возвращён (sell_refund / buy_refund завершён)
+    case PENDING = 'pending';
+    case IN_PROGRESS = 'in_progress';
+    case FISCALIZED = 'fiscalized';
+    case FAILED_RETRYABLE = 'failed_retryable';
+    case FAILED_FINAL = 'failed_final';
+    case NEEDS_RECONCILE = 'needs_reconcile';
 }

@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace Autometria\Jobs;
 
 use Autometria\Enums\FiscalReceiptStatus;
+use Autometria\Exceptions\Domain\FiscalizationValidationException;
+use Autometria\Exceptions\Domain\FiscalNetworkTimeoutException;
 use Autometria\Models\FiscalReceipt;
 use Autometria\Services\Fiscal\FiscalReceiptService;
 use Autometria\Support\AuditLog;
@@ -26,11 +28,14 @@ use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
- * Гарантированная фискализация чека (54-ФЗ) с экспоненциальным retry.
+ * Атомарный Claim-UPDATE + HTTP-фискализация чека (54-ФЗ).
  *
- * - $tries = 5, $backoff = [10, 30, 90, 300] (сек) — повтор при сетевых сбоях ОФД.
- * - Запись берётся под lockForUpdate() внутри транзакции.
- * - Если status уже FISCALIZED — пропускаем (идемпотентность по idempotency_key).
+ * 1) Короткая транзакция (CLAIM): SQL UPDATE ... WHERE status IN (PENDING, FAILED_RETRYABLE)
+ *    AND (locked_at IS NULL OR locked_at < now() - 2 min) RETURNING *. Если 0 rows —
+ *    мгновенный return (другой воркер уже работает / чек фискализирован).
+ * 2) HTTP к драйверу ВНЕ транзакции (строго запрещено делать HTTP внутри DB::transaction).
+ * 3) Короткая транзакция (ФИНАЛИЗАЦИЯ): success → FISCALIZED; timeout/5xx/unknown →
+ *    NEEDS_RECONCILE + dispatch ReconcileReceiptJob; фатальная ошибка валидации → FAILED_FINAL.
  */
 class FiscalizeReceiptJob implements ShouldQueue
 {
@@ -50,24 +55,42 @@ class FiscalizeReceiptJob implements ShouldQueue
 
     public function handle(FiscalReceiptService $service): void
     {
-        // 1) Читаем запись под пессимистичной блокировкой (в транзакции).
-        $receipt = DB::transaction(function (): FiscalReceipt {
-            return FiscalReceipt::query()->withoutGlobalScopes()
-                ->whereKey($this->fiscalReceiptId)
-                ->lockForUpdate()
-                ->firstOrFail();
+        // 1) CLAIM (атомарный capture под блокировкой).
+        $claimed = DB::transaction(function () {
+            return DB::selectOne(
+                "UPDATE fiscal_receipts
+                 SET status = ?, locked_at = clock_timestamp(), attempt = attempt + 1
+                 WHERE id = ?
+                   AND status IN (?, ?)
+                   AND (locked_at IS NULL OR locked_at < clock_timestamp() - interval '2 minutes')
+                 RETURNING *",
+                [
+                    FiscalReceiptStatus::IN_PROGRESS->value,
+                    $this->fiscalReceiptId,
+                    FiscalReceiptStatus::PENDING->value,
+                    FiscalReceiptStatus::FAILED_RETRYABLE->value,
+                ]
+            );
         });
 
-        // Идемпотентность: уже пробит / возвращён — пропускаем без повторного запроса к ОФД.
-        if ($receipt->status === FiscalReceiptStatus::FISCALIZED
-            || $receipt->status === FiscalReceiptStatus::REFUNDED) {
+        // 0 rows → другой воркер уже выполняет или чек финализирован. Мгновенный выход.
+        if ($claimed === null) {
             return;
         }
 
-        // 2) Фискализация через драйвер ВНЕ блокирующей транзакции.
-        $driver = $service->driver();
-        $result = $driver->fiscalize($receipt);
+        $receipt = FiscalReceipt::query()->withoutGlobalScopes()->findOrFail($this->fiscalReceiptId);
 
+        try {
+            // 2) HTTP к драйверу ВНЕ транзакции.
+            $result = $service->driver()->sell($receipt);
+        } catch (FiscalNetworkTimeoutException $e) {
+            // Сетевой таймаут → NEEDS_RECONCILE (НЕ retryable-sell!). Планируем сверку.
+            $this->markNeedsReconcile($receipt, $e->getMessage());
+
+            return;
+        }
+
+        // 3) ФИНАЛИЗАЦИЯ.
         if ($result->success) {
             DB::transaction(function () use ($receipt, $result): void {
                 $r = FiscalReceipt::query()->withoutGlobalScopes()
@@ -75,22 +98,18 @@ class FiscalizeReceiptJob implements ShouldQueue
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                if ($r->status === FiscalReceiptStatus::FISCALIZED) {
-                    return; // кто-то другой уже пробил (конкурентный retry)
-                }
-
                 $r->status = FiscalReceiptStatus::FISCALIZED;
-                $r->fiscal_document_number = $result->fiscalDocumentNumber;
-                $r->fiscal_storage_number = $result->fiscalStorageNumber;
-                $r->fiscal_sign = $result->fiscalSign;
+                $r->fn_number = $result->fiscalStorageNumber;
+                $r->fd_number = (int) ($result->fiscalDocumentNumber ?? 0);
+                $r->fp_value = $result->fiscalSign;
                 $r->qr_code_url = $result->qrCodeUrl;
-                $r->fiscalized_at = now();
-                $r->error_message = null;
+                $r->locked_at = null;
+                $r->last_error = null;
                 $r->save();
 
                 AuditLog::write(
                     (int) $r->tenant_id,
-                    $r->payment?->created_by ?? auth()->id(),
+                    $r->payment?->created_by ?? null,
                     'fiscal.receipt.fiscalized',
                     FiscalReceipt::class,
                     (int) $r->id,
@@ -102,35 +121,79 @@ class FiscalizeReceiptJob implements ShouldQueue
             return;
         }
 
-        // 3) Сбой ОФД: фиксируем FAILED (коммитим), затем бросаем — очередь сделает retry по backoff.
+        // Сбой, требующий сверки (5xx / unknown ответ ККТ).
+        if ($result->needsReconcile) {
+            $this->markNeedsReconcile($receipt, $result->errorMessage ?? 'KKT returned retryable/unknown status');
+
+            return;
+        }
+
+        // Фатальная ошибка валидации 54-ФЗ → FAILED_FINAL (не retry).
         DB::transaction(function () use ($receipt, $result): void {
             $r = FiscalReceipt::query()->withoutGlobalScopes()
                 ->whereKey($receipt->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $r->status = FiscalReceiptStatus::FAILED;
-            $r->error_message = $result->errorMessage;
-            $r->attempts = ($r->attempts ?? 0) + 1;
+            $r->status = FiscalReceiptStatus::FAILED_FINAL;
+            $r->last_error = $result->errorMessage;
+            $r->locked_at = null;
             $r->save();
 
             AuditLog::write(
                 (int) $r->tenant_id,
-                $r->payment?->created_by ?? auth()->id(),
-                'fiscal.receipt.failed',
+                $r->payment?->created_by ?? null,
+                'fiscal.receipt.failed_final',
                 FiscalReceipt::class,
                 (int) $r->id,
                 [],
-                ['error' => $result->errorMessage, 'attempt' => $r->attempts],
+                ['error' => $result->errorMessage],
+            );
+        });
+    }
+
+    private function markNeedsReconcile(FiscalReceipt $receipt, string $message): void
+    {
+        DB::transaction(function () use ($receipt, $message): void {
+            $r = FiscalReceipt::query()->withoutGlobalScopes()
+                ->whereKey($receipt->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $r->status = FiscalReceiptStatus::NEEDS_RECONCILE;
+            $r->last_error = $message;
+            $r->save();
+
+            AuditLog::write(
+                (int) $r->tenant_id,
+                $r->payment?->created_by ?? null,
+                'fiscal.receipt.needs_reconcile',
+                FiscalReceipt::class,
+                (int) $r->id,
+                [],
+                ['error' => $message],
             );
         });
 
-        throw new \RuntimeException('Fiscalization failed: ' . $result->errorMessage);
+        // Запланировать асинхронную сверку (отдельная задача ReconcileReceiptJob).
+        ReconcileReceiptJob::dispatch($receipt->id);
     }
 
     public function failed(Throwable $exception): void
     {
-        // После исчерпания попыток чек остаётся FAILED с error_message (уже записано).
-        // Здесь можно уведомить оператора / алерт.
+        // Исчерпание попыток: если чек остался IN_PROGRESS — снимаем блок для повторного claim.
+        DB::transaction(function (): void {
+            $r = FiscalReceipt::query()->withoutGlobalScopes()
+                ->whereKey($this->fiscalReceiptId)
+                ->where('status', FiscalReceiptStatus::IN_PROGRESS->value)
+                ->first();
+
+            if ($r !== null) {
+                $r->status = FiscalReceiptStatus::FAILED_RETRYABLE;
+                $r->locked_at = null;
+                $r->last_error = 'Job failed: ' . $exception->getMessage();
+                $r->save();
+            }
+        });
     }
 }

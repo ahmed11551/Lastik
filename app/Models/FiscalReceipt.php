@@ -23,23 +23,28 @@ class FiscalReceipt extends TenantModel
         'cash_shift_id',
         'order_id',
         'payment_id',
-        'type',
+        'operation',
         'status',
         'idempotency_key',
-        'fiscal_document_number',
-        'fiscal_storage_number',
-        'fiscal_sign',
+        'driver_request_id',
+        'total_amount',
+        'payload_snapshot',
+        'fn_number',
+        'fd_number',
+        'fp_value',
         'qr_code_url',
-        'payload',
-        'error_message',
-        'attempts',
-        'fiscalized_at',
+        'locked_at',
+        'attempt',
+        'last_error',
     ];
 
     protected $casts = [
-        'payload' => 'array',
+        'payload_snapshot' => 'array',
+        'total_amount' => 'decimal:2',
+        'fd_number' => 'integer',
         'status' => \Autometria\Enums\FiscalReceiptStatus::class,
-        'type' => \Autometria\Enums\FiscalReceiptType::class,
+        'operation' => \Autometria\Enums\FiscalReceiptType::class,
+        'locked_at' => 'immutable_datetime',
     ];
 
     public function cashShift(): BelongsTo
