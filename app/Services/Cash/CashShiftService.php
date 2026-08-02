@@ -62,13 +62,11 @@ class CashShiftService
                 ->where('location_id', $locationId)
                 ->whereNull('closed_at')
                 ->where('status', ShiftStatusEnum::OPENED->value)
+                ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', DB::raw('clock_timestamp()')))
                 ->lockForUpdate()
                 ->first();
 
             if ($opened !== null) {
-                // Re-check expiry on an already-open shift before returning it.
-                $this->assertShiftActive($opened);
-
                 return $opened;
             }
 
@@ -102,8 +100,62 @@ class CashShiftService
     }
 
     /**
-     * Guard: throws ShiftExpiredException if the shift has been open longer than 24h.
-     * Auto-transitions the shift to EXPIRED before throwing.
+     * Guard executed STRICTLY inside a transaction under lockForUpdate():
+     * re-selects the shift with a SQL predicate
+     *   WHERE status = 'opened' AND expires_at > clock_timestamp()
+     * If the row is not found (closed OR expired by the DB clock), the operation
+     * is rejected. This prevents TOCTOU races and clock-skew bypasses — the check
+     * is performed by Postgres at read time, not in PHP before the transaction.
+     */
+    public function requireActiveLocked(int $shiftId, int $expectedTenantId): CashShift
+    {
+        /** @var CashShift|null $shift */
+        $shift = CashShift::query()->withoutGlobalScopes()
+            ->whereKey($shiftId)
+            ->where('tenant_id', $expectedTenantId)
+            ->where('status', ShiftStatusEnum::OPENED->value)
+            ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', DB::raw('clock_timestamp()')))
+            ->lockForUpdate()
+            ->first();
+
+        if ($shift === null) {
+            // Determine failure reason for a precise exception.
+            $row = CashShift::query()->withoutGlobalScopes()
+                ->whereKey($shiftId)
+                ->where('tenant_id', $expectedTenantId)
+                ->first();
+
+            if ($row === null) {
+                throw ShiftAlreadyClosedException::default();
+            }
+
+            if ($row->closed_at !== null || $row->status === ShiftStatusEnum::CLOSED->value) {
+                throw ShiftAlreadyClosedException::default();
+            }
+
+            // opened_at older than 24h (per DB clock) -> auto-expire.
+            $row->status = ShiftStatusEnum::EXPIRED->value;
+            $row->save();
+
+            AuditLog::write(
+                $expectedTenantId,
+                auth()->id() ?? $row->user_id,
+                'cash_shift.expired',
+                CashShift::class,
+                (int) $row->id,
+                [],
+                ['opened_at' => optional($row->opened_at)->toIso8601String(), 'auto' => true],
+            );
+
+            throw new ShiftExpiredException();
+        }
+
+        return $shift;
+    }
+
+    /**
+     * @deprecated Use requireActiveLocked() inside the operation transaction.
+     * Kept for backward compatibility with callers that do not hold a lock yet.
      */
     public function assertShiftActive(CashShift $shift): void
     {
@@ -120,7 +172,6 @@ class CashShiftService
             : null;
 
         if ($openedAt !== null && $openedAt->copy()->addHours(self::MAX_SHIFT_DURATION_HOURS)->isPast()) {
-            // Auto-expire the shift (cannot be used for new operations).
             $shift->status = ShiftStatusEnum::EXPIRED->value;
             $shift->save();
 
@@ -142,16 +193,11 @@ class CashShiftService
     {
         return DB::transaction(function () use ($shift, $actualCash): CashShift {
             /** @var CashShift $shift */
-            $shift = CashShift::query()->withoutGlobalScopes()
-                ->whereKey($shift->id)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $shift = $this->requireActiveLocked((int) $shift->id, (int) $shift->tenant_id);
 
             if ($shift->closed_at !== null || $shift->status === ShiftStatusEnum::CLOSED->value) {
                 throw ShiftAlreadyClosedException::default();
             }
-
-            $this->assertShiftActive($shift);
 
             $totals = $this->calculateTotals($shift);
 
@@ -215,17 +261,12 @@ class CashShiftService
 
     public function deposit(CashShift $shift, float $amount, ?string $reason = null): CashMovement
     {
-        $this->assertShiftActive($shift);
-
         if ($amount <= 0) {
             throw new \InvalidArgumentException('Deposit amount must be positive');
         }
 
         return DB::transaction(function () use ($shift, $amount, $reason) {
-            $shift = CashShift::query()->withoutGlobalScopes()
-                ->whereKey($shift->id)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $shift = $this->requireActiveLocked((int) $shift->id, (int) $shift->tenant_id);
 
             $movement = CashMovement::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $shift->tenant_id,
@@ -260,17 +301,12 @@ class CashShiftService
 
     public function inkasso(CashShift $shift, float $amount, ?string $reason = null): CashMovement
     {
-        $this->assertShiftActive($shift);
-
         if ($amount <= 0) {
             throw new \InvalidArgumentException('Inkasso amount must be positive');
         }
 
         return DB::transaction(function () use ($shift, $amount, $reason) {
-            $shift = CashShift::query()->withoutGlobalScopes()
-                ->whereKey($shift->id)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $shift = $this->requireActiveLocked((int) $shift->id, (int) $shift->tenant_id);
 
             $movement = CashMovement::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $shift->tenant_id,
@@ -305,17 +341,12 @@ class CashShiftService
 
     public function withdrawal(CashShift $shift, float $amount, ?string $reason = null): CashMovement
     {
-        $this->assertShiftActive($shift);
-
         if ($amount <= 0) {
             throw new \InvalidArgumentException('Withdrawal amount must be positive');
         }
 
         return DB::transaction(function () use ($shift, $amount, $reason) {
-            $shift = CashShift::query()->withoutGlobalScopes()
-                ->whereKey($shift->id)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $shift = $this->requireActiveLocked((int) $shift->id, (int) $shift->tenant_id);
 
             $movement = CashMovement::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $shift->tenant_id,

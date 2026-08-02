@@ -13,17 +13,23 @@ declare(strict_types=1);
 
 namespace Autometria\Http\Middleware;
 
-use Autometria\Enums\DeviceType;
-use Autometria\Models\Device;
 use Autometria\Services\DeviceService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * P0 hard device limit: a user may have at most TOTAL_DEVICE_CAP active devices
+ * across ALL types (mobile + desktop). No desktop exception (Грок P0 review).
+ *
+ * The actual enforcement (count + create) happens under pessimistic lock inside
+ * DeviceService::register(); this middleware is a fast pre-check that short-circuits
+ * the request before auth proceeds, returning 429 with a clear message.
+ */
 class CheckDeviceLimit
 {
-    private const MOBILE_LIMIT_MESSAGE = 'Превышен лимит активных смартфонов (не более 2 устройств)';
+    private const LIMIT_MESSAGE = 'Превышен лимит активных устройств (не более 3 устройств, включая ПК)';
 
     public function __construct(
         private readonly DeviceService $devices = new DeviceService,
@@ -42,18 +48,11 @@ class CheckDeviceLimit
             return $next($request);
         }
 
-        // device_type is derived SERVER-SIDE from User-Agent, never from client input.
-        $registeringMobile = DeviceType::detectFromUserAgent((string) $request->userAgent())
-            ->value === DeviceType::MOBILE->value;
+        $cap = DeviceService::TOTAL_DEVICE_CAP;
 
-        if (! $registeringMobile) {
-            return $next($request);
-        }
-
-        $limit = (int) ($user->devices_limit ?? 2);
-
-        if ($this->devices->activeMobileCount($user, $limit) >= $limit) {
-            abort(Response::HTTP_TOO_MANY_REQUESTS, self::MOBILE_LIMIT_MESSAGE);
+        // Fast pre-check (the authoritative enforcement is in DeviceService under lockForUpdate).
+        if ($this->devices->activeTotalCount($user) >= $cap) {
+            abort(Response::HTTP_TOO_MANY_REQUESTS, self::LIMIT_MESSAGE);
         }
 
         return $next($request);

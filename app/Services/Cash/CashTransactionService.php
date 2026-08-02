@@ -33,8 +33,6 @@ final class CashTransactionService
      */
     public function deposit(CashShift $shift, float $amount, ?string $reason = null): CashMovement
     {
-        $this->shifts->assertShiftActive($shift);
-
         return $this->shifts->deposit($shift, $amount, $reason);
     }
 
@@ -43,8 +41,6 @@ final class CashTransactionService
      */
     public function payOut(CashShift $shift, float $amount, ?string $reason = null): CashMovement
     {
-        $this->shifts->assertShiftActive($shift);
-
         return $this->shifts->withdrawal($shift, $amount, $reason);
     }
 
@@ -53,8 +49,6 @@ final class CashTransactionService
      */
     public function inkasso(CashShift $shift, float $amount, ?string $reason = null): CashMovement
     {
-        $this->shifts->assertShiftActive($shift);
-
         return $this->shifts->inkasso($shift, $amount, $reason);
     }
 
