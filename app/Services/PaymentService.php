@@ -46,6 +46,7 @@ use Autometria\Models\Dictionary;
 use Autometria\Models\Order;
 use Autometria\Models\Payment;
 use Autometria\Models\PaymentCorrection;
+use Autometria\Services\Fiscal\FiscalReceiptService;
 use Autometria\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -67,7 +68,7 @@ final class PaymentService
         int $createdBy,
         ?int $shiftId = null,
     ): array {
-        return DB::transaction(function () use ($tenantId, $orderId, $parts, $createdBy, $shiftId): array {
+        $payments = DB::transaction(function () use ($tenantId, $orderId, $parts, $createdBy, $shiftId): array {
             set_current_tenant_id($tenantId);
 
             $order = Order::query()->withoutGlobalScopes()
@@ -82,7 +83,7 @@ final class PaymentService
                 throw new RuntimeException('Shift is closed, use payment correction workflow');
             }
 
-            $payments = [];
+            $created = [];
             $orderTotal = (float) $order->total;
             $paidSum = 0.0;
 
@@ -127,7 +128,7 @@ final class PaymentService
                     ['location_id' => $order->location_id, 'shift_id' => $shift->id],
                 );
 
-                $payments[] = $payment;
+                $created[] = $payment;
                 $paidSum += $amount;
 
                 // P0: hard overpayment guard (financial safety). Catch within the
@@ -147,8 +148,24 @@ final class PaymentService
                 'locked_at' => $paymentStatus === 'paid' ? now() : $order->locked_at,
             ]);
 
-            return $payments;
+            return $created;
         });
+
+        // 54-ФЗ: после успешного проведения оплаты ставим фискальный чек в очередь.
+        // Выполняется ВНЕ транзакции accept() — при QUEUE_CONNECTION=sync Job
+        // фискализует чек немедленно (NullFiscalDriver в dev/test).
+        if ($payments !== []) {
+            $first = $payments[0];
+            app(FiscalReceiptService::class)->createSaleReceipt(
+                $tenantId,
+                $first->shift_id,
+                $orderId,
+                $first->id,
+                'sale-' . $first->id,
+            );
+        }
+
+        return $payments;
     }
 
     public function correct(
