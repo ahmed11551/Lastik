@@ -17,6 +17,9 @@
 **/.DS_Store
 /dist
 /dist-encoded
+/public/build-ds/
+/scripts/e2e/shots/
+/test-results/
 /.env.prod
 /licensing/*.lic
 /licensing/private.pem
