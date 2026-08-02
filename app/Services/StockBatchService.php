@@ -93,12 +93,14 @@ final class StockBatchService
         int $productId,
         float $qty,
         ?int $createdBy = null,
+        ?int $orderId = null,
+        ?int $orderItemId = null,
     ): array {
         if ($qty <= 0) {
             throw new InvalidArgumentException('Write-off qty must be positive');
         }
 
-        return DB::transaction(function () use ($tenantId, $warehouseId, $productId, $qty, $createdBy): array {
+        return DB::transaction(function () use ($tenantId, $warehouseId, $productId, $qty, $createdBy, $orderId, $orderItemId): array {
             // Блокируем остаток склада (пессимистичная блокировка).
             $stock = $this->lockStock($tenantId, $warehouseId, $productId);
 
@@ -133,9 +135,26 @@ final class StockBatchService
                 $batch->remaining_qty = round($availableInBatch - $take, 3);
                 $batch->save();
 
+                $unitCost = round((float) $batch->cost_price, 2);
+                $totalCost = round($take * $unitCost, 2);
+
                 $writtenOff += $take;
-                $cost += round($take * (float) $batch->cost_price, 2);
+                $cost += $totalCost;
                 $batchTrace[(int) $batch->id] = round($take, 3);
+
+                // Фиксируем детализацию списания партии (FIFO COGS) с unit_cost
+                // строго на момент продажи.
+                \Autometria\Models\StockLotDeduction::query()->withoutGlobalScopes()->forceCreate([
+                    'tenant_id' => $tenantId,
+                    'order_id' => $orderId,
+                    'order_item_id' => $orderItemId,
+                    'stock_batch_id' => $batch->id,
+                    'warehouse_id' => $warehouseId,
+                    'product_id' => $productId,
+                    'quantity' => round($take, 3),
+                    'unit_cost' => $unitCost,
+                    'total_cost' => $totalCost,
+                ]);
 
                 $remaining = round($remaining - $take, 3);
             }

@@ -9,15 +9,20 @@
 
 declare(strict_types=1);
 
-use Autometria\Http\Controllers\AuditLogController;
+use Autometria\Http\Controllers\AnalyticsController;
 use Autometria\Http\Controllers\AuthController;
+use Autometria\Http\Controllers\BulkOrderController;
+use Autometria\Http\Controllers\BulkStockController;
 use Autometria\Http\Controllers\CashShiftController;
 use Autometria\Http\Controllers\CommerceMLImportController;
 use Autometria\Http\Controllers\CustomerController;
 use Autometria\Http\Controllers\CustomerImportController;
 use Autometria\Http\Controllers\CustomerMergeController;
 use Autometria\Http\Controllers\DictionaryController;
+use Autometria\Http\Controllers\FiscalReceiptController;
 use Autometria\Http\Controllers\IssuanceController;
+use Autometria\Http\Controllers\OneCExchangeController;
+use Autometria\Http\Controllers\OneCSyncController;
 use Autometria\Http\Controllers\KpiController;
 use Autometria\Http\Controllers\ModuleController;
 use Autometria\Http\Controllers\OrderController;
@@ -26,6 +31,7 @@ use Autometria\Http\Controllers\PosController;
 use Autometria\Http\Controllers\ProductController;
 use Autometria\Http\Controllers\SearchController;
 use Autometria\Http\Controllers\SettingController;
+use Autometria\Http\Controllers\StockBatchController;
 use Autometria\Http\Controllers\StockController;
 use Autometria\Http\Controllers\StockTransferController;
 use Autometria\Http\Controllers\TaskController;
@@ -40,17 +46,28 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     Route::post('auth/login', [AuthController::class, 'login'])->middleware(RateLimitAuth::class);
+
+    // CommerceML 2.10 exchange — HTTP Basic Auth (no Sanctum)
+    Route::match(['GET', 'POST'], '1c/exchange', [OneCExchangeController::class, 'handle'])
+        ->middleware(RateLimitAuth::class);
 });
 
 Route::middleware([RateLimitAuth::class, 'auth:sanctum', EnsureTenant::class, EnforceLocationAccess::class])->prefix('v1')->group(function (): void {
     Route::get('orders/{order}', [OrderController::class, 'show'])->middleware('ensure.permission:orders.view');
     Route::get('orders', [OrderController::class, 'index'])->middleware('ensure.permission:orders.view');
     Route::post('orders', [OrderController::class, 'store'])->middleware('ensure.permission:orders.create');
+    Route::post('orders/bulk-status', [BulkOrderController::class, 'bulkStatus'])->middleware('ensure.permission:orders.update');
+    Route::post('stock/bulk-update', [BulkStockController::class, 'bulkUpdate'])->middleware('ensure.permission:stock.view');
     Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->middleware('ensure.permission:orders.cancel');
     Route::delete('order-items/{item}', [OrderController::class, 'destroyItem'])->middleware('ensure.permission:orders.update');
 
     Route::post('issuances', [IssuanceController::class, 'store'])->middleware('ensure.permission:orders.update');
-    Route::post('stock/transfers', [StockTransferController::class, 'store'])->middleware('ensure.permission:stock.transfer');
+    Route::get('analytics/dashboard-summary', [AnalyticsController::class, 'dashboardSummary'])->middleware('ensure.permission:admin.dashboard');
+    Route::get('analytics/cogs-breakdown', [AnalyticsController::class, 'cogsBreakdown'])->middleware('ensure.permission:admin.dashboard');
+    Route::get('analytics/abc-xyz', [AnalyticsController::class, 'abcXyz'])->middleware('ensure.permission:admin.dashboard');
+    Route::get('analytics/turnover', [AnalyticsController::class, 'turnover'])->middleware('ensure.permission:admin.dashboard');
+    Route::get('stock/batches', [StockBatchController::class, 'index'])->middleware('ensure.permission:stock.view');
+    Route::post('stock/inventory-adjust', [StockBatchController::class, 'adjust'])->middleware('ensure.permission:stock.transfer');
     Route::get('stock', [StockController::class, 'index'])->middleware('ensure.permission:stock.view');
 
     Route::get('audit-logs', [AuditLogController::class, 'index'])->middleware('ensure.permission:admin.dashboard');
@@ -62,11 +79,17 @@ Route::middleware([RateLimitAuth::class, 'auth:sanctum', EnsureTenant::class, En
     Route::get('shifts/current', [CashShiftController::class, 'current'])->middleware('ensure.permission:shifts.create');
     Route::post('shifts/open', [CashShiftController::class, 'openShift'])->middleware('ensure.permission:shifts.create');
     Route::post('shifts/close', [CashShiftController::class, 'closeCurrent'])->middleware('ensure.permission:shifts.close');
+    Route::post('shifts/movements', [CashShiftController::class, 'movement'])->middleware('ensure.permission:shifts.close');
     Route::post('shifts/{shift}/close', [CashShiftController::class, 'close'])->middleware('ensure.permission:shifts.close');
     Route::post('shifts', [CashShiftController::class, 'store'])->middleware('ensure.permission:shifts.create');
     Route::get('shifts', [CashShiftController::class, 'index'])->middleware('ensure.permission:shifts.create');
 
     Route::post('pos/checkout', [PosController::class, 'checkout'])->middleware('ensure.permission:payments.create');
+
+    Route::get('fiscal-receipts', [FiscalReceiptController::class, 'index'])->middleware('ensure.permission:payments.create');
+    Route::post('fiscal-receipts', [FiscalReceiptController::class, 'store'])->middleware('ensure.permission:payments.create');
+    Route::get('fiscal-receipts/{fiscalReceipt}', [FiscalReceiptController::class, 'show'])->middleware('ensure.permission:payments.create');
+    Route::post('fiscal-receipts/{fiscalReceipt}/retry', [FiscalReceiptController::class, 'retry'])->middleware('ensure.permission:payments.create');
 
     Route::get('settings', [SettingController::class, 'index'])->middleware('ensure.permission:settings.view');
     Route::put('settings', [SettingController::class, 'update'])->middleware('ensure.permission:settings.update');
@@ -87,6 +110,12 @@ Route::middleware([RateLimitAuth::class, 'auth:sanctum', EnsureTenant::class, En
     Route::post('imports/commerceml', [CommerceMLImportController::class, 'store'])->middleware('ensure.permission:stock.import');
     Route::get('stock/conflicts', [CommerceMLImportController::class, 'conflicts'])->middleware('ensure.permission:stock.view');
     Route::post('stock/conflicts/{conflict}/resolve', [CommerceMLImportController::class, 'resolveConflict'])->middleware('ensure.permission:stock.import');
+
+    Route::get('1c/credentials', [OneCSyncController::class, 'credentials'])->middleware('ensure.permission:stock.import');
+    Route::post('1c/credentials/reset', [OneCSyncController::class, 'resetCredentials'])->middleware('ensure.permission:stock.import');
+    Route::put('1c/options', [OneCSyncController::class, 'updateOptions'])->middleware('ensure.permission:stock.import');
+    Route::get('1c/logs', [OneCSyncController::class, 'logs'])->middleware('ensure.permission:stock.import');
+    Route::post('1c/manual-upload', [OneCSyncController::class, 'manualUpload'])->middleware('ensure.permission:stock.import');
 
     Route::get('vehicles', [VehicleController::class, 'index'])->middleware('ensure.permission:customers.view');
     Route::get('warehouses', [WarehouseController::class, 'index'])->middleware('ensure.permission:stock.view');
