@@ -23,6 +23,7 @@ use Autometria\Models\ProductService;
 use Autometria\Services\OrderService;
 use Autometria\Services\PaymentService;
 use Autometria\Services\Marking\MarkingValidationService;
+use Autometria\Services\ProductionService;
 use Autometria\Services\StockBatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,6 +38,7 @@ class PosController extends Controller
         private readonly PaymentService $payments,
         private readonly StockBatchService $batches,
         private readonly MarkingValidationService $markingCodes,
+        private readonly ProductionService $production,
     ) {}
 
     public function checkout(Request $request): JsonResponse
@@ -243,7 +245,8 @@ class PosController extends Controller
                     ])->save();
                 }
 
-                // FIFO write-off. Online → no overdraft; offline → allow overdraft.
+                // FIFO write-off. Composite products → ingredient BOM via ProductionService.
+                // Online → no overdraft; offline → allow overdraft.
                 $allowOverdraft = $isOffline;
                 foreach ($order->orderItems as $item) {
                     if ($item->type === 'service' || $item->product_id === null) {
@@ -253,6 +256,18 @@ class PosController extends Controller
                         ?? collect($items)->firstWhere('product_id', (int) $item->product_id)['warehouse_id']
                         ?? null;
                     if ($warehouseId === null) {
+                        continue;
+                    }
+                    $composite = $this->production->processCompositeSale(
+                        $item,
+                        (int) $warehouseId,
+                        $allowOverdraft,
+                        (int) $user->id,
+                    );
+                    if ($composite !== null) {
+                        if (($composite['has_overdraft'] ?? false) === true) {
+                            $anyOverdraft = true;
+                        }
                         continue;
                     }
                     $result = $this->batches->writeOff(

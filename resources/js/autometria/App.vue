@@ -23,6 +23,7 @@ import RegulatoryMarkingIndex from '@/Pages/Regulatory/Marking/Index.vue'
 import RegulatoryEgaisIndex from '@/Pages/Regulatory/Egais/Index.vue'
 import BranchesIndex from '@/Pages/Settings/Branches/Index.vue'
 import WarehousePrices from '@/Pages/Inventory/WarehousePrices.vue'
+import ProductionIndex from '@/Pages/Production/Index.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
 import { getToken } from '@/autometria/api/client'
@@ -41,6 +42,7 @@ const VIEW_TITLES = {
   inventory: 'Инвентаризация',
   inventory_create: 'Складской документ',
   warehouse_prices: 'Цены по складам',
+  production: 'Производство / BOM',
   branches: 'Филиалы',
   regulatory: 'Маркировка (Честный Знак)',
   egais: 'ЕГАИС',
@@ -90,6 +92,9 @@ const breadcrumbs = computed(() => {
   }
   if (view.value === 'warehouse_prices') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Цены' }]
+  }
+  if (view.value === 'production') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Производство' }]
   }
   if (view.value === 'branches') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Настройки' }, { label: 'Филиалы' }]
@@ -261,6 +266,11 @@ function onLoginSuccess() {
 
       <WarehousePrices
         v-else-if="view === 'warehouse_prices'"
+        embedded
+      />
+
+      <ProductionIndex
+        v-else-if="view === 'production'"
         embedded
       />
 
