@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { apiGet, apiPost } from '../api/client'
 import { applyBulkError, applyBulkSuccess, assertBulkIds, normalizeBulkIds } from '../api/bulk'
+import { toast } from '../api/toast'
 
 export const useWarehouseStore = defineStore('warehouse', {
   state: () => ({
@@ -10,6 +11,7 @@ export const useWarehouseStore = defineStore('warehouse', {
     meta: { current_page: 1, last_page: 1, per_page: 50, total: 0 },
     loading: false,
     bulkPending: false,
+    opPending: false,
     error: null,
     query: '',
     category: 'all',
@@ -60,7 +62,6 @@ export const useWarehouseStore = defineStore('warehouse', {
         this.error = e.response?.data?.message || e.message || 'Не удалось загрузить склад'
         this.rows = []
         this.degraded = true
-        // Soft fallback: try products list for degraded UI signal
         try {
           await apiGet('/products', { params: { q: this.query || undefined }, silent: true })
         } catch {
@@ -72,13 +73,69 @@ export const useWarehouseStore = defineStore('warehouse', {
       }
     },
 
+    async fetchBatches(productId, warehouseId) {
+      const payload = await apiGet('/stock/batches', {
+        params: { product_id: productId, warehouse_id: warehouseId },
+        silent: true,
+      })
+      return Array.isArray(payload?.data) ? payload.data : []
+    },
+
     /**
-     * POST /stock/bulk-update
-     * @param {number[]} ids
-     * @param {'update_category'|'adjust_actual'|'adjust_reserved'} action
-     * @param {{ category?: string, adjustment?: number }} payload
-     * @param {{ clearSelection?: () => void }} [opts]
+     * POST /stock/inventory-adjust
      */
+    async inventoryAdjust({ product_id, warehouse_id, stock_id, actual_qty, reason }) {
+      this.opPending = true
+      try {
+        const res = await apiPost(
+          '/stock/inventory-adjust',
+          { product_id, warehouse_id, stock_id, actual_qty, reason },
+          { silent: true },
+        )
+        const d = res?.data || {}
+        toast.success(d.message || 'Инвентаризация проведена', 'Склад')
+        await this.fetchStock()
+        return res
+      } catch (e) {
+        applyBulkError(e)
+        throw e
+      } finally {
+        this.opPending = false
+      }
+    },
+
+    /**
+     * POST /stock/transfers — one call per line (backend contract).
+     */
+    async transferStock({ from_warehouse_id, to_warehouse_id, reason, items }) {
+      this.opPending = true
+      try {
+        let ok = 0
+        for (const item of items || []) {
+          await apiPost(
+            '/stock/transfers',
+            {
+              product_id: item.product_id,
+              from_warehouse_id,
+              to_warehouse_id,
+              qty: item.qty,
+              reason,
+            },
+            { silent: true },
+          )
+          ok += 1
+        }
+        toast.success(`Перемещено позиций: ${ok}`, 'Склад')
+        await this.fetchStock()
+        return { success: true, count: ok }
+      } catch (e) {
+        applyBulkError(e)
+        throw e
+      } finally {
+        this.opPending = false
+      }
+    },
+
     async bulkUpdate(ids, action, payload, opts = {}) {
       const intIds = normalizeBulkIds(ids)
       if (!assertBulkIds(intIds)) return null

@@ -50,24 +50,43 @@ class CommerceMLImportService
         private readonly CommerceMLStreamParser $streamParser,
     ) {}
 
-    public function import(string $filePath, int $tenantId, ?int $userId = null): ImportJob
+    /**
+     * @param  array{file_name?: string, channel?: string, file_type?: string}|null  $meta
+     */
+    public function import(string $filePath, int $tenantId, ?int $userId = null, ?array $meta = null): ImportJob
     {
         set_current_tenant_id($tenantId);
 
+        $meta = $meta ?? [];
         $job = ImportJob::query()->withoutGlobalScopes()->forceCreate([
             'tenant_id' => $tenantId,
             'source' => 'commerceml2',
+            'file_name' => $meta['file_name'] ?? basename($filePath),
+            'channel' => $meta['channel'] ?? 'manual_upload',
             'status' => 'processing',
+            'summary' => [
+                'file_type' => $meta['file_type'] ?? null,
+            ],
             'created_by' => $userId,
         ]);
 
-        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        try {
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
-        if ($ext === 'xml' || $this->looksLikeXml($filePath)) {
-            return $this->importXmlStream($filePath, $tenantId, $job, $userId);
+            if ($ext === 'xml' || $this->looksLikeXml($filePath)) {
+                return $this->importXmlStream($filePath, $tenantId, $job, $userId);
+            }
+
+            return $this->importJsonRemains($filePath, $tenantId, $job, $userId);
+        } catch (\Throwable $e) {
+            $job->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+                'errors' => [['message' => $e->getMessage()]],
+            ]);
+
+            throw $e;
         }
-
-        return $this->importJsonRemains($filePath, $tenantId, $job, $userId);
     }
 
     private function importXmlStream(string $filePath, int $tenantId, ImportJob $job, ?int $userId): ImportJob
@@ -85,9 +104,12 @@ class CommerceMLImportService
         );
 
         $job->update([
-            'status' => 'finished',
-            'summary' => $batchSummary,
+            'status' => 'completed',
+            'summary' => array_merge(is_array($job->summary) ? $job->summary : [], $batchSummary, [
+                'offers' => (int) ($batchSummary['processed'] ?? 0),
+            ]),
             'errors' => [],
+            'error_message' => null,
         ]);
 
         return $job->fresh();
@@ -125,9 +147,12 @@ class CommerceMLImportService
         ];
 
         $job->update([
-            'status' => 'finished',
-            'summary' => $summary,
+            'status' => 'completed',
+            'summary' => array_merge(is_array($job->summary) ? $job->summary : [], $summary, [
+                'offers' => (int) ($summary['processed'] ?? 0),
+            ]),
             'errors' => [],
+            'error_message' => null,
         ]);
 
         return $job->fresh();

@@ -85,6 +85,9 @@ Route::middleware([RateLimitAuth::class, 'auth:sanctum', EnsureTenant::class, En
     Route::get('shifts', [CashShiftController::class, 'index'])->middleware('ensure.permission:shifts.create');
 
     Route::post('pos/checkout', [PosController::class, 'checkout'])->middleware('ensure.permission:payments.create');
+    Route::post('pos/offline-receipts', [PosController::class, 'offlineReceipts'])->middleware('ensure.permission:payments.create');
+    // Alias per Offline Sync TZ (Block 3.1)
+    Route::post('fiscal/receipts', [PosController::class, 'offlineReceipts'])->middleware('ensure.permission:payments.create');
 
     Route::get('fiscal-receipts', [FiscalReceiptController::class, 'index'])->middleware('ensure.permission:payments.create');
     Route::post('fiscal-receipts', [FiscalReceiptController::class, 'store'])->middleware('ensure.permission:payments.create');

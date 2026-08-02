@@ -65,6 +65,15 @@ api.interceptors.request.use((config) => {
     config.headers = config.headers || {}
     config.headers.Authorization = `Bearer ${token}`
   }
+  // Let the browser set multipart boundary for FormData
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (config.headers && typeof config.headers.set === 'function') {
+      config.headers.set('Content-Type', false)
+    } else if (config.headers) {
+      delete config.headers['Content-Type']
+      delete config.headers['content-type']
+    }
+  }
   return config
 })
 
@@ -141,6 +150,19 @@ export async function apiPost(url, body, config = {}) {
 
 export async function apiPut(url, body, config = {}) {
   const res = await api.put(url, body, config)
+  return res.data
+}
+
+/** multipart/form-data — do not force JSON Content-Type */
+export async function apiUpload(url, formData, config = {}) {
+  const res = await api.post(url, formData, {
+    ...config,
+    headers: {
+      ...(config.headers || {}),
+      'Content-Type': undefined,
+    },
+    timeout: config.timeout ?? 120000,
+  })
   return res.data
 }
 

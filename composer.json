@@ -17,6 +17,7 @@
     "autoload": {
         "psr-4": {
             "Autometria\\": "app/",
+            "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         },

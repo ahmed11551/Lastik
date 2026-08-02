@@ -53,6 +53,7 @@ readonly class CreateOrderDTO
         public ?string $note = null,
         public ?int $vehicleId = null,
         public string $scenario = 'without_installation',
+        public bool $allowOverdraft = false,
     ) {}
 
     /**

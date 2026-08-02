@@ -9,10 +9,26 @@ export const useShiftStore = defineStore('shift', {
     startedAt: null,
     revenue: 0,
     openingAmount: 0,
+    expectedCash: 0,
+    totals: {
+      cash: 0,
+      card: 0,
+      transfer: 0,
+      deposit: 0,
+      inkasso: 0,
+      withdrawal: 0,
+    },
     loading: false,
+    mutating: false,
     error: null,
     degraded: false,
   }),
+  getters: {
+    cashSales: (s) => Number(s.totals?.cash || 0),
+    deposits: (s) => Number(s.totals?.deposit || 0),
+    withdrawals: (s) => Number(s.totals?.withdrawal || 0),
+    inkasso: (s) => Number(s.totals?.inkasso || 0),
+  },
   actions: {
     async fetchCurrent() {
       this.loading = true
@@ -25,6 +41,15 @@ export const useShiftStore = defineStore('shift', {
         this.startedAt = d.opened_at || null
         this.revenue = Number(d.revenue || 0)
         this.openingAmount = Number(d.opening_amount || 0)
+        this.expectedCash = Number(d.expected_cash || 0)
+        this.totals = {
+          cash: Number(d.totals?.cash || 0),
+          card: Number(d.totals?.card || 0),
+          transfer: Number(d.totals?.transfer || 0),
+          deposit: Number(d.totals?.deposit || 0),
+          inkasso: Number(d.totals?.inkasso || 0),
+          withdrawal: Number(d.totals?.withdrawal || 0),
+        }
         this.degraded = false
       } catch (e) {
         this.error = e.response?.data?.message || e.message
@@ -35,21 +60,52 @@ export const useShiftStore = defineStore('shift', {
       }
     },
 
-    async openShift(openingAmount = 0) {
-      const res = await apiPost('/shifts/open', { opening_amount: openingAmount })
-      toast.success('Смена открыта', 'Shift')
-      await this.fetchCurrent()
-      return res.data
+    async openShift(openingAmount = 0, note) {
+      this.mutating = true
+      try {
+        const res = await apiPost('/shifts/open', {
+          opening_amount: openingAmount,
+          note: note || undefined,
+        })
+        toast.success('Смена открыта', 'Shift')
+        await this.fetchCurrent()
+        return res.data
+      } finally {
+        this.mutating = false
+      }
     },
 
     async closeShift(payload = {}) {
-      const res = await apiPost('/shifts/close', {
-        shift_id: this.shiftId || undefined,
-        ...payload,
-      })
-      toast.success('Смена закрыта', 'Shift')
-      await this.fetchCurrent()
-      return res.data
+      this.mutating = true
+      try {
+        const res = await apiPost('/shifts/close', {
+          shift_id: this.shiftId || undefined,
+          ...payload,
+        })
+        toast.success('Смена закрыта · Z-отчёт снят', 'Shift')
+        await this.fetchCurrent()
+        return res.data
+      } finally {
+        this.mutating = false
+      }
+    },
+
+    async cashMovement({ type, amount, reason }) {
+      this.mutating = true
+      try {
+        const res = await apiPost('/shifts/movements', {
+          type,
+          amount,
+          reason,
+          shift_id: this.shiftId || undefined,
+        })
+        const label = type === 'deposit' ? 'Внесение' : type === 'withdrawal' ? 'Выемка' : 'Инкассация'
+        toast.success(`${label} ₽${Number(amount).toLocaleString('ru-RU')}`, 'Касса')
+        await this.fetchCurrent()
+        return res.data
+      } finally {
+        this.mutating = false
+      }
     },
   },
 })
@@ -60,6 +116,7 @@ export const useCashierStore = defineStore('cashier', {
     catalog: [],
     selectedPay: 'cash',
     tendered: 0,
+    productQuery: '',
     lastOp: { status: 'pending', label: 'Ожидает оплаты' },
     loading: false,
     checkingOut: false,
@@ -81,20 +138,21 @@ export const useCashierStore = defineStore('cashier', {
           stock_id: r.id,
           sku: r.sku,
           oem: r.oem,
+          barcode: r.barcode || r.sku || r.oem,
           name: r.name,
           price: Number(r.price || 0),
           available: Number(r.available || 0),
           warehouse_id: r.warehouse_id,
         }))
-        // Prefer products endpoint for product_id
         try {
           const products = await apiGet('/products', { silent: true })
           const list = Array.isArray(products?.data) ? products.data : []
           if (list.length) {
-            this.catalog = list.slice(0, 50).map((p) => ({
+            this.catalog = list.slice(0, 80).map((p) => ({
               product_id: p.id,
               sku: p.article || `ID-${p.id}`,
               oem: p.external_id || '—',
+              barcode: p.barcode || p.article || String(p.id),
               name: p.name,
               price: Number(p.base_price || 0),
               available: null,
@@ -127,6 +185,7 @@ export const useCashierStore = defineStore('cashier', {
             warehouse_id: p.warehouse_id,
             sku: p.sku,
             oem: p.oem,
+            barcode: p.barcode,
             name: p.name,
             qty,
             discount,
@@ -143,24 +202,83 @@ export const useCashierStore = defineStore('cashier', {
       this.lastOp = { status: 'pending', label: 'Способ выбран' }
     },
 
-    async checkout() {
+    /**
+     * EAN-8/13 / 8–14 digits barcode latch → add or bump qty in cart.
+     */
+    addByBarcode(raw) {
+      const code = String(raw || '').trim()
+      if (!/^\d{8,14}$/.test(code)) {
+        return { ok: false, reason: 'not_barcode' }
+      }
+
+      const product = this.catalog.find((p) => {
+        const keys = [p.barcode, p.sku, p.oem, String(p.product_id)]
+          .filter(Boolean)
+          .map((k) => String(k).trim())
+        return keys.includes(code)
+      })
+
+      if (!product) {
+        this.lastOp = { status: 'warning', label: `Штрихкод ${code} не найден` }
+        toast.warning(`Штрихкод ${code} не найден в каталоге`, 'Scan')
+        return { ok: false, reason: 'not_found', code }
+      }
+
+      const existing = this.cart.find((r) => Number(r.product_id) === Number(product.product_id))
+      if (existing) {
+        existing.qty = Number(existing.qty || 0) + 1
+        existing.line = Math.round(product.price * existing.qty * (1 - Number(existing.discount || 0) / 100))
+      } else {
+        const n = this.cart.length + 1
+        this.cart.push({
+          id: Date.now(),
+          n,
+          product_id: product.product_id,
+          warehouse_id: product.warehouse_id,
+          sku: product.sku,
+          oem: product.oem,
+          barcode: product.barcode,
+          name: product.name,
+          qty: 1,
+          discount: 0,
+          line: Math.round(product.price),
+        })
+      }
+
+      this.productQuery = ''
+      this.lastOp = { status: 'success', label: `+ ${product.name}` }
+      toast.success(`Добавлено: ${product.name}`, 'Scan')
+      return { ok: true, product }
+    },
+
+    /**
+     * POS checkout. Optional `options.vat_rate` is sent per line for 54-ФЗ.
+     * @param {{ method?: string, tendered?: number, vat_rate?: string }} [options]
+     */
+    async checkout(options = {}) {
       if (!this.cart.length) {
         this.lastOp = { status: 'warning', label: 'Корзина пуста' }
         return null
       }
       this.checkingOut = true
+      const vatRate = options.vat_rate || 'none'
+      const method = options.method || this.selectedPay
+      const tendered = options.tendered ?? this.tendered ?? this.totalDue
+      /** Snapshot for fiscal payload before cart clear */
+      const cartSnapshot = this.cart.map((r) => ({ ...r }))
       try {
-        const items = this.cart.map((r) => ({
+        const items = cartSnapshot.map((r) => ({
           product_id: r.product_id,
           qty: r.qty,
           discount: r.discount || 0,
           warehouse_id: r.warehouse_id || undefined,
           type: 'product',
+          vat_rate: r.vat_rate || vatRate,
         }))
         const payload = await apiPost('/pos/checkout', {
           items,
-          method: this.selectedPay,
-          amount_tendered: this.tendered || this.totalDue,
+          method,
+          amount_tendered: tendered,
         })
         const change = payload?.data?.change ?? 0
         this.lastOp = {
@@ -169,7 +287,12 @@ export const useCashierStore = defineStore('cashier', {
         }
         toast.success(this.lastOp.label, 'POS')
         this.cart = []
-        return payload.data
+        this.selectedPay = method
+        return {
+          ...payload.data,
+          cart_snapshot: cartSnapshot,
+          vat_rate: vatRate,
+        }
       } catch (e) {
         this.lastOp = {
           status: 'danger',
@@ -179,6 +302,27 @@ export const useCashierStore = defineStore('cashier', {
       } finally {
         this.checkingOut = false
       }
+    },
+
+    /**
+     * Build fiscal line items from cart snapshot.
+     * @param {Array} cartRows
+     * @param {string} vatRate
+     */
+    buildFiscalItems(cartRows, vatRate = 'none') {
+      return (cartRows || []).map((r) => {
+        const qty = Number(r.qty || 0)
+        const sum = Number(r.line || 0)
+        const price = qty > 0 ? Math.round((sum / qty) * 100) / 100 : Number(r.price || 0)
+        return {
+          name: r.name || r.sku || `ID ${r.product_id}`,
+          qty,
+          price,
+          sum,
+          vat_rate: r.vat_rate || vatRate,
+          discount: Number(r.discount || 0),
+        }
+      })
     },
   },
 })

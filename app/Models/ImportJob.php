@@ -44,9 +44,12 @@ class ImportJob extends TenantModel
 
     protected $fillable = [
         'source',
+        'file_name',
+        'channel',
         'status',
         'summary',
         'errors',
+        'error_message',
         'created_by',
     ];
 

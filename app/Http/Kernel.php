@@ -23,6 +23,7 @@
 
 namespace Autometria\Http;
 
+use App\Http\Middleware\VerifyCsrfToken;
 use Autometria\Http\Middleware\EnforceAutometriaLicense;
 use Autometria\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -54,7 +55,7 @@ class Kernel extends HttpKernel
             AddQueuedCookiesToResponse::class,
             StartSession::class,
             ShareErrorsFromSession::class,
-            ValidateCsrfToken::class,
+            VerifyCsrfToken::class,
             SubstituteBindings::class,
             HandleInertiaRequests::class,
         ],

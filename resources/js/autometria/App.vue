@@ -14,6 +14,8 @@ import OrdersView from '@/autometria/views/OrdersView.vue'
 import AuditView from '@/autometria/views/AuditView.vue'
 import LoginView from '@/autometria/views/LoginView.vue'
 import SystemModuleView from '@/autometria/views/SystemModuleView.vue'
+import OneCSyncSettingsView from '@/autometria/views/OneCSyncSettingsView.vue'
+import PosView from '@/views/pos/PosView.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
 import { getToken } from '@/autometria/api/client'
@@ -29,8 +31,11 @@ const VIEW_TITLES = {
   vehicles: 'Автомобили',
   warehouse: 'Склад и остатки',
   stock: 'Склад и остатки',
+  onec: 'Синхронизация 1С',
+  '1c': 'Синхронизация 1С',
   cashier: 'Касса и смены',
   shifts: 'Касса и смены',
+  pos: 'POS Терминал',
   kpi: 'Выработка & KPI',
   tasks: 'Задачи',
   audit: 'Журнал действий',
@@ -44,6 +49,7 @@ const VIEW_TITLES = {
 function normalizeView(raw) {
   if (raw === 'stock') return 'warehouse'
   if (raw === 'shifts') return 'cashier'
+  if (raw === '1c') return 'onec'
   return VIEW_TITLES[raw] ? raw : 'dashboard'
 }
 
@@ -65,8 +71,14 @@ const breadcrumbs = computed(() => {
   if (view.value === 'warehouse') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Остатки' }]
   }
+  if (view.value === 'onec') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Интеграции' }, { label: '1С CommerceML' }]
+  }
   if (view.value === 'cashier') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Касса' }, { label: 'Смены' }]
+  }
+  if (view.value === 'pos') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Касса' }, { label: 'POS Offline' }]
   }
   if (view.value === 'orders' || view.value === 'new_order') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Продажи' }, { label: 'Заказы' }]
@@ -168,9 +180,17 @@ function onLoginSuccess() {
           class="ds-badge ds-badge--warning"
         >Warehouse</span>
         <span
+          v-else-if="view === 'onec'"
+          class="ds-badge ds-badge--warning"
+        >1C Sync</span>
+        <span
           v-else-if="view === 'cashier'"
           class="ds-badge ds-badge--warning"
         >Cashier</span>
+        <span
+          v-else-if="view === 'pos'"
+          class="ds-badge ds-badge--warning"
+        >POS Offline</span>
         <span
           v-else-if="view === 'orders' || view === 'new_order'"
           class="ds-badge ds-badge--warning"
@@ -195,6 +215,8 @@ function onLoginSuccess() {
 
       <WarehouseView v-else-if="view === 'warehouse'" />
 
+      <OneCSyncSettingsView v-else-if="view === 'onec'" />
+
       <OrdersView
         v-else-if="view === 'orders' || view === 'new_order'"
         @create-order="view = 'orders'"
@@ -205,6 +227,8 @@ function onLoginSuccess() {
         @navigate="onNavigate"
         @pay="onCashierPay"
       />
+
+      <PosView v-else-if="view === 'pos'" />
 
       <KpiView
         v-else-if="view === 'kpi'"

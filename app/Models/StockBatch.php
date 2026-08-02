@@ -27,6 +27,7 @@ class StockBatch extends TenantModel
         'remaining_qty',
         'cost_price',
         'received_at',
+        'is_overdraft',
     ];
 
     protected $casts = [
@@ -34,6 +35,7 @@ class StockBatch extends TenantModel
         'remaining_qty' => 'decimal:3',
         'cost_price' => 'decimal:2',
         'received_at' => 'datetime',
+        'is_overdraft' => 'boolean',
     ];
 
     public function tenant(): BelongsTo

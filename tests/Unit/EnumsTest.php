@@ -16,7 +16,7 @@ use Autometria\Enums\ShiftStatusEnum;
 use Autometria\Enums\UserRoleEnum;
 
 it('has expected enum values', function (): void {
-    expect(OrderStatusEnum::cases())->toHaveCount(9);
+    expect(OrderStatusEnum::cases())->toHaveCount(10);
     expect(PaymentStatusEnum::cases())->toHaveCount(3);
     expect(UserRoleEnum::cases())->toHaveCount(6);
     expect(ShiftStatusEnum::cases())->toHaveCount(3);

@@ -38,22 +38,25 @@ declare(strict_types=1);
 
 namespace Autometria\Models;
 
+use Autometria\Enums\OrderStatusEnum;
+use Autometria\Enums\PaymentStatusEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends TenantModel
 {
-    public const STATUS_CREATED = 'created';
+    public const STATUS_CREATED = OrderStatusEnum::CREATED->value;
 
-    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_IN_PROGRESS = OrderStatusEnum::IN_PROGRESS->value;
 
-    public const STATUS_READY = 'ready';
+    public const STATUS_READY = OrderStatusEnum::READY->value;
 
-    public const STATUS_ISSUED = 'issued';
+    public const STATUS_ISSUED = OrderStatusEnum::ISSUED->value;
 
-    public const STATUS_CLOSED = 'closed';
+    public const STATUS_CLOSED = OrderStatusEnum::CLOSED->value;
 
-    public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_CANCELLED = OrderStatusEnum::CANCELLED->value;
 
     protected $table = 'orders';
 
@@ -101,5 +104,38 @@ class Order extends TenantModel
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Apply UI list filter token from query param `status`.
+     */
+    public function scopeWithListStatusFilter(Builder $query, string $filter): Builder
+    {
+        if (OrderStatusEnum::isPaidListFilter($filter)) {
+            return $query->where('payment_status', PaymentStatusEnum::PAID->value);
+        }
+
+        $values = OrderStatusEnum::valuesForListFilter($filter);
+        if ($values !== null) {
+            return $query->whereIn('status', $values);
+        }
+
+        $status = OrderStatusEnum::tryFrom($filter);
+
+        return $status !== null
+            ? $query->where('status', $status->value)
+            : $query;
+    }
+
+    /**
+     * Apply payment filter from query param `payment`.
+     */
+    public function scopeWithPaymentFilter(Builder $query, string $filter): Builder
+    {
+        $status = PaymentStatusEnum::fromApiFilter($filter);
+
+        return $status !== null
+            ? $query->where('payment_status', $status->value)
+            : $query;
     }
 }

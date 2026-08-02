@@ -40,6 +40,8 @@ namespace Autometria\Http\Controllers;
 
 use Autometria\Exceptions\Domain\InsufficientStockException;
 use Autometria\Exceptions\Domain\NoActiveShiftException;
+use Autometria\Enums\OrderStatusEnum;
+use Autometria\Enums\PaymentStatusEnum;
 use Autometria\Http\Requests\StoreOrderRequest;
 use Autometria\Models\Location;
 use Autometria\Models\Order;
@@ -86,25 +88,11 @@ class OrderController extends Controller
         }
 
         if ($status !== '' && strtolower($status) !== 'all') {
-            if ($status === 'in_progress') {
-                $query->whereIn('status', [Order::STATUS_CREATED, Order::STATUS_IN_PROGRESS]);
-            } elseif ($status === 'ready') {
-                $query->whereIn('status', [Order::STATUS_READY, Order::STATUS_ISSUED]);
-            } elseif ($status === 'paid') {
-                $query->where('payment_status', 'paid');
-            } else {
-                $query->where('status', $status);
-            }
+            $query->withListStatusFilter($status);
         }
 
         if ($payment !== '' && strtolower($payment) !== 'all') {
-            $map = [
-                'paid' => 'paid',
-                'partial' => 'partial',
-                'debt' => 'unpaid',
-                'unpaid' => 'unpaid',
-            ];
-            $query->where('payment_status', $map[$payment] ?? $payment);
+            $query->withPaymentFilter($payment);
         }
 
         if ($q !== '') {
@@ -133,18 +121,8 @@ class OrderController extends Controller
         $paginator = $query->latest('id')->paginate($perPage);
 
         $data = collect($paginator->items())->map(function (Order $o): array {
-            $payment = match ((string) $o->payment_status) {
-                'paid' => 'paid',
-                'partial' => 'partial',
-                default => 'debt',
-            };
-            $fulfillment = match ((string) $o->status) {
-                Order::STATUS_READY, Order::STATUS_ISSUED => 'ready',
-                Order::STATUS_CLOSED => 'done',
-                Order::STATUS_IN_PROGRESS => 'in_progress',
-                Order::STATUS_CREATED => 'in_progress',
-                default => 'assembled',
-            };
+            $payment = PaymentStatusEnum::toApiBucketFromStored($o->payment_status);
+            $fulfillment = OrderStatusEnum::fulfillmentBucket($o->status);
 
             $client = $o->customer?->legal_name ?: ($o->customer?->name ?: '—');
             $vehicle = trim(($o->vehicle?->brand ?: '').' '.($o->vehicle?->model ?: '')) ?: ($o->vehicle?->plate ?: '—');

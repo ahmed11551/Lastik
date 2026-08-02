@@ -38,10 +38,15 @@ declare(strict_types=1);
 
 namespace Autometria\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Device extends TenantModel
 {
+    public const TYPE_MOBILE = 'mobile';
+
+    public const TYPE_DESKTOP = 'desktop';
+
     protected $table = 'devices';
 
     protected $fillable = [
@@ -70,5 +75,22 @@ class Device extends TenantModel
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function scopeActiveMobile(Builder $query): Builder
+    {
+        return $query
+            ->where('is_active', true)
+            ->where('device_type', self::TYPE_MOBILE);
+    }
+
+    public function isMobile(): bool
+    {
+        return self::isMobileType($this->device_type);
+    }
+
+    public static function isMobileType(?string $deviceType): bool
+    {
+        return strtolower((string) $deviceType) === self::TYPE_MOBILE;
     }
 }

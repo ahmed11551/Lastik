@@ -1,0 +1,322 @@
+/**
+ * AUTOMETRIA ERP — POS cart / catalog store
+ */
+import { defineStore } from 'pinia'
+import { apiGet, apiPost, getStoredUser } from '../autometria/api/client'
+import { toast } from '../autometria/api/toast'
+import { useOfflineStore } from './useOfflineStore'
+import type { CachedProduct, LocalPaymentType, LocalReceiptItem } from '../services/offlineDb'
+
+export type PosCartLine = {
+  key: string
+  product_id: number
+  warehouse_id?: number | null
+  sku: string
+  barcode?: string
+  title: string
+  qty: number
+  price: number
+  discount: number
+  vat_rate: string
+  line: number
+}
+
+function lineSum(price: number, qty: number, discount: number): number {
+  return Math.round(price * qty * (1 - Number(discount || 0) / 100) * 100) / 100
+}
+
+export const usePosStore = defineStore('pos', {
+  state: () => ({
+    cart: [] as PosCartLine[],
+    catalog: [] as CachedProduct[],
+    quickCategories: ['all', 'popular'] as string[],
+    activeCategory: 'all',
+    searchQuery: '',
+    discountPercent: 0,
+    promoCode: '',
+    checkingOut: false,
+    loadingCatalog: false,
+    lastOp: { status: 'pending' as string, label: 'Готов к работе' },
+  }),
+
+  getters: {
+    itemsCount: (s) => s.cart.reduce((n, r) => n + Number(r.qty || 0), 0),
+    subtotal: (s) => s.cart.reduce((n, r) => n + Number(r.line || 0), 0),
+    totalDue(s): number {
+      const sub = s.cart.reduce((n, r) => n + Number(r.line || 0), 0)
+      const d = Math.min(100, Math.max(0, Number(s.discountPercent || 0)))
+      return Math.round(sub * (1 - d / 100) * 100) / 100
+    },
+    filteredCatalog(s): CachedProduct[] {
+      const q = String(s.searchQuery || '').trim().toLowerCase()
+      let rows = s.catalog
+      if (s.activeCategory && s.activeCategory !== 'all') {
+        rows = rows.filter((p) => (p.category || 'all') === s.activeCategory)
+      }
+      if (!q) return rows.slice(0, 60)
+      return rows
+        .filter((p) => {
+          const hay = [p.sku, p.barcode, p.oem, p.title].join(' ').toLowerCase()
+          return hay.includes(q)
+        })
+        .slice(0, 60)
+    },
+  },
+
+  actions: {
+    async loadCatalog() {
+      this.loadingCatalog = true
+      const offline = useOfflineStore()
+      try {
+        let rows: CachedProduct[] = []
+        try {
+          const payload = await apiGet('/stock', { params: { per_page: 80 }, silent: true })
+          const list = Array.isArray(payload?.data) ? payload.data : []
+          rows = list.map((r: Record<string, unknown>) => ({
+            id: Number(r.product_id || r.id),
+            product_id: Number(r.product_id || r.id),
+            sku: String(r.sku || ''),
+            barcode: String(r.barcode || r.sku || r.oem || ''),
+            oem: r.oem ? String(r.oem) : undefined,
+            title: String(r.name || r.title || ''),
+            price: Number(r.price || 0),
+            available: r.available != null ? Number(r.available) : null,
+            warehouse_id: r.warehouse_id != null ? Number(r.warehouse_id) : null,
+            vat_rate: 'none',
+            category: 'popular',
+          }))
+        } catch {
+          /* fallback products */
+        }
+
+        if (!rows.length) {
+          try {
+            const products = await apiGet('/products', { silent: true })
+            const list = Array.isArray(products?.data) ? products.data : []
+            rows = list.slice(0, 100).map((p: Record<string, unknown>) => ({
+              id: Number(p.id),
+              product_id: Number(p.id),
+              sku: String(p.article || `ID-${p.id}`),
+              barcode: String(p.barcode || p.article || p.id),
+              oem: p.external_id ? String(p.external_id) : undefined,
+              title: String(p.name || ''),
+              price: Number(p.base_price || 0),
+              available: null,
+              warehouse_id: null,
+              vat_rate: 'none',
+              category: 'popular',
+            }))
+          } catch {
+            /* offline only */
+          }
+        }
+
+        if (rows.length) {
+          this.catalog = rows
+          await offline.cacheProducts(rows)
+        } else {
+          this.catalog = await offline.searchCached('', 80)
+        }
+        this.lastOp = { status: 'success', label: `Каталог ${this.catalog.length}` }
+      } finally {
+        this.loadingCatalog = false
+      }
+    },
+
+    addProduct(p: CachedProduct, qty = 1) {
+      const key = `p-${p.product_id}`
+      const existing = this.cart.find((r) => r.key === key)
+      if (existing) {
+        existing.qty = Number(existing.qty) + qty
+        existing.line = lineSum(existing.price, existing.qty, existing.discount)
+      } else {
+        this.cart.push({
+          key,
+          product_id: p.product_id,
+          warehouse_id: p.warehouse_id,
+          sku: p.sku,
+          barcode: p.barcode,
+          title: p.title,
+          qty,
+          price: Number(p.price || 0),
+          discount: 0,
+          vat_rate: p.vat_rate || 'none',
+          line: lineSum(Number(p.price || 0), qty, 0),
+        })
+      }
+      this.lastOp = { status: 'success', label: `+ ${p.title}` }
+    },
+
+    async addByBarcode(raw: string) {
+      const code = String(raw || '').trim()
+      if (!/^\d{8,14}$/.test(code) && code.length < 3) {
+        return { ok: false as const, reason: 'not_barcode' }
+      }
+
+      let product = this.catalog.find((p) => {
+        const keys = [p.barcode, p.sku, p.oem, String(p.product_id)].filter(Boolean).map(String)
+        return keys.includes(code)
+      })
+
+      if (!product) {
+        const offline = useOfflineStore()
+        product = (await offline.findByBarcode(code)) || undefined
+      }
+
+      if (!product) {
+        this.lastOp = { status: 'warning', label: `Штрихкод ${code} не найден` }
+        toast.warning(`Штрихкод ${code} не найден`, 'POS')
+        return { ok: false as const, reason: 'not_found', code }
+      }
+
+      this.addProduct(product, 1)
+      this.searchQuery = ''
+      toast.success(`Добавлено: ${product.title}`, 'Scan')
+      return { ok: true as const, product }
+    },
+
+    setQty(key: string, qty: number) {
+      const row = this.cart.find((r) => r.key === key)
+      if (!row) return
+      const q = Math.max(0, Math.round(Number(qty) * 1000) / 1000)
+      if (q <= 0) {
+        this.cart = this.cart.filter((r) => r.key !== key)
+        return
+      }
+      row.qty = q
+      row.line = lineSum(row.price, row.qty, row.discount)
+    },
+
+    removeLine(key: string) {
+      this.cart = this.cart.filter((r) => r.key !== key)
+    },
+
+    clearCart() {
+      this.cart = []
+      this.discountPercent = 0
+      this.promoCode = ''
+    },
+
+    applyPromo(code: string) {
+      const c = String(code || '').trim().toUpperCase()
+      this.promoCode = c
+      if (c === 'SALE10') {
+        this.discountPercent = 10
+        toast.success('Промокод SALE10 · −10%', 'POS')
+        return true
+      }
+      if (!c) {
+        this.discountPercent = 0
+        return true
+      }
+      toast.warning('Промокод не найден', 'POS')
+      return false
+    },
+
+    /**
+     * Complete sale: offline-first write, then try online checkout.
+     */
+    async completeSale(payload: {
+      payment_type: LocalPaymentType
+      amount_tendered: number
+      shift_id: number
+      payment_parts?: Array<{ method: string; amount: number }>
+      method?: string
+    }) {
+      if (!this.cart.length) {
+        this.lastOp = { status: 'warning', label: 'Корзина пуста' }
+        return null
+      }
+
+      const user = getStoredUser() as { id?: number; tenant_id?: number } | null
+      const tenantId = Number(user?.tenant_id || 0)
+      const cashierId = Number(user?.id || 0)
+      const offline = useOfflineStore()
+
+      const factor = this.totalDue / Math.max(this.subtotal, 0.01)
+      const items: LocalReceiptItem[] = this.cart.map((r) => ({
+        product_id: r.product_id,
+        warehouse_id: r.warehouse_id,
+        title: r.title,
+        sku: r.sku,
+        qty: r.qty,
+        price: Math.round(r.price * factor * 100) / 100,
+        discount: r.discount,
+        vat_rate: r.vat_rate || 'none',
+      }))
+
+      this.checkingOut = true
+      try {
+        const local = await offline.saveLocalReceipt({
+          tenant_id: tenantId,
+          shift_id: payload.shift_id,
+          cashier_id: cashierId,
+          items,
+          total_amount: this.totalDue,
+          amount_tendered: payload.amount_tendered,
+          payment_type: payload.payment_type,
+          payment_parts: payload.payment_parts,
+        })
+
+        if (offline.online) {
+          try {
+            const method =
+              payload.method ||
+              (payload.payment_type === 'CARD'
+                ? 'card'
+                : payload.payment_type === 'MIXED'
+                  ? 'cash'
+                  : 'cash')
+            await apiPost(
+              '/pos/offline-receipts',
+              {
+                uuid: local.uuid,
+                shift_id: payload.shift_id,
+                payment_type: payload.payment_type,
+                amount_tendered: payload.amount_tendered,
+                total_amount: this.totalDue,
+                items: items.map((i) => ({
+                  product_id: i.product_id,
+                  qty: i.qty,
+                  discount: i.discount || 0,
+                  warehouse_id: i.warehouse_id || undefined,
+                  vat_rate: i.vat_rate,
+                  type: 'product',
+                })),
+                method,
+                payment_parts: payload.payment_parts,
+              },
+              {
+                headers: { 'X-Idempotency-Key': local.uuid },
+              },
+            )
+            if (local.id != null) await offline.markSynced(local.id)
+            this.lastOp = { status: 'success', label: 'Оплачено · синхронизировано' }
+            toast.success('Чек проведён', 'POS')
+          } catch (e: unknown) {
+            const msg =
+              (e as { response?: { data?: { message?: string } }; message?: string })?.response?.data
+                ?.message ||
+              (e as { message?: string })?.message ||
+              'Сеть недоступна'
+            this.lastOp = { status: 'warning', label: 'Сохранено офлайн · ожидает sync' }
+            toast.warning(`Чек в очереди sync: ${msg}`, 'POS Offline')
+          }
+        } else {
+          this.lastOp = { status: 'warning', label: 'OFFLINE · чек в IndexedDB' }
+          toast.info('Нет сети — чек сохранён локально', 'POS Offline')
+        }
+
+        const snapshot = {
+          uuid: local.uuid,
+          total: this.totalDue,
+          payment_type: payload.payment_type,
+        }
+        this.clearCart()
+        return snapshot
+      } finally {
+        this.checkingOut = false
+      }
+    },
+  },
+})

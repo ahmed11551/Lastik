@@ -95,12 +95,13 @@ final class StockBatchService
         ?int $createdBy = null,
         ?int $orderId = null,
         ?int $orderItemId = null,
+        bool $allowOverdraft = false,
     ): array {
         if ($qty <= 0) {
             throw new InvalidArgumentException('Write-off qty must be positive');
         }
 
-        return DB::transaction(function () use ($tenantId, $warehouseId, $productId, $qty, $createdBy, $orderId, $orderItemId): array {
+        return DB::transaction(function () use ($tenantId, $warehouseId, $productId, $qty, $createdBy, $orderId, $orderItemId, $allowOverdraft): array {
             // Блокируем остаток склада (пессимистичная блокировка).
             $stock = $this->lockStock($tenantId, $warehouseId, $productId);
 
@@ -160,14 +161,53 @@ final class StockBatchService
             }
 
             if ($remaining > 0.0001) {
-                // Данные партий не покрывают available (рассинхрон) — откатываем.
-                throw new InsufficientStockException('batch_coverage_gap');
+                if (! $allowOverdraft) {
+                    // Данные партий не покрывают доступный остаток — откатываем.
+                    throw new InsufficientStockException('batch_coverage_gap');
+                }
+
+                // Overdraft-фоллбэк (только для офлайн-чеков с фискальным приоритетом):
+                // создаём техническую отрицательную партию под недостающий объём.
+                $lastCost = (float) ($batches->last()?->cost_price ?? 0);
+                $shortfall = round($remaining, 3);
+                $overdraftBatch = \Autometria\Models\StockBatch::query()->withoutGlobalScopes()->forceCreate([
+                    'tenant_id' => $tenantId,
+                    'warehouse_id' => $warehouseId,
+                    'product_id' => $productId,
+                    'batch_number' => 'OVERDRAFT-' . \Illuminate\Support\Str::uuid()->toString(),
+                    'qty' => -$shortfall,
+                    'remaining_qty' => -$shortfall,
+                    'cost_price' => round($lastCost, 2),
+                    'is_overdraft' => true,
+                    'received_at' => now(),
+                ]);
+
+                $unitCost = round($lastCost, 2);
+                $totalCost = round($shortfall * $unitCost, 2);
+                $writtenOff += $shortfall;
+                $cost += $totalCost;
+
+                \Autometria\Models\StockLotDeduction::query()->withoutGlobalScopes()->forceCreate([
+                    'tenant_id' => $tenantId,
+                    'order_id' => $orderId,
+                    'order_item_id' => $orderItemId,
+                    'stock_batch_id' => $overdraftBatch->id,
+                    'warehouse_id' => $warehouseId,
+                    'product_id' => $productId,
+                    'quantity' => $shortfall,
+                    'unit_cost' => $unitCost,
+                    'total_cost' => $totalCost,
+                ]);
+
+                $remaining = 0.0;
             }
 
-            // Уменьшаем суммарный остаток склада.
+            // Уменьшаем суммарный остаток склада (может уйти в минус при overdraft).
             $stock->actual = (float) $stock->actual - $writtenOff;
             $stock->available = (float) $stock->actual - (float) $stock->reserved;
             $stock->save();
+
+            $isOverdraft = $remaining < 0 || ($batches->count() === 0 && $allowOverdraft);
 
             AuditLog::write(
                 $tenantId,
@@ -189,6 +229,8 @@ final class StockBatchService
                 'written_off' => round($writtenOff, 3),
                 'cost' => round($cost, 2),
                 'batches' => $batchTrace,
+                'overdraft' => $isOverdraft,
+                'shortfall' => $isOverdraft ? round($shortfall ?? 0, 3) : 0.0,
             ];
         });
     }
