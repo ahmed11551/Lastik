@@ -16,6 +16,7 @@ use Autometria\Models\Price;
 use Autometria\Models\ProductService;
 use Autometria\Models\Stock;
 use Autometria\Models\Warehouse;
+use Autometria\Services\CommerceML\CommerceMLStreamParser;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use function Pest\Laravel\get;
@@ -182,3 +183,57 @@ it('imports offers (prices + stock) correctly', function (): void {
     expect((float) $stock->actual)->toBe(12.0);
     expect((float) $stock->available)->toBe(12.0);
 });
+
+/**
+ * XXE hardening: внешние сущности/DTD не загружаются и не раскрываются.
+ * Парсер либо отклоняет вредоносный файл (бросает исключение при открытии
+ * с внешней DTD), либо парсит, но НЕ раскрывает содержимое /etc/passwd.
+ */
+it('rejects xxe payload', function (): void {
+    $xml = <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE root [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<КоммерческаяИнформация>
+  <Каталог>
+    <Товары>
+      <Товар>
+        <Ид>XXE-1</Ид>
+        <Наименование>&xxe;</Наименование>
+        <Артикул>XXE-A</Артикул>
+        <БазоваяЕдиница>шт</БазоваяЕдиница>
+        <Цены>
+          <Цена>
+            <Представление>100</Представление>
+            <ЦенаЗаЕдиницу>100</ЦенаЗаЕдиницу>
+          </Цена>
+        </Цены>
+      </Товар>
+    </Товары>
+  </Каталог>
+</КоммерческаяИнформация>
+XML;
+
+    $path = sys_get_temp_dir() . '/xxe_test_' . uniqid() . '.xml';
+    file_put_contents($path, $xml);
+
+    $leaked = false;
+    try {
+        $parser = new CommerceMLStreamParser();
+        $products = iterator_to_array($parser->parseProducts($path));
+        foreach ($products as $p) {
+            $name = (string) ($p->name ?? '');
+            if (str_contains($name, 'root:') || str_contains($name, ':0:0:')) {
+                $leaked = true;
+            }
+        }
+    } catch (Throwable $e) {
+        // Парсер корректно отклонил вредоносный файл — XXE заблокирован.
+    } finally {
+        @unlink($path);
+    }
+
+    expect($leaked)->toBeFalse();
+});
+

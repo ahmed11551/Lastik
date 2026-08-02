@@ -180,6 +180,17 @@ class CommerceMLStreamParser
             throw CommerceMLImportException::invalidXml('File not found: '.$filePath);
         }
 
+        // XXE hardening:
+        // - На PHP < 8.2 отключаем загрузку внешних сущностей/DTD (на 8.2+ защита
+        //   включена на уровне libxml по умолчанию, а сама функция libxml_disable_entity_loader
+        //   удалена в PHP 8.4 и вызывать её нельзя).
+        // - SUBST_ENTITIES выставлен в false ниже, LIBXML_NOENT не используется
+        //   (это гарантирует, что &xxe; НЕ раскрывается в содержимое внешнего файла).
+        if (PHP_VERSION_ID < 80200 && function_exists('libxml_disable_entity_loader')) {
+            /** @psalm-suppress DeprecatedFunction */
+            @libxml_disable_entity_loader(true);
+        }
+
         $reader = new XMLReader;
         if (! $reader->open($filePath)) {
             throw CommerceMLImportException::invalidXml('Cannot open XML stream: '.$filePath);
@@ -204,7 +215,7 @@ class CommerceMLStreamParser
                     continue;
                 }
 
-                $node = @simplexml_load_string($outer);
+                $node = @simplexml_load_string($outer, null, LIBXML_NONET);
                 if (! $node instanceof SimpleXMLElement) {
                     continue;
                 }
