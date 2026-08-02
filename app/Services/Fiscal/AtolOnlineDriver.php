@@ -156,7 +156,7 @@ final class AtolOnlineDriver implements FiscalDriverInterface
         $receiptItems = [];
         foreach ($items as $item) {
             $vat = $vatMap[$item['vat_rate'] ?? VatRate::NONE->value] ?? 'none';
-            $receiptItems[] = [
+            $row = [
                 'name' => $item['name'] ?? 'Товар',
                 'quantity' => (float) ($item['quantity'] ?? 1),
                 'price' => (float) (($item['price'] ?? 0) / 100), // minor units -> рубли
@@ -165,6 +165,13 @@ final class AtolOnlineDriver implements FiscalDriverInterface
                 'payment_object' => 'commodity',
                 'payment_method' => 'full_payment',
             ];
+            // ФФД 1.2 marking: product_code (тег 1162) when CIS present.
+            if (! empty($item['product_code'])) {
+                $row['product_code'] = $item['product_code'];
+            } elseif (! empty($item['fiscal_tags']['1162'])) {
+                $row['product_code'] = ['hex' => $item['fiscal_tags']['1162']];
+            }
+            $receiptItems[] = $row;
         }
 
         $typeTag = $isRefund

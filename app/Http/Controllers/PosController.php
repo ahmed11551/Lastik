@@ -22,6 +22,7 @@ use Autometria\Models\Location;
 use Autometria\Models\ProductService;
 use Autometria\Services\OrderService;
 use Autometria\Services\PaymentService;
+use Autometria\Services\Marking\MarkingValidationService;
 use Autometria\Services\StockBatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ class PosController extends Controller
         private readonly OrderService $orders,
         private readonly PaymentService $payments,
         private readonly StockBatchService $batches,
+        private readonly MarkingValidationService $markingCodes,
     ) {}
 
     public function checkout(Request $request): JsonResponse
@@ -272,6 +274,19 @@ class PosController extends Controller
                     $order->forceFill([
                         'status' => OrderStatusEnum::COMPLETED_WITH_OVERDRAFT->value,
                     ])->save();
+                }
+
+                // Regulatory: mark CIS as SOLD (двойное выбытие guard).
+                foreach ($order->orderItems as $item) {
+                    $cis = trim((string) ($item->marking_code ?? ''));
+                    if ($cis === '') {
+                        continue;
+                    }
+                    $this->markingCodes->registerMarkSelling(
+                        $cis,
+                        null,
+                        $item->product_id !== null ? (int) $item->product_id : null,
+                    );
                 }
 
                 return $order->fresh(['orderItems', 'payments']);

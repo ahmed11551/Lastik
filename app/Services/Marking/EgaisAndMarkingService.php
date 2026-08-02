@@ -23,6 +23,7 @@ class EgaisAndMarkingService
     public function __construct(
         private readonly DataMatrixParserService $parser,
         private readonly ChestnyZnakClient $chestnyZnak,
+        private readonly MarkingValidationService $markingCodes,
     ) {}
 
     /**
@@ -51,21 +52,23 @@ class EgaisAndMarkingService
         }
 
         try {
-            $parsed = $this->parser->parse($code);
-            $result = $this->chestnyZnak->validate($code, $parsed);
+            set_current_tenant_id($tenantId);
+            // Local double-exit guard + registry upsert.
+            $local = $this->markingCodes->validateDataMatrix($code, (int) $product->id);
+            $result = $this->chestnyZnak->validate($local['raw'], $local);
 
             $this->logValidation(
                 $tenantId,
-                $code,
-                $parsed['gtin'],
+                $local['raw'],
+                $local['gtin'],
                 $result['status'],
                 $result['payload'],
             );
 
             return [
-                'marking_code' => $code,
-                'gtin' => $parsed['gtin'],
-                'serial_number' => $parsed['serial'],
+                'marking_code' => $local['raw'],
+                'gtin' => $local['gtin'],
+                'serial_number' => $local['serial'],
             ];
         } catch (InvalidMarkingCodeException $e) {
             $gtin = '00000000000000';
@@ -78,7 +81,7 @@ class EgaisAndMarkingService
 
             $status = str_contains(strtoupper($e->getMessage()), 'EXPIRED')
                 ? MarkingValidationStatusEnum::EXPIRED
-                : (str_contains(strtoupper($e->getMessage()), 'SOLD')
+                : (str_contains(strtoupper($e->errorCode), 'SOLD') || str_contains(strtoupper($e->getMessage()), 'SOLD')
                     ? MarkingValidationStatusEnum::SOLD
                     : MarkingValidationStatusEnum::INVALID);
 
@@ -109,6 +112,9 @@ class EgaisAndMarkingService
         } catch (InvalidMarkingCodeException) {
             // still log unbind with placeholder GTIN
         }
+
+        set_current_tenant_id($tenantId);
+        $this->markingCodes->releaseMarkOnRefund($code);
 
         $result = $this->chestnyZnak->unbind($code, $resolvedGtin);
         $this->logValidation(

@@ -19,6 +19,8 @@ import TvBoardIndex from '@/Pages/TvBoard/Index.vue'
 import IntegrationsIndex from '@/Pages/Settings/Integrations/Index.vue'
 import InventoryIndex from '@/Pages/Inventory/Index.vue'
 import InventoryDocumentForm from '@/Pages/Inventory/DocumentForm.vue'
+import RegulatoryMarkingIndex from '@/Pages/Regulatory/Marking/Index.vue'
+import RegulatoryEgaisIndex from '@/Pages/Regulatory/Egais/Index.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
 import { getToken } from '@/autometria/api/client'
@@ -36,6 +38,8 @@ const VIEW_TITLES = {
   stock: 'Склад и остатки',
   inventory: 'Инвентаризация',
   inventory_create: 'Складской документ',
+  regulatory: 'Маркировка (Честный Знак)',
+  egais: 'ЕГАИС',
   onec: 'Синхронизация 1С',
   '1c': 'Синхронизация 1С',
   integrations: 'Интеграции 1С / CommerceML',
@@ -243,6 +247,16 @@ function onLoginSuccess() {
         v-else-if="view === 'inventory_create'"
         embedded
         @navigate="onNavigate"
+      />
+
+      <RegulatoryMarkingIndex
+        v-else-if="view === 'regulatory'"
+        embedded
+      />
+
+      <RegulatoryEgaisIndex
+        v-else-if="view === 'egais'"
+        embedded
       />
 
       <IntegrationsIndex

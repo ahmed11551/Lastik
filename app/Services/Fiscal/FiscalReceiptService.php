@@ -41,15 +41,35 @@ final class FiscalReceiptService
     public function buildSaleSnapshot(Order $order, ?float $receiptTotal = null): array
     {
         $rawItems = [];
-        foreach ($order->orderItems as $item) {
+        $orderItems = $order->orderItems->values();
+        foreach ($orderItems as $item) {
             /** @var \Autometria\Models\OrderItem $item */
             $snapshot = $item->snapshot ?? [];
-            $rawItems[] = [
+            $row = [
                 'name' => $snapshot['name'] ?? ($item->product?->name ?? ('Позиция #' . $item->id)),
                 'price' => (float) $item->price,
                 'quantity' => (float) ($item->qty ?? 1),
                 'vat_rate' => $item->vat_rate ?? 'none',
             ];
+
+            // ФФД 1.2: тег 1162 (код товара / КИЗ) + 1163 (мера количества) для маркировки.
+            $cis = trim((string) ($item->marking_code ?? ''));
+            if ($cis !== '') {
+                $gtin = (string) ($item->gtin ?? '');
+                $serial = (string) ($item->serial_number ?? '');
+                $row['marking_code'] = $cis;
+                $row['gtin'] = $gtin;
+                $row['serial_number'] = $serial;
+                $row['fiscal_tags'] = [
+                    '1162' => $this->buildTag1162($gtin, $serial),
+                    '1163' => '0', // штуки
+                ];
+                $row['product_code'] = [
+                    'gs1m' => bin2hex($this->buildGs1Binary($gtin, $serial)),
+                ];
+            }
+
+            $rawItems[] = $row;
         }
 
         $targetTotal = $receiptTotal ?? (float) $order->total;
@@ -61,11 +81,37 @@ final class FiscalReceiptService
         // Валидация сходимости копеек (бросит FiscalizationValidationException до ККТ).
         $allocated = $this->discounts->allocate($rawItems, $targetTotal, $payments);
 
+        // Preserve marking / fiscal tags lost during discount allocation.
+        foreach ($allocated['items'] as $i => &$allocatedItem) {
+            foreach (['marking_code', 'gtin', 'serial_number', 'fiscal_tags', 'product_code'] as $key) {
+                if (isset($rawItems[$i][$key])) {
+                    $allocatedItem[$key] = $rawItems[$i][$key];
+                }
+            }
+        }
+        unset($allocatedItem);
+
         return [
             'items' => $allocated['items'],
             'total' => $allocated['total'],
             'payment_address' => $order->payload['payment_address'] ?? 'https://autometria.local',
         ];
+    }
+
+    /**
+     * Тег 1162 — hex representation of GS1 product code for ФФД.
+     */
+    private function buildTag1162(string $gtin, string $serial): string
+    {
+        return strtoupper(bin2hex($this->buildGs1Binary($gtin, $serial)));
+    }
+
+    private function buildGs1Binary(string $gtin, string $serial): string
+    {
+        $gtin = preg_replace('/\D/', '', $gtin) ?: '00000000000000';
+        $gtin = str_pad(substr($gtin, -14), 14, '0', STR_PAD_LEFT);
+
+        return '01'.$gtin.'21'.$serial;
     }
 
     public function createSaleReceipt(
