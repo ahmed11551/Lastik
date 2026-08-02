@@ -5,6 +5,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
 import ErrorBoundary from './Components/ErrorBoundary.vue'
 import NetworkStatus from './Components/NetworkStatus.vue'
 import { toast } from './autometria/api/toast'
+import { usePwa } from './autometria/composables/usePwa'
 
 createInertiaApp({
   title: (title) => (title ? `${title} · AUTOMETRIA ERP` : 'AUTOMETRIA ERP'),
@@ -36,6 +37,9 @@ createInertiaApp({
     }
 
     vueApp.mount(el)
+
+    // PWA: Service Worker + offline cart draft persistence.
+    usePwa().init()
 
     // Mount a global network-status indicator as a sibling of the app root.
     const nsHost = document.createElement('div')

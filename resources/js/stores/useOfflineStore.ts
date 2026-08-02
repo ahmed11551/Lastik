@@ -221,5 +221,49 @@ export const useOfflineStore = defineStore('offline', {
       })
       await this.refreshCounts()
     },
+
+    /**
+     * Persist in-progress cart as a draft when the network drops (Sprint A).
+     */
+    async saveCartDraft(input: {
+      tenant_id: number
+      shift_id: number
+      cashier_id: number
+      items: LocalReceiptItem[]
+      total_amount: number
+      customer_id?: number
+      bonus_spend?: number
+    }) {
+      if (!input.items?.length) return null
+      const key = `draft-${input.cashier_id || 0}-${input.shift_id || 0}`
+      const existing = await db.cartDrafts.where('key').equals(key).first()
+      const row = {
+        key,
+        tenant_id: input.tenant_id,
+        shift_id: input.shift_id,
+        cashier_id: input.cashier_id,
+        items: input.items,
+        total_amount: input.total_amount,
+        customer_id: input.customer_id,
+        bonus_spend: input.bonus_spend,
+        updated_at: new Date().toISOString(),
+      }
+      if (existing?.id != null) {
+        await db.cartDrafts.update(existing.id, row)
+        return { ...row, id: existing.id }
+      }
+      const id = await db.cartDrafts.add(row)
+      return { ...row, id }
+    },
+
+    async loadCartDraft(cashierId = 0, shiftId = 0) {
+      const key = `draft-${cashierId}-${shiftId}`
+      return (await db.cartDrafts.where('key').equals(key).first()) || null
+    },
+
+    async clearCartDraft(cashierId = 0, shiftId = 0) {
+      const key = `draft-${cashierId}-${shiftId}`
+      await db.cartDrafts.where('key').equals(key).delete()
+    },
   },
 })
