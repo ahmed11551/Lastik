@@ -35,9 +35,12 @@
     "resources/js/stores/**/*.ts",
     "resources/js/composables/**/*.ts",
     "resources/js/components/pos/**/*.vue",
+    "resources/js/Components/pos/**/*.vue",
     "resources/js/views/pos/**/*.vue",
     "resources/js/shims-vue.d.ts",
-    "vite.config.ts"
+    "vite.config.ts",
+    "playwright.config.ts",
+    "tests/e2e/**/*.ts"
   ],
   "exclude": [
     "resources/js/app.ts",

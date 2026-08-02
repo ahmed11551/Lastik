@@ -11,22 +11,25 @@ declare(strict_types=1);
 use Autometria\Enums\OrderStatusEnum;
 use Autometria\Models\InventoryAlert;
 use Autometria\Models\Order;
+use Autometria\Models\Price;
 use Autometria\Models\ProductService;
 use Autometria\Models\StockBatch;
 use Autometria\Models\StockLotDeduction;
 use Autometria\Services\Cash\CashShiftService;
 use Tests\Support\AcceptanceFixture;
+
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\postJson;
 
 beforeEach(function (): void {
+    // Exclude 500s from Redis throttle / license middleware in feature tests.
+    $this->withoutMiddleware();
+    // Тестовое окружение: кэш в array (redis-расширение недоступно в контейнере тестов).
+    config(['cache.default' => 'array']);
+
     $this->fx = AcceptanceFixture::make('pos-'.uniqid());
     set_current_tenant_id($this->fx->tenant->id);
     actingAs($this->fx->user);
-    // API endpoints are stateless; disable web/CSRF middleware for feature tests.
-    $this->withSession(['_token' => 'test-token']);
-    $this->withHeader('X-CSRF-TOKEN', 'test-token');
-    $this->withCookie('XSRF-TOKEN', 'test-token');
 
     // Открываем активную смену (24ч лимит от текущего момента).
     $this->shift = app(CashShiftService::class)->open(
@@ -37,19 +40,43 @@ beforeEach(function (): void {
     );
 });
 
-/**
- * Test 1: идемпотентность офлайн-чека по X-Idempotency-Key.
- * Повторная отправка не дублирует заказ и списания.
- */
-it('offline receipt idempotency prevents duplicates', function (): void {
+function seedPosProduct(object $fx, string $article, float $price): ProductService
+{
     $product = ProductService::query()->forceCreate([
-        'tenant_id' => $this->fx->tenant->id,
+        'tenant_id' => $fx->tenant->id,
         'type' => 'product',
-        'name' => 'Шина idempotent',
-        'article' => 'IDEM-1',
-        'base_price' => 1000.0,
+        'name' => 'Шина '.$article,
+        'article' => $article,
+        'base_price' => $price,
         'is_active' => true,
     ]);
+
+    Price::query()->withoutGlobalScopes()->forceCreate([
+        'tenant_id' => $fx->tenant->id,
+        'product_id' => $product->id,
+        'type' => 'retail',
+        'price' => $price,
+        'amount' => $price,
+        'cost_price' => round($price * 0.7, 2),
+    ]);
+
+    return $product;
+}
+
+/**
+ * Test 1: идемпотентность офлайн-чека по X-Idempotency-Key.
+ */
+it('offline receipt idempotency prevents duplicates', function (): void {
+    $product = seedPosProduct($this->fx, 'IDEM-1', 1000.0);
+
+    // Онлайн-остаток есть — без овердрафта (проверяем только идемпотентность).
+    app(\Autometria\Services\StockBatchService::class)->ingress(
+        $this->fx->tenant->id,
+        $this->fx->warehouse->id,
+        $product->id,
+        5.0,
+        700.0,
+    );
 
     $payload = [
         'method' => 'cash',
@@ -75,7 +102,6 @@ it('offline receipt idempotency prevents duplicates', function (): void {
     $deductionsAfterFirst = StockLotDeduction::query()->withoutGlobalScopes()
         ->where('tenant_id', $this->fx->tenant->id)->count();
 
-    // Повторная отправка того же ключа.
     $second = postJson('/api/v1/pos/offline-receipts', $payload, $headers);
     $second->assertStatus(200);
 
@@ -84,28 +110,20 @@ it('offline receipt idempotency prevents duplicates', function (): void {
     $deductionsAfterSecond = StockLotDeduction::query()->withoutGlobalScopes()
         ->where('tenant_id', $this->fx->tenant->id)->count();
 
-    // Без дублирования.
     expect($ordersAfterSecond)->toBe($ordersAfterFirst);
     expect($deductionsAfterSecond)->toBe($deductionsAfterFirst);
 });
 
 /**
- * Test 2: офлайн-чек при нулевом остатке создаёт овердрафт-партию и уведомление.
+ * Test 2: офлайн-чек при нулевом остатке → овердрафт-партия + alert.
  */
 it('offline receipt handles stock overdraft gracefully', function (): void {
-    $product = ProductService::query()->forceCreate([
-        'tenant_id' => $this->fx->tenant->id,
-        'type' => 'product',
-        'name' => 'Шина overdraft',
-        'article' => 'OVD-1',
-        'base_price' => 2000.0,
-        'is_active' => true,
-    ]);
+    $product = seedPosProduct($this->fx, 'OVD-1', 2000.0);
     // Намеренно НЕ создаём партии — остаток нулевой.
 
     $payload = [
         'method' => 'cash',
-        'amount_tendered' => 2500.0,
+        'amount_tendered' => 4000.0,
         'items' => [
             [
                 'product_id' => $product->id,
@@ -120,7 +138,6 @@ it('offline receipt handles stock overdraft gracefully', function (): void {
     $response = postJson('/api/v1/pos/offline-receipts', $payload, ['X-Idempotency-Key' => $key]);
     $response->assertStatus(201);
 
-    // Овердрафт-партия создана.
     $overdraftBatch = StockBatch::query()->withoutGlobalScopes()
         ->where('tenant_id', $this->fx->tenant->id)
         ->where('product_id', $product->id)
@@ -129,14 +146,12 @@ it('offline receipt handles stock overdraft gracefully', function (): void {
     expect($overdraftBatch)->not->toBeNull();
     expect((float) $overdraftBatch->remaining_qty)->toBe(-2.0);
 
-    // Уведомление кладовщику.
     $alert = InventoryAlert::query()->withoutGlobalScopes()
         ->where('tenant_id', $this->fx->tenant->id)
         ->where('type', 'OVERDRAFT')
         ->first();
     expect($alert)->not->toBeNull();
 
-    // Заказ в статусе completed_with_overdraft.
     $order = Order::query()->withoutGlobalScopes()
         ->where('tenant_id', $this->fx->tenant->id)
         ->latest('id')->first();
@@ -147,18 +162,10 @@ it('offline receipt handles stock overdraft gracefully', function (): void {
  * Test 3: просроченная смена (>24ч) блокирует синхронизацию офлайн-чека.
  */
 it('expired shift blocks offline receipt sync', function (): void {
-    // Сдвигаем expires_at смены в прошлое.
     $this->shift->expires_at = now()->subHour();
     $this->shift->save();
 
-    $product = ProductService::query()->forceCreate([
-        'tenant_id' => $this->fx->tenant->id,
-        'type' => 'product',
-        'name' => 'Шина expired',
-        'article' => 'EXP-1',
-        'base_price' => 1500.0,
-        'is_active' => true,
-    ]);
+    $product = seedPosProduct($this->fx, 'EXP-1', 1500.0);
 
     $payload = [
         'method' => 'cash',
@@ -175,7 +182,6 @@ it('expired shift blocks offline receipt sync', function (): void {
 
     $key = (string) \Illuminate\Support\Str::uuid();
     $response = postJson('/api/v1/pos/offline-receipts', $payload, ['X-Idempotency-Key' => $key]);
-    $response->dump();
     $response->assertStatus(422);
     $response->assertJsonFragment(['code' => 'SHIFT_EXPIRED']);
 });
