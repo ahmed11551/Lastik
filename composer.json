@@ -4,9 +4,10 @@
     "type": "project",
     "require": {
         "php": "^8.3 || ^8.4 || ^8.5",
+        "guzzlehttp/guzzle": "^7.9",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.2",
-        "guzzlehttp/guzzle": "^7.9"
+        "predis/predis": "^2.0"
     },
     "require-dev": {
         "laravel/pint": "^1.18",

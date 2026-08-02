@@ -37,6 +37,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(EnforceAutometriaLicense::class);
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+            'sanctum/csrf-cookie',
+            'orders/bulk-status',
+            'stock/bulk-update',
+        ]);
         $middleware->alias([
             'ensure.tenant' => EnsureTenant::class,
             'ensure.permission' => EnsurePermission::class,

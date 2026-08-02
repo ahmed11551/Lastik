@@ -5,6 +5,7 @@ FROM php:8.4-fpm-alpine AS base
 
 # 1. Системные зависимости и PostgreSQL drivers
 RUN apk add --no-cache \
+    $PHPIZE_DEPS \
     postgresql-dev \
     libpng-dev \
     libzip-dev \
@@ -12,7 +13,10 @@ RUN apk add --no-cache \
     oniguruma-dev \
     bash \
     curl \
-    fcgi
+    fcgi \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del $PHPIZE_DEPS
 
 # 2. Установка стандартных расширений PHP
 RUN docker-php-ext-install \
