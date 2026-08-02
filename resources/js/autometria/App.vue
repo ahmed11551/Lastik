@@ -17,6 +17,8 @@ import SystemModuleView from '@/autometria/views/SystemModuleView.vue'
 import PosView from '@/views/pos/PosView.vue'
 import TvBoardIndex from '@/Pages/TvBoard/Index.vue'
 import IntegrationsIndex from '@/Pages/Settings/Integrations/Index.vue'
+import InventoryIndex from '@/Pages/Inventory/Index.vue'
+import InventoryDocumentForm from '@/Pages/Inventory/DocumentForm.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
 import { getToken } from '@/autometria/api/client'
@@ -32,6 +34,8 @@ const VIEW_TITLES = {
   vehicles: 'Автомобили',
   warehouse: 'Склад и остатки',
   stock: 'Склад и остатки',
+  inventory: 'Инвентаризация',
+  inventory_create: 'Складской документ',
   onec: 'Синхронизация 1С',
   '1c': 'Синхронизация 1С',
   integrations: 'Интеграции 1С / CommerceML',
@@ -72,6 +76,9 @@ const title = computed(() => VIEW_TITLES[view.value] || 'AUTOMETRIA')
 const breadcrumbs = computed(() => {
   if (view.value === 'warehouse') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Остатки' }]
+  }
+  if (view.value === 'inventory' || view.value === 'inventory_create') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Документы' }]
   }
   if (view.value === 'integrations') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Интеграции' }, { label: '1С CommerceML' }]
@@ -187,6 +194,10 @@ function onLoginSuccess() {
           class="ds-badge ds-badge--warning"
         >Warehouse</span>
         <span
+          v-else-if="view === 'inventory' || view === 'inventory_create'"
+          class="ds-badge ds-badge--warning"
+        >Inventory</span>
+        <span
           v-else-if="view === 'integrations'"
           class="ds-badge ds-badge--warning"
         >1C Sync</span>
@@ -221,6 +232,18 @@ function onLoginSuccess() {
       />
 
       <WarehouseView v-else-if="view === 'warehouse'" />
+
+      <InventoryIndex
+        v-else-if="view === 'inventory'"
+        embedded
+        @navigate="onNavigate"
+      />
+
+      <InventoryDocumentForm
+        v-else-if="view === 'inventory_create'"
+        embedded
+        @navigate="onNavigate"
+      />
 
       <IntegrationsIndex
         v-else-if="view === 'integrations'"
