@@ -60,6 +60,16 @@ class Customer extends TenantModel
         return $this->hasMany(Order::class);
     }
 
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function portalTokens(): HasMany
+    {
+        return $this->hasMany(CustomerPortalToken::class);
+    }
+
     public function loyaltyTransactions(): HasMany
     {
         return $this->hasMany(LoyaltyTransaction::class);
