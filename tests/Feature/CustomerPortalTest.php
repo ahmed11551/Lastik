@@ -6,6 +6,7 @@ use Autometria\Models\Booking;
 use Autometria\Models\Customer;
 use Autometria\Models\Post;
 use Autometria\Services\Portal\CustomerPortalService;
+use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Tests\Support\AcceptanceFixture;
 
@@ -15,6 +16,7 @@ use function Pest\Laravel\postJson;
 
 beforeEach(function (): void {
     config(['cache.default' => 'array']);
+    RateLimiter::clear('auth-api');
     $this->fx = AcceptanceFixture::make('portal-'.uniqid());
     set_current_tenant_id($this->fx->tenant->id);
     $this->post = Post::query()->withoutGlobalScopes()->forceCreate([
