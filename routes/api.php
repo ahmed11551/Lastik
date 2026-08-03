@@ -41,6 +41,7 @@ use Autometria\Http\Controllers\ProductController;
 use Autometria\Http\Controllers\ProductionController;
 use Autometria\Http\Controllers\Purchasing\SupplierController;
 use Autometria\Http\Controllers\Purchasing\SupplierOrderController;
+use Autometria\Http\Controllers\Wms\WmsController;
 use Autometria\Http\Controllers\Payroll\AccrualRuleController;
 use Autometria\Http\Controllers\Payroll\DeductionController;
 use Autometria\Http\Controllers\Payroll\PayrollPeriodController;
@@ -197,7 +198,19 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
     Route::post('recipes', [RecipeController::class, 'store'])->middleware('ensure.permission:stock.transfer');
     Route::put('recipes/{id}', [RecipeController::class, 'update'])->middleware('ensure.permission:stock.transfer');
     Route::get('production/orders', [ProductionController::class, 'index'])->middleware('ensure.permission:stock.view');
+    Route::post('production/orders', [ProductionController::class, 'produce'])->middleware('ensure.permission:stock.transfer');
     Route::post('production/produce', [ProductionController::class, 'produce'])->middleware('ensure.permission:stock.transfer');
+    Route::post('production/nested-preview', [ProductionController::class, 'nestedPreview'])->middleware('ensure.permission:stock.view');
+
+    Route::get('wms/storage-cells', [WmsController::class, 'listCells'])->middleware('ensure.permission:stock.view');
+    Route::post('wms/storage-cells', [WmsController::class, 'storeCell'])->middleware('ensure.permission:stock.transfer');
+    Route::put('wms/storage-cells/{id}', [WmsController::class, 'updateCell'])->middleware('ensure.permission:stock.transfer');
+    Route::delete('wms/storage-cells/{id}', [WmsController::class, 'destroyCell'])->middleware('ensure.permission:stock.transfer');
+    Route::post('wms/batch-placement', [WmsController::class, 'placeBatch'])->middleware('ensure.permission:stock.transfer');
+    Route::post('wms/batch-move', [WmsController::class, 'moveBatch'])->middleware('ensure.permission:stock.transfer');
+    Route::get('wms/serial-numbers', [WmsController::class, 'listSerials'])->middleware('ensure.permission:stock.view');
+    Route::post('wms/serial-numbers', [WmsController::class, 'receiveSerials'])->middleware('ensure.permission:stock.transfer');
+    Route::post('wms/serial-numbers/mark-sold', [WmsController::class, 'markSerialsSold'])->middleware('ensure.permission:stock.transfer');
 
     Route::get('suppliers', [SupplierController::class, 'index'])->middleware('ensure.permission:stock.view');
     Route::post('suppliers', [SupplierController::class, 'store'])->middleware('ensure.permission:stock.transfer');

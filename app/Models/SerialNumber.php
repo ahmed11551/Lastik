@@ -40,4 +40,9 @@ class SerialNumber extends TenantModel
     {
         return $this->belongsTo(StockBatch::class);
     }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
 }

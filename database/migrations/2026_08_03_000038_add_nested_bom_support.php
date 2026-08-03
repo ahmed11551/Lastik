@@ -21,10 +21,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('recipe_items') && ! Schema::hasColumn('recipe_items', 'ingredient_id_index')) {
-            Schema::table('recipe_items', function (Blueprint $table): void {
-                $table->index(['tenant_id', 'ingredient_id'], 'recipe_items_tenant_ingredient_idx');
-            });
+        if (Schema::hasTable('recipe_items')) {
+            $hasIdx = collect(Schema::getIndexes('recipe_items'))
+                ->contains(fn ($i) => ($i['name'] ?? null) === 'recipe_items_tenant_ingredient_idx');
+            if (! $hasIdx) {
+                Schema::table('recipe_items', function (Blueprint $table): void {
+                    $table->index(['tenant_id', 'ingredient_id'], 'recipe_items_tenant_ingredient_idx');
+                });
+            }
         }
 
         if (Schema::hasTable('products_services') && ! Schema::hasColumn('products_services', 'is_semi_finished')) {
@@ -43,10 +47,14 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (Schema::hasTable('recipe_items') && Schema::hasColumn('recipe_items', 'ingredient_id_index')) {
-            Schema::table('recipe_items', function (Blueprint $table): void {
-                $table->dropIndex('recipe_items_tenant_ingredient_idx');
-            });
+        if (Schema::hasTable('recipe_items')) {
+            $hasIdx = collect(Schema::getIndexes('recipe_items'))
+                ->contains(fn ($i) => ($i['name'] ?? null) === 'recipe_items_tenant_ingredient_idx');
+            if ($hasIdx) {
+                Schema::table('recipe_items', function (Blueprint $table): void {
+                    $table->dropIndex('recipe_items_tenant_ingredient_idx');
+                });
+            }
         }
 
         if (Schema::hasTable('products_services') && Schema::hasColumn('products_services', 'is_semi_finished')) {

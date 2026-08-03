@@ -89,6 +89,9 @@ final class SupplierOrderController extends Controller
             'items.*.product_id' => ['nullable', 'integer'],
             'items.*.qty' => ['required', 'numeric', 'min:0.001'],
             'items.*.cost_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.storage_cell_id' => ['nullable', 'integer'],
+            'items.*.serials' => ['nullable', 'array'],
+            'items.*.serials.*' => ['string', 'max:128'],
         ]);
 
         try {

@@ -69,12 +69,14 @@ class ProductService extends TenantModel
         'marking_type',
         'is_egais',
         'egais_alcocode',
+        'is_semi_finished',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'is_marked' => 'boolean',
         'is_egais' => 'boolean',
+        'is_semi_finished' => 'boolean',
         'base_price' => 'decimal:2',
         'min_stock' => 'decimal:3',
         'max_stock' => 'decimal:3',
@@ -85,6 +87,11 @@ class ProductService extends TenantModel
     public function stocks(): HasMany
     {
         return $this->hasMany(Stock::class, 'product_id');
+    }
+
+    public function recipe(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Recipe::class, 'product_id');
     }
 
     public function category(): BelongsTo
