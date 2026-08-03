@@ -26,8 +26,8 @@ return new class extends Migration
             DB::statement("DROP POLICY IF EXISTS {$table}_tenant_isolation ON {$table}");
             DB::statement("
                 CREATE POLICY {$table}_tenant_isolation ON {$table}
-                USING (tenant_id = current_setting('autometria.tenant_id')::bigint)
-                WITH CHECK (tenant_id = current_setting('autometria.tenant_id')::bigint)
+                USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint)
+                WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint)
             ");
         }
     }
