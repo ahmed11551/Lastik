@@ -55,8 +55,20 @@ class FiscalizeReceiptJob implements ShouldQueue
 
     public function handle(FiscalReceiptService $service): void
     {
+        // 0) Установка tenant-контекста ДО любых raw-SQL (RLS требует app.current_tenant_id).
+        // Иначе под не-superuser ролью (без BYPASSRLS) RLS заблокирует UPDATE ... RETURNING.
+        $receiptTenant = FiscalReceipt::query()->withoutGlobalScopes()
+            ->whereKey($this->fiscalReceiptId)
+            ->value('tenant_id');
+        if ($receiptTenant !== null) {
+            DB::statement('SELECT set_config(?, ?, true)', [
+                'app.current_tenant_id',
+                (string) $receiptTenant,
+            ]);
+        }
+
         // 1) CLAIM (атомарный capture под блокировкой).
-        $claimed = DB::transaction(function () {
+        $claimed = DB::transaction(function () use ($receiptTenant) {
             return DB::selectOne(
                 "UPDATE fiscal_receipts
                  SET status = ?, locked_at = clock_timestamp(), attempt = attempt + 1
