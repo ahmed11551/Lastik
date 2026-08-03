@@ -91,6 +91,7 @@ final class AcceptanceFixture
                 'stock.view', 'stock.transfer', 'stock.import',
                 'settings.view', 'settings.update',
                 'locations.all', 'admin.dashboard',
+                'payroll.view', 'payroll.manage',
             ],
         ]);
 

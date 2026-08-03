@@ -104,6 +104,8 @@ const sections = [
       { id: 'users', label: 'Пользователи & Устройства' },
       { id: 'tenants', label: 'Организации & Точки' },
       { id: 'modules', label: 'Модули' },
+      { id: 'payroll', label: 'Зарплата' },
+      { id: 'payroll_rules', label: 'Правила зарплаты' },
       { id: 'audit', label: 'Журнал действий' },
     ],
   },

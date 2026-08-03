@@ -28,6 +28,9 @@ import AnalyticsDashboard from '@/Pages/Dashboard.vue'
 import PurchasesIndex from '@/Pages/Purchases/Index.vue'
 import SupplierOrderForm from '@/Pages/Purchases/SupplierOrderForm.vue'
 import ReplenishmentPlan from '@/Pages/Purchases/ReplenishmentPlan.vue'
+import PayrollPeriodsIndex from '@/Pages/Payroll/PeriodsIndex.vue'
+import PayslipView from '@/Pages/Payroll/PayslipView.vue'
+import PayrollRules from '@/Pages/Payroll/Rules.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
 import { getToken } from '@/autometria/api/client'
@@ -50,6 +53,9 @@ const VIEW_TITLES = {
   purchases: 'Закупки',
   purchase_form: 'Заказ поставщику',
   replenishment: 'План пополнения',
+  payroll: 'Зарплата',
+  payroll_rules: 'Правила зарплаты',
+  payslip: 'Расчётный лист',
   production: 'Производство / BOM',
   branches: 'Филиалы',
   regulatory: 'Маркировка (Честный Знак)',
@@ -75,6 +81,7 @@ function normalizeView(raw) {
   if (raw === 'shifts') return 'cashier'
   if (raw === '1c' || raw === 'onec') return 'integrations'
   if (String(raw).startsWith('purchase_form')) return 'purchase_form'
+  if (String(raw).startsWith('payslip:')) return 'payslip'
   return VIEW_TITLES[raw] ? raw : 'dashboard'
 }
 
@@ -89,8 +96,14 @@ function purchaseOrderIdFromHash() {
   return m ? Number(m[1]) : null
 }
 
+function payslipIdFromHash() {
+  const m = location.hash.replace(/^#\/?/, '').match(/^payslip:(\d+)/)
+  return m ? Number(m[1]) : null
+}
+
 const view = ref(readHash())
 const purchaseOrderId = ref(purchaseOrderIdFromHash())
+const payslipId = ref(payslipIdFromHash())
 const shiftStore = useShiftStore()
 const {
   open: shiftOpen,
@@ -145,6 +158,11 @@ watch(view, (v) => {
     if (location.hash !== next) location.hash = next
     return
   }
+  if (v === 'payslip' && payslipId.value) {
+    const next = `#/payslip:${payslipId.value}`
+    if (location.hash !== next) location.hash = next
+    return
+  }
   const next = `#/${v}`
   if (v !== 'purchase_form' && location.hash !== next) location.hash = next
   if (v === 'purchase_form' && !purchaseOrderId.value && location.hash !== next) {
@@ -155,6 +173,7 @@ watch(view, (v) => {
 function onHashChange() {
   view.value = readHash()
   purchaseOrderId.value = purchaseOrderIdFromHash()
+  payslipId.value = payslipIdFromHash()
 }
 
 onMounted(() => {
@@ -178,6 +197,12 @@ function onNavigate(item) {
   if (String(raw).startsWith('purchase_form:')) {
     purchaseOrderId.value = purchaseOrderIdFromHash() || Number(String(raw).split(':')[1]) || null
     view.value = 'purchase_form'
+    location.hash = `#/${raw}`
+    return
+  }
+  if (String(raw).startsWith('payslip:')) {
+    payslipId.value = payslipIdFromHash() || Number(String(raw).split(':')[1]) || null
+    view.value = 'payslip'
     location.hash = `#/${raw}`
     return
   }
@@ -329,6 +354,18 @@ function onLoginSuccess() {
         v-else-if="view === 'replenishment'"
         embedded
         @navigate="onNavigate"
+      />
+
+      <PayrollPeriodsIndex
+        v-else-if="view === 'payroll'"
+        @navigate="onNavigate"
+      />
+
+      <PayrollRules v-else-if="view === 'payroll_rules'" />
+
+      <PayslipView
+        v-else-if="view === 'payslip'"
+        :payslip-id="payslipId"
       />
 
       <ProductionIndex

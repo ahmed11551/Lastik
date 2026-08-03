@@ -11,7 +11,6 @@ namespace Autometria\Models;
 
 use Autometria\Models\TenantModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PayrollPeriod extends TenantModel
 {
@@ -47,109 +46,4 @@ class PayrollPeriod extends TenantModel
     {
         return $this->hasMany(Payslip::class);
     }
-}
-
-class Payslip extends TenantModel
-{
-    protected $table = 'payslips';
-
-    protected $fillable = [
-        'tenant_id',
-        'payroll_period_id',
-        'user_id',
-        'gross',
-        'deductions_total',
-        'net',
-        'status',
-    ];
-
-    protected $casts = [
-        'gross' => 'decimal:2',
-        'deductions_total' => 'decimal:2',
-        'net' => 'decimal:2',
-    ];
-
-    public function payrollPeriod(): BelongsTo
-    {
-        return $this->belongsTo(PayrollPeriod::class);
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function items(): HasMany
-    {
-        return $this->hasMany(PayslipItem::class);
-    }
-}
-
-class PayslipItem extends TenantModel
-{
-    protected $table = 'payslip_items';
-
-    protected $fillable = [
-        'tenant_id',
-        'payslip_id',
-        'type',
-        'label',
-        'amount',
-        'source_id',
-    ];
-
-    protected $casts = [
-        'amount' => 'decimal:2',
-    ];
-
-    public const TYPE_EARNING = 'EARNING';
-    public const TYPE_DEDUCTION = 'DEDUCTION';
-
-    public function payslip(): BelongsTo
-    {
-        return $this->belongsTo(Payslip::class);
-    }
-}
-
-class Deduction extends TenantModel
-{
-    protected $table = 'deductions';
-
-    protected $fillable = [
-        'tenant_id',
-        'name',
-        'type',
-        'value',
-        'is_active',
-    ];
-
-    protected $casts = [
-        'value' => 'decimal:2',
-        'is_active' => 'boolean',
-    ];
-
-    public const TYPE_FIXED = 'FIXED';
-    public const TYPE_PERCENT = 'PERCENT';
-}
-
-class AccrualRule extends TenantModel
-{
-    protected $table = 'accrual_rules';
-
-    protected $fillable = [
-        'tenant_id',
-        'name',
-        'type',
-        'value',
-        'is_active',
-    ];
-
-    protected $casts = [
-        'value' => 'decimal:2',
-        'is_active' => 'boolean',
-    ];
-
-    public const TYPE_KPI_PERCENT = 'KPI_PERCENT';
-    public const TYPE_FIXED = 'FIXED';
-    public const TYPE_BONUS = 'BONUS';
 }

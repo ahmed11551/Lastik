@@ -39,6 +39,10 @@ use Autometria\Http\Controllers\ProductController;
 use Autometria\Http\Controllers\ProductionController;
 use Autometria\Http\Controllers\Purchasing\SupplierController;
 use Autometria\Http\Controllers\Purchasing\SupplierOrderController;
+use Autometria\Http\Controllers\Payroll\AccrualRuleController;
+use Autometria\Http\Controllers\Payroll\DeductionController;
+use Autometria\Http\Controllers\Payroll\PayrollPeriodController;
+use Autometria\Http\Controllers\Payroll\PayslipController;
 use Autometria\Http\Controllers\RecipeController;
 use Autometria\Http\Controllers\RefundController;
 use Autometria\Http\Controllers\SearchController;
@@ -186,6 +190,18 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
     Route::post('supplier-orders/{id}/confirm', [SupplierOrderController::class, 'confirm'])->middleware('ensure.permission:stock.transfer');
     Route::post('supplier-orders/{id}/receive', [SupplierOrderController::class, 'receive'])->middleware('ensure.permission:stock.transfer');
     Route::get('purchases/replenishment-plan', [SupplierOrderController::class, 'replenishmentPlan'])->middleware('ensure.permission:stock.view');
+
+    Route::get('payroll-periods', [PayrollPeriodController::class, 'index'])->middleware('ensure.permission:payroll.view');
+    Route::post('payroll-periods', [PayrollPeriodController::class, 'store'])->middleware('ensure.permission:payroll.manage');
+    Route::post('payroll-periods/{id}/calculate', [PayrollPeriodController::class, 'calculate'])->middleware('ensure.permission:payroll.manage');
+    Route::post('payroll-periods/{id}/approve', [PayrollPeriodController::class, 'approve'])->middleware('ensure.permission:payroll.manage');
+    Route::post('payroll-periods/{id}/pay', [PayrollPeriodController::class, 'pay'])->middleware('ensure.permission:payroll.manage');
+    Route::get('payslips', [PayslipController::class, 'index'])->middleware('ensure.permission:payroll.view');
+    Route::get('payslips/{id}', [PayslipController::class, 'show'])->middleware('ensure.permission:payroll.view');
+    Route::get('deductions', [DeductionController::class, 'index'])->middleware('ensure.permission:payroll.view');
+    Route::post('deductions', [DeductionController::class, 'store'])->middleware('ensure.permission:payroll.manage');
+    Route::get('accrual-rules', [AccrualRuleController::class, 'index'])->middleware('ensure.permission:payroll.view');
+    Route::post('accrual-rules', [AccrualRuleController::class, 'store'])->middleware('ensure.permission:payroll.manage');
 
     Route::get('modules', [ModuleController::class, 'index'])->middleware('ensure.permission:modules.view');
     Route::post('modules/{slug}/enable', [ModuleController::class, 'enable'])->middleware('ensure.permission:modules.update');
