@@ -15,6 +15,7 @@ export default defineConfig({
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:5178',
     trace: 'on-first-retry',
     ...devices['Desktop Chrome'],
+    channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
   },
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1 --port 5178',
