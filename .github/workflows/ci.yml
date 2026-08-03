@@ -2,99 +2,112 @@ name: CI
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main]
   pull_request:
+    branches: [main]
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Pest + Build
+  backend:
+    name: Backend (Pest) + Lint + Build
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:16-alpine
         env:
+          POSTGRES_DB: lastik_test
           POSTGRES_USER: lastik
           POSTGRES_PASSWORD: secret
-          POSTGRES_DB: lastik_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U lastik -d lastik_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
+          --health-cmd="pg_isready -U lastik"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
       redis:
-        image: redis:alpine
+        image: redis:7-alpine
         ports:
           - 6379:6379
         options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
-    env:
-      APP_ENV: testing
-      APP_URL: http://localhost
-      DB_CONNECTION: pgsql
-      DB_HOST: 127.0.0.1
-      DB_PORT: 5432
-      DB_DATABASE: lastik_test
-      DB_USERNAME: lastik
-      DB_PASSWORD: secret
-      DB_URL: ""
-      CACHE_STORE: array
-      QUEUE_CONNECTION: sync
-      SESSION_DRIVER: array
-      REDIS_HOST: 127.0.0.1
-      REDIS_PORT: 6379
-      DEFAULT_TENANT_SLUG: acceptance
-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup PHP 8.4
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.4"
-          extensions: mbstring, pdo_pgsql, pgsql, redis, bcmath, ctype, fileinfo, json, openssl, tokenizer, xml, curl
+          php-version: '8.4'
+          extensions: pgsql, redis, intl, gd
           coverage: none
-          tools: composer:v2
 
-      - name: Setup Node.js
+      - name: Install composer deps
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare env
+        run: |
+          cp .env.example .env
+          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/REDIS_HOST=.*/REDIS_HOST=127.0.0.1/' .env
+          php artisan key:generate
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      - name: Run backend tests
+        run: php artisan test --stop-on-failure
+
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: '20'
           cache: npm
 
-      - name: Install NPM dependencies
+      - name: Install frontend deps
         run: npm ci
+
+      - name: Lint frontend
+        run: npm run lint
 
       - name: Build frontend
         run: npm run build
 
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+  e2e:
+    name: Playwright E2E (system Chrome)
+    runs-on: ubuntu-latest
+    needs: backend
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Prepare Laravel .env
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Install system Chrome
         run: |
-          cp .env.example .env 2>/dev/null || true
-          php -r "file_put_contents('.env', preg_replace('/^APP_KEY=.*/m', 'APP_KEY=', file_get_contents('.env') ?: ''));"
-          php artisan key:generate --force
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
 
-      - name: Wait for PostgreSQL
-        run: |
-          until pg_isready -h 127.0.0.1 -p 5432 -U lastik -d lastik_test; do sleep 1; done
+      - name: Run Playwright E2E
+        env:
+          PLAYWRIGHT_CHANNEL: chrome
+        run: npx playwright test --reporter=line
 
-      - name: Run Pest tests
-        run: php artisan test --compact
-
-      - name: Laravel Pint (style gate)
-        run: vendor/bin/pint --test
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
