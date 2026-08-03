@@ -35,6 +35,8 @@ use Autometria\Http\Controllers\ModuleController;
 use Autometria\Http\Controllers\OrderController;
 use Autometria\Http\Controllers\PaymentController;
 use Autometria\Http\Controllers\PosController;
+use Autometria\Http\Controllers\Portal\AuthController as PortalAuthController;
+use Autometria\Http\Controllers\Portal\PortalController;
 use Autometria\Http\Controllers\ProductController;
 use Autometria\Http\Controllers\ProductionController;
 use Autometria\Http\Controllers\Purchasing\SupplierController;
@@ -68,6 +70,20 @@ Route::prefix('v1')->group(function (): void {
     // CommerceML 2.10 exchange — HTTP Basic Auth (no Sanctum)
     Route::match(['GET', 'POST'], '1c/exchange', OneCExchangeController::class)
         ->middleware([RateLimitAuth::class, 'throttle:auth-api']);
+});
+
+Route::prefix('v1/portal')->group(function (): void {
+    Route::post('auth/request-token', [PortalAuthController::class, 'requestToken'])
+        ->middleware([RateLimitAuth::class, 'throttle:auth-api']);
+
+    Route::middleware('auth.customer')->group(function (): void {
+        Route::get('me', [PortalController::class, 'me']);
+        Route::get('bookings', [PortalController::class, 'bookings']);
+        Route::post('bookings', [PortalController::class, 'storeBooking']);
+        Route::delete('bookings/{id}', [PortalController::class, 'destroyBooking']);
+        Route::get('posts', [PortalController::class, 'posts']);
+        Route::get('orders', [PortalController::class, 'orders']);
+    });
 });
 
 Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::class])->prefix('v1')->group(function (): void {

@@ -15,6 +15,7 @@ use Autometria\Exceptions\Domain\ShiftAlreadyClosedException;
 use Autometria\Exceptions\Domain\ShiftAlreadyOpenedException;
 use Autometria\Exceptions\Domain\TenantAccessDeniedException;
 use Autometria\Http\Middleware\CheckDeviceLimit;
+use Autometria\Http\Middleware\AuthenticateCustomer;
 use Autometria\Http\Middleware\EnforceAutometriaLicense;
 use Autometria\Http\Middleware\EnforceLocationAccess;
 use Autometria\Http\Middleware\EnsurePermission;
@@ -50,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.device' => CheckDeviceLimit::class,
             'support.access' => SupportAccess::class,
             'auth.license' => EnforceAutometriaLicense::class,
+            'auth.customer' => AuthenticateCustomer::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

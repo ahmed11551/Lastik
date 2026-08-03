@@ -42,10 +42,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Booking extends TenantModel
 {
+    public const PENDING = 'pending';
+
+    public const CANCELLED = 'cancelled';
+
+    public const BOOKED = 'booked';
+
     protected $table = 'bookings';
 
     protected $fillable = [
         'post_id',
+        'customer_id',
         'customer_name',
         'customer_phone',
         'start_time',
@@ -61,5 +68,10 @@ class Booking extends TenantModel
     public function post(): BelongsTo
     {
         return $this->belongsTo(Post::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 }
