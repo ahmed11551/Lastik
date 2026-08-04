@@ -40,10 +40,23 @@ const lastUpdated = ref<string | null>(null)
 let timer: ReturnType<typeof setInterval> | null = null
 
 const COL_META = [
-  { key: 'queue' as const, title: 'Очередь', tone: 'neutral' },
-  { key: 'in_progress' as const, title: 'В работе', tone: 'warning' },
-  { key: 'ready' as const, title: 'Готово', tone: 'success' },
+  { key: 'queue' as const, title: 'Очередь', tone: 'neutral', empty: 'Нет машин в очереди' },
+  { key: 'in_progress' as const, title: 'В работе', tone: 'warning', empty: 'Посты свободны' },
+  { key: 'ready' as const, title: 'Готово', tone: 'success', empty: 'Ожидаем выдачу' },
 ]
+
+const STATUS_RU: Record<string, string> = {
+  created: 'Создан',
+  in_progress: 'В работе',
+  ready: 'Готов',
+  issued: 'Выдан',
+  closed: 'Закрыт',
+  cancelled: 'Отменён',
+}
+
+function statusLabel(status: string): string {
+  return STATUS_RU[status] || status
+}
 
 const totalCards = computed(
   () => columns.value.queue.length + columns.value.in_progress.length + columns.value.ready.length,
@@ -98,14 +111,27 @@ onUnmounted(() => {
         <header class="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div class="text-[11px] uppercase tracking-[0.12em]" style="color: var(--color-text-secondary)">
-              Industrial Precision · Live
+              Industrial Precision · Live · TTL / event eviction
             </div>
             <h1 class="m-0 text-2xl font-semibold" style="color: var(--color-text-primary)">Очередь шиномонтажа</h1>
+            <p class="mt-1 m-0 text-xs" style="color: var(--color-text-secondary)">
+              Очередь → В работе → Готово · автообновление {{ Math.round(pollMs / 1000) }}с
+            </p>
           </div>
           <div class="flex items-center gap-2 text-[12px]" style="color: var(--color-text-secondary)">
             <DsBadge class="ds-badge--neutral">Точка {{ locationId ?? '—' }}</DsBadge>
             <DsBadge class="ds-badge--warning">{{ totalCards }} заказов</DsBadge>
-            <span v-if="lastUpdated">обновлено {{ lastUpdated }}</span>
+            <span
+              class="inline-flex items-center gap-1.5"
+              :title="loading ? 'Обновление…' : undefined"
+            >
+              <span
+                class="inline-block h-1.5 w-1.5 rounded-full"
+                :style="{ background: loading ? '#f59e0b' : '#10b981' }"
+              />
+              <span v-if="lastUpdated">{{ lastUpdated }}</span>
+              <span v-else>ожидание</span>
+            </span>
             <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" data-testid="tv-refresh" @click="loadBoard">
               Обновить
             </button>
@@ -152,7 +178,7 @@ onUnmounted(() => {
                   <div class="text-xl font-semibold tracking-tight" style="color: var(--color-primary)">
                     {{ card.number }}
                   </div>
-                  <DsBadge class="ds-badge--neutral">{{ card.status }}</DsBadge>
+                  <DsBadge class="ds-badge--neutral">{{ statusLabel(card.status) }}</DsBadge>
                 </div>
                 <div class="mt-2 text-lg font-medium" style="color: var(--color-text-primary)">
                   {{ card.plate || '—' }}
@@ -167,7 +193,7 @@ onUnmounted(() => {
                 class="flex flex-1 items-center justify-center text-[12px]"
                 style="color: var(--color-text-secondary)"
               >
-                Пусто
+                {{ col.empty }}
               </div>
             </div>
           </section>
@@ -178,10 +204,24 @@ onUnmounted(() => {
     <!-- Kiosk / SPA hash route: full-bleed without shell chrome -->
     <div v-else class="tv-kiosk min-h-screen p-4" data-testid="tv-board">
       <header class="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 class="m-0 text-3xl font-semibold" style="color: var(--color-primary)">Очередь шиномонтажа</h1>
-        <div class="flex items-center gap-2 text-[14px]" style="color: var(--color-text-secondary)">
+        <div>
+          <div class="font-mono text-[11px] uppercase tracking-[0.14em]" style="color: #f59e0b">
+            TV Board // kiosk · DemoSeeder
+          </div>
+          <h1 class="m-0 text-3xl font-semibold" style="color: var(--color-primary)">Очередь шиномонтажа</h1>
+        </div>
+        <div class="flex items-center gap-3 text-[14px]" style="color: var(--color-text-secondary)">
           <DsBadge class="ds-badge--warning">{{ totalCards }}</DsBadge>
-          <span v-if="lastUpdated">{{ lastUpdated }}</span>
+          <span class="inline-flex items-center gap-1.5">
+            <span
+              class="inline-block h-2 w-2 rounded-full"
+              :style="{ background: loading ? '#f59e0b' : '#10b981' }"
+            />
+            <span v-if="lastUpdated">{{ lastUpdated }}</span>
+          </span>
+          <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" data-testid="tv-refresh-kiosk" @click="loadBoard">
+            Обновить
+          </button>
         </div>
       </header>
       <div v-if="error" class="ds-surface mb-4 p-3" style="color: var(--color-danger)">{{ error }}</div>
@@ -203,7 +243,10 @@ onUnmounted(() => {
               class="tv-card rounded border p-4"
               style="border-color: var(--color-border); background: var(--color-bg-elevated, #111827)"
             >
-              <div class="text-3xl font-semibold" style="color: var(--color-primary)">{{ card.number }}</div>
+              <div class="flex items-start justify-between gap-2">
+                <div class="text-3xl font-semibold" style="color: var(--color-primary)">{{ card.number }}</div>
+                <DsBadge class="ds-badge--neutral">{{ statusLabel(card.status) }}</DsBadge>
+              </div>
               <div class="mt-2 text-2xl font-medium">{{ card.plate || '—' }}</div>
               <div class="mt-1 text-base" style="color: var(--color-text-secondary)">{{ card.vehicle || '' }}</div>
             </article>
@@ -212,7 +255,7 @@ onUnmounted(() => {
               class="flex flex-1 items-center justify-center text-sm"
               style="color: var(--color-text-secondary)"
             >
-              Пусто
+              {{ col.empty }}
             </div>
           </div>
         </section>
@@ -227,6 +270,9 @@ onUnmounted(() => {
   color: var(--color-text-primary, #e5e7eb);
 }
 .tv-card {
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.tv-card:hover {
+  border-color: #f59e0b;
 }
 </style>

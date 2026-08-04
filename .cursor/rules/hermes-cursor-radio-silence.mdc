@@ -1,0 +1,33 @@
+---
+description: Radio silence — Hermes (BE) vs Cursor (FE) ownership boundaries
+alwaysApply: true
+---
+
+# Разделение труда: Гермес vs Курсор
+
+## Зона Курсора (этот агент в FE-задачах)
+
+**Полные права:** `resources/js/`, `resources/css/`, `package.json`, `vite.config.*`, `tsconfig.json`.
+
+**Задача:** Vue 3, Inertia-страницы, UX демо-стенда, Tailwind, сборка фронта.
+
+**Табу:** Не править `app/`, `database/`, `routes/` (кроме явного исключения), `tests/`, `.env`, миграции. Не запускать миграции.
+
+При FE-задачах всегда помнить: **работаешь ТОЛЬКО в resources/js/ (+ css/vite/package). Бэкенд не трогать!**
+
+## Зона Гермеса (Backend)
+
+**Полные права:** `app/`, `database/`, `tests/`, `routes/`, `.env`, CI.
+
+**Табу:** Не лезть в `resources/js/` и Vue-компоненты.
+
+При BE-задачах: **работаешь ТОЛЬКО по backend/database. UI-файлы не трогать!**
+
+## Контракт демо-стенда (FE ↔ Hermes)
+
+`POST /api/v1/demo/login`  
+Body: `{ "email": "admin@demo.local" }` (email optional on BE)  
+Response: `{ "token": string, "user": object }`  
+При `DEMO_MODE=false`: **403** → UI toast «Демо-режим отключен на данном сервере»
+
+Кнопка «Демо-вход в 1 клик» → `LoginView.vue` → `#/dashboard`.

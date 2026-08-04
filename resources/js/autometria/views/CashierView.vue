@@ -97,9 +97,9 @@ const payMethods = [
 
 const quickNav = [
   { id: 'warehouse', label: 'Склад' },
+  { id: 'wms_cells', label: 'Ячейки' },
+  { id: 'tv_display', label: 'TV' },
   { id: 'orders', label: 'Заказы' },
-  { id: 'new_order', label: 'Новый заказ' },
-  { id: 'kpi', label: 'KPI' },
 ]
 
 const totalDue = computed(() => cashier.totalDue)
@@ -440,12 +440,24 @@ onUnmounted(() => {
     >
       <div class="min-w-0">
         <div class="mb-1 font-mono text-[10px] font-medium uppercase tracking-[0.14em]" style="color: #f59e0b">
-          Cashier // 2.1 смена · 2.3 54-ФЗ · F2/F4
+          Cashier // демо-стенд · смена · 54-ФЗ · F2/F4
         </div>
         <h2 class="text-sm font-medium text-white sm:text-base">Касса и смены</h2>
-        <p class="mt-1 text-xs font-medium" style="color: #9ca3af">Чек · фискализация · Z-отчёт · сканер</p>
+        <p class="mt-1 text-xs font-medium" style="color: #9ca3af">
+          Чек · фискализация · Z-отчёт · сканер · demo: 8 заказов
+        </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        <button
+          v-for="n in quickNav"
+          :key="n.id"
+          type="button"
+          class="hidden border px-2 py-1.5 font-mono text-[10px] uppercase tracking-wide sm:inline-flex"
+          style="border-color: #1f2937; color: #9ca3af; border-radius: 4px; background: #0b0d10"
+          @click="emit('navigate', { id: n.id })"
+        >
+          {{ n.label }}
+        </button>
         <DsLoadingBadge v-if="loading || checkingOut || shiftLoading || fiscalPolling" label="POS" />
         <DsBadge v-if="degraded || shiftDegraded" status="warning" label="Degraded" variant="warning" dot />
         <DsBadge :variant="opBadge.variant" :label="opBadge.label" :status="lastOp.status" dot />

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /**
- * AUTOMETRIA ERP — Vue 3 primary frontend (React Orbital disabled)
+ * AUTOMETRIA ERP — Vue 3 + Vite (Inertia Laravel via vite.laravel.config.js)
  */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
