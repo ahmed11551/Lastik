@@ -90,7 +90,9 @@ jobs:
           cache: npm
 
       - name: Install frontend deps
-        run: npm ci
+        env:
+          NODE_ENV: development
+        run: npm ci --include=dev
 
       - name: Lint frontend
         run: npm run lint
@@ -98,7 +100,9 @@ jobs:
       - name: Build frontend
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-        run: npm run build
+        run: |
+          test -d node_modules/@vitejs/plugin-vue
+          npx vite build
 
   e2e:
     name: Playwright E2E (system Chrome)
@@ -114,7 +118,9 @@ jobs:
           cache: npm
 
       - name: Install frontend deps
-        run: npm ci
+        env:
+          NODE_ENV: development
+        run: npm ci --include=dev
 
       - name: Install system Chrome
         run: |
