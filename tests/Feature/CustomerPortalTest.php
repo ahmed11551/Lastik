@@ -18,9 +18,6 @@ beforeEach(function (): void {
     config(['cache.default' => 'array']);
     \Illuminate\Support\Facades\Cache::clear();
     \Illuminate\Support\Facades\RateLimiter::clear('auth-api');
-    // Composed throttle key (auth-api|<ip>) isn't cleared by RateLimiter::clear('auth-api')
-    // under parallel Pest workers — forget it explicitly to avoid 429 flake.
-    \Illuminate\Support\Facades\Cache::forget('auth-api|127.0.0.1');
     $this->fx = AcceptanceFixture::make('portal-'.uniqid());
     set_current_tenant_id($this->fx->tenant->id);
     $this->post = Post::query()->withoutGlobalScopes()->forceCreate([
