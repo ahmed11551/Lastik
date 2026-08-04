@@ -48,7 +48,7 @@ beforeEach(function (): void {
 
 it('stores fractional stock quantity (1.5 l) without rounding', function (): void {
     $stock = Stock::query()->withoutGlobalScopes()->forceCreate([
-        'tenant_id' => 1,
+        'tenant_id' => $this->tenant->id,
         'warehouse_id' => $this->warehouse->id,
         'product_id' => $this->product->id,
         'actual' => 10.000,
