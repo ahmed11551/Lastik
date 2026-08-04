@@ -61,7 +61,7 @@ const VIEW_TITLES = {
   payslip: 'Расчётный лист',
   production: 'Производство / BOM',
   nested_bom: 'Nested BOM',
-  wms_cells: 'WMS · Ячейки',
+  wms_cells: 'Склад хранения',
   wms_serials: 'WMS · Серийники',
   branches: 'Филиалы',
   regulatory: 'Маркировка (Честный Знак)',
@@ -135,7 +135,7 @@ const breadcrumbs = computed(() => {
     return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Nested BOM' }]
   }
   if (view.value === 'wms_cells') {
-    return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'WMS · Ячейки' }]
+    return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Хранение' }]
   }
   if (view.value === 'wms_serials') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'WMS · Серийники' }]
@@ -246,8 +246,12 @@ function openPalette() {
   window.dispatchEvent(new CustomEvent('command-palette:open'))
 }
 
-function onLoginSuccess() {
-  view.value = 'dashboard'
+function onLoginSuccess(payload) {
+  const landing = payload?.landing && VIEW_TITLES[payload.landing]
+    ? payload.landing
+    : 'dashboard'
+  view.value = landing
+  location.hash = `#/${landing}`
   shiftStore.fetchCurrent().catch(() => {})
 }
 </script>
