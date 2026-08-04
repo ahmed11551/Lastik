@@ -1,0 +1,16 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    # Gate P0 / Team Lead: Core ERP static analysis floor (level 8/9)
+    level: 8
+    paths:
+        - app
+    excludePaths:
+        - app/Http/Controllers/Auth
+        - app/Http/Requests/Auth
+        - app/Http/Requests/ProfileUpdateRequest.php
+        - app/Http/Middleware/HandleInertiaRequests.php
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false

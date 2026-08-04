@@ -77,7 +77,7 @@ it('fiscalize worker sets tenant context before raw SQL', function (): void {
     ]);
 
     // Запуск handle() напрямую: не должен упасть из-за RLS при установке контекста.
-    $job = new \Autometria\Jobs\FiscalizeReceiptJob($receipt->id);
+    $job = new \Autometria\Jobs\FiscalizeReceiptJob($receipt->id, $receipt->tenant_id);
     expect(fn () => $job->handle(new \Autometria\Services\Fiscal\FiscalReceiptService()))
         ->not->toThrow(\Throwable::class);
 

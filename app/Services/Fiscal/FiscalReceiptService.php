@@ -149,7 +149,7 @@ final class FiscalReceiptService
 
         // Гарантированная фискализация: dispatchSync — выполняется немедленно
         // в рамках текущего процесса (Queue=sync). При реальном worker — dispatch().
-        FiscalizeReceiptJob::dispatchSync($receipt->id);
+        FiscalizeReceiptJob::dispatchSync($receipt->id, $receipt->tenant_id);
 
         return $receipt;
     }
@@ -189,7 +189,7 @@ final class FiscalReceiptService
             ]),
         ]);
 
-        FiscalizeReceiptJob::dispatchSync($receipt->id);
+        FiscalizeReceiptJob::dispatchSync($receipt->id, $receipt->tenant_id);
 
         return $receipt->fresh();
     }
