@@ -137,5 +137,39 @@ docker compose exec postgres psql -U lastik -d lastik -c \
 
 ---
 
+## 9. Подготовка релиза v1.1.0-STABLE (F1 + F2)
+
+После Gate P0 ядро заморожено. Закрыты последние P1-долги Core:
+
+| # | Долг | Статус | Артефакт |
+|---|---|---|---|
+| F1 | BCMath в себестоимости (исключение float-drift в COGS/остатках) | ✅ Closed | `app/Services/Traits/BcMathDecimal.php`, `ProductionService`, `StockBatchService` |
+| F2 | Runtime DB-роль без BYPASSRLS | ⚠️ Требует founder-action | `database/sql/001_create_lastik_app_role.sql`, `2026_08_04_000002_*` миграция-гард, `ConnectionRoleIsNotSuperuserTest` |
+| TD-1 | Инвалидация ТВ-кэша по событию | ✅ Closed | `OrderStatusChanged` + `InvalidateTvBoardCache` (afterCommit) |
+| TD-2 | Событийная шина | ✅ Closed | `app/Events`, `app/Listeners`, `bootstrap/providers.php` |
+| TD-3 | Graceful Redis degradation | ✅ Closed | `app/Services/Traits/RedisSafeCache.php` + `RedisDegradationTest` |
+
+### Финальные метрики (перед тегом v1.1.0-STABLE)
+- `migrate:fresh --seed` → SUCCESS
+- **Pest: 210 passed / 945 assertions** (1 skipped = role-guard, локально под lastik)
+- **E2E Playwright: 8 passed** (system Chrome)
+- **Frontend lint (tsc): 0 errors**
+
+### Founder-action для F2 (обязательно до прод-деплоя)
+```bash
+# 1. Применить роль (на стейджинге/проде, под lastik superuser):
+psql -U lastik -d lastik -f database/sql/001_create_lastik_app_role.sql
+# 2. Обновить .env:
+#    DB_USERNAME=lastik_app
+#    DB_PASSWORD=<strong>
+# 3. php artisan config:clear
+# 4. Подтвердить: php artisan test --filter=ConnectionRoleIsNotSuperuserTest  → PASS
+```
+После F2: `git tag -a v1.1.0-STABLE -m "Core frozen: RLS enforcement, bcmath COGS, Redis degradation, event bus"`.
+
+**Модули Fitment / Omnichannel / Notifications Outbox — ЗАМОРОЖЕНЫ** до появления реальных пилотов (решение founder + investor-audit).
+
+---
+
 **Подписано:** Hermes (CEO/OS HERMES CORP)
-**Готовность к Telderi:** P0 по безопасности/RLS закрыт и верифицирован. Остался founder-action по смене DB-роли на NOBYPASSRLS (п.6 выше) для полноценной RLS в runtime.
+**Готовность к Telderi / пилотам:** ядро 100% ТЗ, финансовая точность (bcmath) и RLS-runtime (после F2) закрыты. Осталось: F2 founder-action + Dual UI cleanup (отдельный этап) + боевой деплой.
