@@ -83,11 +83,11 @@ it('tv board service hits cache with five seconds ttl', function (): void {
 
     $tv->board($fx->tenant->id, $fx->location->id);
 
-    Cache::shouldHaveReceived('remember')
+    // safeRemember: читает ключ (miss → null), затем пишет с TTL 5с.
+    Cache::shouldHaveReceived('get')
         ->once()
-        ->withArgs(function (string $key, mixed $ttl, callable $callback) use ($expectedKey): bool {
-            return $key === $expectedKey
-                && (int) $ttl === TvBoardService::CACHE_TTL_SECONDS
-                && $callback instanceof Closure;
-        });
+        ->with($expectedKey);
+    Cache::shouldHaveReceived('put')
+        ->once()
+        ->with($expectedKey, \Mockery::any(), TvBoardService::CACHE_TTL_SECONDS);
 });

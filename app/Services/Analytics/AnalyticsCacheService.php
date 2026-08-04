@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace Autometria\Services\Analytics;
 
+use Autometria\Services\Traits\RedisSafeCache;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\Cache;
  */
 final class AnalyticsCacheService
 {
+    use RedisSafeCache;
+
     private const TTL_SECONDS = 300;
 
     public function __construct(
@@ -36,7 +39,7 @@ final class AnalyticsCacheService
     ): array {
         $key = $this->key('summary', $tenantId, $dateFrom, $dateTo, $warehouseId);
 
-        return Cache::remember($key, self::TTL_SECONDS, fn () => $this->reports->getDashboardSummary(
+        return $this->safeRemember($key, self::TTL_SECONDS, fn () => $this->reports->getDashboardSummary(
             $tenantId,
             $dateFrom,
             $dateTo,
@@ -58,7 +61,7 @@ final class AnalyticsCacheService
     ): array {
         $key = $this->key('dashboard', $tenantId, $dateFrom, $dateTo, $warehouseId, (string) $topLimit);
 
-        return Cache::remember($key, self::TTL_SECONDS, fn () => $this->reports->getDashboard(
+        return $this->safeRemember($key, self::TTL_SECONDS, fn () => $this->reports->getDashboard(
             $tenantId,
             $dateFrom,
             $dateTo,
@@ -80,7 +83,7 @@ final class AnalyticsCacheService
     ): array {
         $key = $this->key('abcxyz', $tenantId, $dateFrom, $dateTo, $warehouseId);
 
-        return Cache::remember($key, self::TTL_SECONDS, fn () => $this->reports->getAbcXyzAnalysis(
+        return $this->safeRemember($key, self::TTL_SECONDS, fn () => $this->reports->getAbcXyzAnalysis(
             $tenantId,
             $dateFrom,
             $dateTo,
@@ -94,12 +97,13 @@ final class AnalyticsCacheService
     public function invalidateTenant(int $tenantId): void
     {
         $versionKey = $this->versionKey($tenantId);
-        Cache::forever($versionKey, (int) Cache::get($versionKey, 1) + 1);
+        $current = $this->safeVersionKey($versionKey);
+        $this->safeIncrementVersion($versionKey, $current);
     }
 
     private function key(string $metric, int $tenantId, ?string $from, ?string $to, ?int $warehouseId, string $extra = ''): string
     {
-        $version = (int) Cache::get($this->versionKey($tenantId), 1);
+        $version = $this->safeVersionKey($this->versionKey($tenantId));
 
         return implode(':', [
             'analytics',

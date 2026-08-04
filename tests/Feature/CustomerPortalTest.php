@@ -17,6 +17,7 @@ use function Pest\Laravel\postJson;
 beforeEach(function (): void {
     config(['cache.default' => 'array']);
     \Illuminate\Support\Facades\Cache::clear();
+    \Illuminate\Support\Facades\RateLimiter::clear('auth-api');
     $this->fx = AcceptanceFixture::make('portal-'.uniqid());
     set_current_tenant_id($this->fx->tenant->id);
     $this->post = Post::query()->withoutGlobalScopes()->forceCreate([

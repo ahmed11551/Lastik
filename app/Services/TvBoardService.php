@@ -12,10 +12,13 @@ namespace Autometria\Services;
 
 use Autometria\Models\Order;
 use Autometria\Models\Vehicle;
+use Autometria\Services\Traits\RedisSafeCache;
 use Illuminate\Support\Facades\Cache;
 
 final class TvBoardService
 {
+    use RedisSafeCache;
+
     public const CACHE_TTL_SECONDS = 5;
 
     /**
@@ -28,7 +31,7 @@ final class TvBoardService
         $cacheKey = $this->cacheKey($tenantId, $locationId);
 
         /** @var array{location_id: int|null, columns: array<string, list<array<string, mixed>>>} $payload */
-        $payload = Cache::remember(
+        $payload = $this->safeRemember(
             $cacheKey,
             self::CACHE_TTL_SECONDS,
             fn (): array => $this->buildBoard($tenantId, $locationId),
@@ -39,9 +42,9 @@ final class TvBoardService
 
     public function forget(int $tenantId, ?int $locationId = null): void
     {
-        Cache::forget($this->cacheKey($tenantId, $locationId));
+        $this->safeForget($this->cacheKey($tenantId, $locationId));
         if ($locationId !== null) {
-            Cache::forget($this->cacheKey($tenantId, null));
+            $this->safeForget($this->cacheKey($tenantId, null));
         }
     }
 
