@@ -52,16 +52,35 @@ jobs:
 
       - name: Prepare env
         run: |
-          cp .env.example .env
-          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
-          sed -i 's/REDIS_HOST=.*/REDIS_HOST=127.0.0.1/' .env
-          echo "APP_ENV=testing" >> .env
-          php artisan key:generate
+          # .env.testing already has CI DB/Redis credentials (lastik_test / secret).
+          # Do NOT rely on a truncated .env.example — that broke migrate on CI #50–#52.
+          cp .env.testing .env
+          sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/^REDIS_HOST=.*/REDIS_HOST=127.0.0.1/' .env
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=lastik_test/' .env
+          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=lastik/' .env
+          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=secret/' .env
+          grep -q '^DB_ROLE_ENFORCE=' .env || echo 'DB_ROLE_ENFORCE=false' >> .env
+          php artisan key:generate --force
 
       - name: Run migrations
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: lastik_test
+          DB_USERNAME: lastik
+          DB_PASSWORD: secret
         run: php artisan migrate --force
 
       - name: Run backend tests
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: lastik_test
+          DB_USERNAME: lastik
+          DB_PASSWORD: secret
         run: php artisan test --stop-on-failure
 
       - name: Setup Node
