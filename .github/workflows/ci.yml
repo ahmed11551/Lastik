@@ -96,6 +96,8 @@ jobs:
         run: npm run lint
 
       - name: Build frontend
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
 
   e2e:
