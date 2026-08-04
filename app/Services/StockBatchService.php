@@ -68,6 +68,7 @@ final class StockBatchService
             $stock = $this->ensureStock($tenantId, $warehouseId, $productId);
             $stock->actual = (float) $this->bcAdd($stock->actual, $qty);
             $stock->available = (float) $this->bcSub($stock->actual, $stock->reserved);
+            $stock->quantity = (float) $this->bcAdd((float) $stock->quantity, $qty);
             $stock->save();
 
             AuditLog::write(
@@ -239,6 +240,7 @@ final class StockBatchService
             // Уменьшаем суммарный остаток склада (может уйти в минус при overdraft).
             $stock->actual = (float) $stock->actual - $writtenOff;
             $stock->available = (float) $stock->actual - (float) $stock->reserved;
+            $stock->quantity = (float) $stock->quantity - $writtenOff;
             $stock->save();
 
             AuditLog::write(

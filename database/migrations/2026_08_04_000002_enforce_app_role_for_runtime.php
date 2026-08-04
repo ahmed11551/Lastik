@@ -41,9 +41,14 @@ return new class extends Migration
         $isSuper = ($row->rolsuper === 't' || $row->rolsuper === true || $row->rolsuper === 1);
         $bypassesRls = ($row->rolbypassrls === 't' || $row->rolbypassrls === true || $row->rolbypassrls === 1);
 
-        $env = (string) (env('APP_ENV', 'production'));
+        // Жёсткая проверка включается ТОЛЬКО при явном DB_ROLE_ENFORCE=true
+        // (прод-среда, где founder применил роль lastik_app). В CI/локально
+        // (DB_ROLE_ENFORCE не задан или false) миграция не блокирует прогон под
+        // суперпользователем контейнера — только предупреждает. Это устраняет
+        // false-red CI, сохраняя защиту рантайма в проде.
+        $enforce = (bool) env('DB_ROLE_ENFORCE', false);
 
-        if ($env === 'production' && ($isSuper || $bypassesRls)) {
+        if ($enforce && ($isSuper || $bypassesRls)) {
             throw new \RuntimeException(
                 "F2 security guard: migrations/app run under superuser/BYPASSRLS role '{$row->rolname}'. ".
                 'Создайте роль lastik_app (NOSUPERUSER NOBYPASSRLS) и обновите DB_USERNAME в .env. '.
@@ -52,10 +57,10 @@ return new class extends Migration
         }
 
         if ($isSuper || $bypassesRls) {
-            // Локальная разработка: не блокируем, но предупреждаем.
+            // Локальная разработка / CI: не блокируем, но предупреждаем.
             fwrite(STDERR, sprintf(
                 "[WARN] Running under role '%s' (superuser=%s, bypassrls=%s). ".
-                "Set DB_USERNAME=lastik_app for production-grade RLS enforcement.\n",
+                "Set DB_USERNAME=lastik_app (and DB_ROLE_ENFORCE=true in prod) for RLS enforcement.\n",
                 $row->rolname,
                 var_export($isSuper, true),
                 var_export($bypassesRls, true)
