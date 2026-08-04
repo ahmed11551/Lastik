@@ -19,6 +19,7 @@ use Autometria\Models\Recipe;
 use Autometria\Models\RecipeItem;
 use Autometria\Models\StockBatch;
 use Autometria\Support\AuditLog;
+use Autometria\Services\Traits\BcMathDecimal;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -27,6 +28,8 @@ use InvalidArgumentException;
  */
 final class ProductionService
 {
+    use BcMathDecimal;
+
     public function __construct(
         private readonly StockBatchService $batches,
         private readonly NestedBomService $nestedBom,
@@ -60,8 +63,8 @@ final class ProductionService
             }
 
             $lineCost = $this->estimateFifoCost($tenantId, $warehouseId, (int) $item->ingredient_id, $gross);
-            $unit = $gross > 0 ? round($lineCost / $gross, 4) : 0.0;
-            $total += $lineCost;
+            $unit = $gross > 0 ? (float) $this->bcRound($this->bcDiv($lineCost, $gross), 4) : 0.0;
+            $total = $this->bcAdd($total, $lineCost);
 
             $lines[] = [
                 'ingredient_id' => (int) $item->ingredient_id,
@@ -139,8 +142,8 @@ final class ProductionService
                     (int) $item->id,
                     $allowOverdraft,
                 );
-                $totalCost += (float) $result['cost'];
-                $totalWritten += (float) $result['written_off'];
+                $totalCost = $this->bcAdd($totalCost, (float) $result['cost']);
+                $totalWritten = $this->bcAdd($totalWritten, (float) $result['written_off']);
                 $hasOverdraft = $hasOverdraft || (($result['has_overdraft'] ?? false) === true);
                 $trace[] = [
                     'ingredient_id' => (int) $ri->ingredient_id,
@@ -161,8 +164,8 @@ final class ProductionService
                     (int) $item->id,
                     $allowOverdraft,
                 );
-                $totalCost += (float) $result['cost'];
-                $totalWritten += (float) $result['written_off'];
+                $totalCost = $this->bcAdd($totalCost, (float) $result['cost']);
+                $totalWritten = $this->bcAdd($totalWritten, (float) $result['written_off']);
                 $hasOverdraft = $hasOverdraft || (($result['has_overdraft'] ?? false) === true);
                 $trace[] = [
                     'ingredient_id' => $mod['ingredient_id'],
@@ -232,7 +235,7 @@ final class ProductionService
                     $need,
                     $createdBy,
                 );
-                $totalCost += (float) $result['cost'];
+                $totalCost = $this->bcAdd($totalCost, (float) $result['cost']);
                 $trace[] = [
                     'ingredient_id' => (int) $leaf['product_id'],
                     'qty' => $need,
@@ -241,7 +244,7 @@ final class ProductionService
                 ];
             }
 
-            $unitCost = round($totalCost / $qty, 4);
+            $unitCost = (float) $this->bcRound($this->bcDiv($totalCost, $qty), 4);
             $batch = $this->batches->ingress(
                 $tenantId,
                 $warehouseId,
