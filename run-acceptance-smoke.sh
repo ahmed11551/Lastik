@@ -90,7 +90,7 @@ docker compose exec -T \
   -e DB_USERNAME=lastik -e DB_PASSWORD=secret \
   app php artisan migrate --force
 
-PEST_FILTER='AcceptanceCoreSecurityTest|AcceptanceTvBoardTest|AcceptanceCommerceMlBatchTest|AcceptanceEndToEndBusinessTest'
+PEST_FILTER='AcceptanceCoreSecurityTest|AcceptanceTvBoardTest|AcceptanceCommerceMlBatchTest|AcceptanceEndToEndBusinessTest|TvBoardCacheEvictionTest'
 
 echo "==> [5/6] Pest Layers 1–5 (${PEST_FILTER})..."
 set +e

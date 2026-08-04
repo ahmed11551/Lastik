@@ -40,6 +40,7 @@ namespace Autometria\Models;
 
 use Autometria\Enums\OrderStatusEnum;
 use Autometria\Enums\PaymentStatusEnum;
+use Autometria\Events\OrderStatusChanged;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -59,6 +60,19 @@ class Order extends TenantModel
     public const STATUS_CANCELLED = OrderStatusEnum::CANCELLED->value;
 
     protected $table = 'orders';
+
+    /**
+     * @var array<string, class-string<object>>
+     */
+    protected $dispatchesEvents = [
+        'updated' => OrderStatusChanged::class,
+    ];
+
+    /**
+     * Transient: previous status captured in updating when status is dirty.
+     * Not a DB column — used by {@see OrderStatusChanged} after syncOriginal().
+     */
+    public ?string $statusBeforeLastSave = null;
 
     protected $fillable = [
         'location_id',
@@ -80,6 +94,15 @@ class Order extends TenantModel
         'total' => 'decimal:2',
         'locked_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (Order $order): void {
+            if ($order->isDirty('status')) {
+                $order->statusBeforeLastSave = (string) ($order->getOriginal('status') ?? '');
+            }
+        });
+    }
 
     public function tenant(): BelongsTo
     {

@@ -8,9 +8,11 @@
  */
 
 use Autometria\Providers\AppServiceProvider;
+use Autometria\Providers\EventServiceProvider;
 use Autometria\Providers\RouteServiceProvider;
 
 return [
     AppServiceProvider::class,
+    EventServiceProvider::class,
     RouteServiceProvider::class,
 ];
