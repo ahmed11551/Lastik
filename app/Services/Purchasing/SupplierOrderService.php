@@ -19,6 +19,8 @@ use Autometria\Models\Supplier;
 use Autometria\Models\SupplierOrder;
 use Autometria\Models\SupplierOrderItem;
 use Autometria\Models\Warehouse;
+use Autometria\Services\Wms\SerialNumberService;
+use Autometria\Services\Wms\StorageCellService;
 use Autometria\Support\AuditLog;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +28,11 @@ use InvalidArgumentException;
 
 final class SupplierOrderService
 {
+    public function __construct(
+        private readonly StorageCellService $cells,
+        private readonly SerialNumberService $serials,
+    ) {}
+
     /**
      * @param  array{
      *   supplier_id: int,
@@ -159,7 +166,14 @@ final class SupplierOrderService
     }
 
     /**
-     * @param  list<array{product_id?: int, supplier_order_item_id?: int, qty: float|int, cost_price?: float|int}>  $items
+     * @param  list<array{
+     *   product_id?: int,
+     *   supplier_order_item_id?: int,
+     *   qty: float|int,
+     *   cost_price?: float|int,
+     *   storage_cell_id?: int|null,
+     *   serials?: list<string>
+     * }>  $items
      */
     public function receiveGoods(int $tenantId, int $orderId, array $items, ?int $userId = null): SupplierOrder
     {
@@ -266,12 +280,35 @@ final class SupplierOrderService
                 $item->received_qty = round((float) $item->received_qty + $qty, 3);
                 $item->save();
 
+                if (! empty($row['storage_cell_id'])) {
+                    $this->cells->placeBatch(
+                        $tenantId,
+                        (int) $batch->id,
+                        (int) $row['storage_cell_id'],
+                        $qty,
+                        $userId,
+                    );
+                }
+
+                if (! empty($row['serials']) && is_array($row['serials'])) {
+                    $this->serials->receive(
+                        $tenantId,
+                        (int) $item->product_id,
+                        (int) $batch->id,
+                        $row['serials'],
+                        $warehouseId,
+                        $userId,
+                    );
+                }
+
                 $receivedTrace[] = [
                     'item_id' => $item->id,
                     'product_id' => $item->product_id,
                     'qty' => $qty,
                     'cost_price' => $cost,
                     'batch_id' => $batch->id,
+                    'storage_cell_id' => $row['storage_cell_id'] ?? null,
+                    'serials_count' => is_array($row['serials'] ?? null) ? count($row['serials']) : 0,
                 ];
             }
 

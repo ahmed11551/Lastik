@@ -13,6 +13,7 @@ use Autometria\DTOs\CreateOrderDTO;
 use Autometria\Models\Order;
 use Autometria\Services\OrderService;
 use Autometria\Services\TvBoardService;
+use Illuminate\Support\Facades\Cache;
 use Tests\Support\AcceptanceFixture;
 
 /**
@@ -20,6 +21,7 @@ use Tests\Support\AcceptanceFixture;
  */
 beforeEach(function (): void {
     $this->fx = AcceptanceFixture::make('tv-'.uniqid());
+    config(['cache.default' => 'array']);
 });
 
 it('groups installation orders into queue / in_progress / ready columns', function (): void {
@@ -52,7 +54,10 @@ it('groups installation orders into queue / in_progress / ready columns', functi
     Order::query()->withoutGlobalScopes()->whereKey($progress->id)->update(['status' => Order::STATUS_IN_PROGRESS]);
     Order::query()->withoutGlobalScopes()->whereKey($ready->id)->update(['status' => Order::STATUS_READY]);
 
-    $board = app(TvBoardService::class)->board($fx->tenant->id, $fx->location->id);
+    $tv = app(TvBoardService::class);
+    $tv->forget($fx->tenant->id, $fx->location->id);
+
+    $board = $tv->board($fx->tenant->id, $fx->location->id);
 
     $queueIds = collect($board['columns']['queue'])->pluck('id')->all();
     $progressIds = collect($board['columns']['in_progress'])->pluck('id')->all();
@@ -66,4 +71,23 @@ it('groups installation orders into queue / in_progress / ready columns', functi
     expect($readyIds)->not->toContain($skip->id);
 
     expect($board['columns']['queue'][0]['plate'] ?? null)->not->toBeEmpty();
+});
+
+it('tv board service hits cache with five seconds ttl', function (): void {
+    Cache::flush();
+    Cache::spy();
+
+    $fx = $this->fx;
+    $tv = app(TvBoardService::class);
+    $expectedKey = sprintf('tv_board:%d:%d', $fx->tenant->id, $fx->location->id);
+
+    $tv->board($fx->tenant->id, $fx->location->id);
+
+    Cache::shouldHaveReceived('remember')
+        ->once()
+        ->withArgs(function (string $key, mixed $ttl, callable $callback) use ($expectedKey): bool {
+            return $key === $expectedKey
+                && (int) $ttl === TvBoardService::CACHE_TTL_SECONDS
+                && $callback instanceof Closure;
+        });
 });

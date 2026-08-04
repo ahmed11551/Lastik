@@ -3,35 +3,7 @@
 /**
  * AUTOMETRIA ERP Engine Core
  *
- * @package    Autometria\Core
- * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
- * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
- * @license    Proprietary & Confidential. Unauthorized copying, distribution,
- *             modification, or reverse engineering of this file, via any medium,
- *             is strictly prohibited.
- *
- * NOTICE: All information contained herein is, and remains the property of
- * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
- * herein are proprietary and protected by trade secret and copyright law.
- */
-/**
- * LASTIK B2B SaaS Engine Core
- *
- * @copyright  (c) 2026 Себиев Ахмед Сулейманович (Sebiev Akhmed Suleymanovich). All Rights Reserved.
- * @author     Себиев Ахмед Сулейманович (Chief Software Architect / Lead Developer)
- * @license    Proprietary & Confidential. Unauthorized copying, distribution,
- *             modification, or reverse engineering of this file, via any medium,
- *             is strictly prohibited.
- *
- * NOTICE: All information contained herein is, and remains the property of
- * Себиев Ахмед Сулейманович. The intellectual and technical concepts contained
- * herein are proprietary and protected by trade secret and copyright law.
- */
-/*
- * AUTOMETRIA ERP Engine Core
  * @copyright (c) 2026 Себиев Ахмед Сулейманович. All Rights Reserved.
- * @author Себиев Ахмед Сулейманович
- * @license Proprietary & Confidential.
  */
 
 declare(strict_types=1);
@@ -40,15 +12,48 @@ namespace Autometria\Services;
 
 use Autometria\Models\Order;
 use Autometria\Models\Vehicle;
+use Illuminate\Support\Facades\Cache;
 
 final class TvBoardService
 {
+    public const CACHE_TTL_SECONDS = 5;
+
     /**
-     * Простое TV-табло текущих работ (п. 42).
+     * TV-табло текущих работ (п. 42) с коротким cache/Redis TTL.
      *
      * @return array{location_id: int|null, columns: array<string, list<array<string, mixed>>>}
      */
     public function board(int $tenantId, ?int $locationId = null): array
+    {
+        $cacheKey = $this->cacheKey($tenantId, $locationId);
+
+        /** @var array{location_id: int|null, columns: array<string, list<array<string, mixed>>>} $payload */
+        $payload = Cache::remember(
+            $cacheKey,
+            self::CACHE_TTL_SECONDS,
+            fn (): array => $this->buildBoard($tenantId, $locationId),
+        );
+
+        return $payload;
+    }
+
+    public function forget(int $tenantId, ?int $locationId = null): void
+    {
+        Cache::forget($this->cacheKey($tenantId, $locationId));
+        if ($locationId !== null) {
+            Cache::forget($this->cacheKey($tenantId, null));
+        }
+    }
+
+    private function cacheKey(int $tenantId, ?int $locationId): string
+    {
+        return sprintf('tv_board:%d:%s', $tenantId, $locationId === null ? 'all' : (string) $locationId);
+    }
+
+    /**
+     * @return array{location_id: int|null, columns: array<string, list<array<string, mixed>>>}
+     */
+    private function buildBoard(int $tenantId, ?int $locationId): array
     {
         $query = Order::query()->withoutGlobalScopes()
             ->where('tenant_id', $tenantId)

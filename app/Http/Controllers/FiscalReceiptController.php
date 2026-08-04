@@ -142,7 +142,7 @@ class FiscalReceiptController extends Controller
         $fiscalReceipt->error_message = null;
         $fiscalReceipt->save();
 
-        FiscalizeReceiptJob::dispatch($fiscalReceipt->id);
+        FiscalizeReceiptJob::dispatch($fiscalReceipt->id, $fiscalReceipt->tenant_id);
 
         return response()->json(['data' => $this->serialize($fiscalReceipt->fresh())]);
     }

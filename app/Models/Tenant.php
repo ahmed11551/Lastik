@@ -56,12 +56,14 @@ class Tenant extends Model
         'support_access_enabled',
         'support_access_reason',
         'support_access_expiry',
+        'max_bom_depth',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'support_access_enabled' => 'boolean',
         'support_access_expiry' => 'datetime',
+        'max_bom_depth' => 'integer',
     ];
 
     public function customers(): HasMany

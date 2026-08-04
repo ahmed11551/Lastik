@@ -96,6 +96,14 @@ it('blocks cross-tenant RLS access to loyalty and fiscal receipts', function ():
                 [$table, 'tenant_isolation_'.$table],
             );
             expect($policy)->not->toBeNull();
+
+            $withCheck = DB::selectOne(
+                'SELECT with_check FROM pg_policies
+                 WHERE schemaname = current_schema() AND tablename = ? AND policyname = ?',
+                [$table, 'tenant_isolation_'.$table],
+            );
+            expect($withCheck?->with_check)->not->toBeNull();
+            expect((string) $withCheck->with_check)->toContain('app.current_tenant_id');
         }
 
         // Session GUC for attacker must not match victim tenant_id.

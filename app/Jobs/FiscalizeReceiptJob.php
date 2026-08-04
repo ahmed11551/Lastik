@@ -51,10 +51,16 @@ class FiscalizeReceiptJob implements ShouldQueue
 
     public function __construct(
         public int $fiscalReceiptId,
+        public int $tenantId,
     ) {}
 
     public function handle(FiscalReceiptService $service): void
     {
+        // 0) Установка tenant-контекста ДО любых raw-SQL (RLS требует app.current_tenant_id).
+        // tenant_id передаётся в конструктор джобы, чтобы не делать SELECT до set_config
+        // (под RLS такой SELECT вернул бы null и контекст не установился бы).
+        set_current_tenant_id($this->tenantId);
+
         // 1) CLAIM (атомарный capture под блокировкой).
         $claimed = DB::transaction(function () {
             return DB::selectOne(
@@ -179,10 +185,17 @@ class FiscalizeReceiptJob implements ShouldQueue
 
         // Запланировать асинхронную сверку (отдельная задача ReconcileReceiptJob).
         ReconcileReceiptJob::dispatch($receipt->id);
+
+        // Сброс tenant-контекста, чтобы следующая джоба в этом же воркере
+        // не унаследовала чужой tenant_id (is_local=true залипание соединения).
+        DB::statement("SELECT set_config('app.current_tenant_id', '', false)");
     }
 
     public function failed(Throwable $exception): void
     {
+        // Сброс tenant-контекста при падении (защита от залипания в воркере).
+        DB::statement("SELECT set_config('app.current_tenant_id', '', false)");
+
         // Исчерпание попыток: если чек остался IN_PROGRESS — снимаем блок для повторного claim.
         DB::transaction(function (): void {
             $r = FiscalReceipt::query()->withoutGlobalScopes()
