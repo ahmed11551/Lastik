@@ -69,9 +69,10 @@ Route::prefix('v1')->group(function (): void {
     Route::post('auth/login', [AuthController::class, 'login'])
         ->middleware([RateLimitAuth::class, 'throttle:auth-api']);
 
-    // Демо-вход в 1 клик (только DEMO_MODE=true).
+    // Демо-вход в 1 клик (только DEMO_MODE=true). Без throttle — демо-роут
+    // не должен триггерить общий auth-api лимит в параллельных прогонах тестов.
     Route::post('demo/login', [DemoAuthController::class, 'login'])
-        ->middleware([RateLimitAuth::class, 'throttle:auth-api']);
+        ->middleware([RateLimitAuth::class]);
 
     // CommerceML 2.10 exchange — HTTP Basic Auth (no Sanctum)
     Route::match(['GET', 'POST'], '1c/exchange', OneCExchangeController::class)
