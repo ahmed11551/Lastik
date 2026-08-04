@@ -1,0 +1,3619 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method Autometria\\DTOs\\Booking\\BookingMoveDTO\:\:fromRequest\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/DTOs/Booking/BookingMoveDTO.php
+
+		-
+			message: '#^Cannot cast float\|int\|list\<string\>\|string\|null to string\.$#'
+			identifier: cast.string
+			count: 2
+			path: app/Http/Controllers/Api/V1/OneC/OneCExchangeController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\Api\\V1\\OneC\\OneCExchangeController\:\:resolveTenantId\(\) never returns int so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Http/Controllers/Api/V1/OneC/OneCExchangeController.php
+
+		-
+			message: '#^Parameter \#1 \$token of method Autometria\\Services\\OneC\\OneCAuthService\:\:validateSession\(\) expects string\|null, array\|string\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/Api/V1/OneC/OneCExchangeController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/AuditLogController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>role_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/AuditLogController.php
+
+		-
+			message: '#^Cannot call method createToken\(\) on Autometria\\Models\\User\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Cannot call method only\(\) on Autometria\\Models\\User\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Parameter \#1 \$user of method Autometria\\Services\\DeviceService\:\:register\(\) expects Autometria\\Models\\User, Autometria\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Call to static method render\(\) on an unknown class Autometria\\Http\\Controllers\\Inertia\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/BookingController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\BookingController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/BookingController.php
+
+		-
+			message: '#^Property Autometria\\Http\\Controllers\\BookingController\:\:\$bookings is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Http/Controllers/BookingController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/BookingController.php
+
+		-
+			message: '#^Call to static method render\(\) on an unknown class Inertia\\Inertia\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/BookingPageController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\BookingPageController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/BookingPageController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/BookingPageController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/BranchController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/BranchController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/BranchController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/BranchController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/BranchController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/BulkOrderController.php
+
+		-
+			message: '#^Cannot access property \$value on Autometria\\Enums\\OrderStatusEnum\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/BulkOrderController.php
+
+		-
+			message: '#^Parameter \#2 \$to of method Autometria\\Http\\Controllers\\BulkOrderController\:\:canTransition\(\) expects Autometria\\Enums\\OrderStatusEnum, Autometria\\Enums\\OrderStatusEnum\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/BulkOrderController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/BulkStockController.php
+
+		-
+			message: '#^Parameter \#1 \$value of static method Illuminate\\Database\\Connection\:\:raw\(\) expects float\|int\|literal\-string, non\-falsy\-string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/BulkStockController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\CashShiftController\:\:close\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/CashShiftController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\CashShiftController\:\:index\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/CashShiftController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/CommerceMLExportController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/CommerceMLImportController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: app/Http/Controllers/CommerceMLImportController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\CommerceMLImportController\:\:conflicts\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/CommerceMLImportController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/CustomerController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\CustomerController\:\:serialize\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/CustomerController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/CustomerController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/CustomerImportController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/CustomerImportController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/CustomerMergeController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/CustomerMergeController.php
+
+		-
+			message: '#^Call to static method render\(\) on an unknown class Inertia\\Inertia\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\DashboardController\:\:__invoke\(\) has invalid return type Inertia\\Response\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/DictionaryController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: app/Http/Controllers/DictionaryController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\DictionaryController\:\:index\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/DictionaryController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/EgaisController.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\FiscalReceipt\:\:\$attempts\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\FiscalReceipt\:\:\$error_message\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\FiscalReceipt\:\:\$fiscal_document_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\FiscalReceipt\:\:\$fiscal_sign\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\FiscalReceipt\:\:\$fiscal_storage_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\FiscalReceipt\:\:\$fiscalized_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\FiscalReceipt\:\:\$payload\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\FiscalReceipt\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Access to undefined constant Autometria\\Enums\\FiscalReceiptStatus\:\:FAILED\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Parameter \#1 \$r of method Autometria\\Http\\Controllers\\FiscalReceiptController\:\:serialize\(\) expects Autometria\\Models\\FiscalReceipt, Autometria\\Models\\FiscalReceipt\|null given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/FiscalReceiptController.php
+
+		-
+			message: '#^Call to static method render\(\) on an unknown class Inertia\\Inertia\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/IntegrationsPageController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\IntegrationsPageController\:\:__invoke\(\) has invalid return type Inertia\\Response\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/IntegrationsPageController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cost_price\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\InventoryDocumentController\:\:serialize\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/InventoryDocumentController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/IssuanceController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/IssuanceController.php
+
+		-
+			message: '#^Property Autometria\\Http\\Controllers\\JsonExchangeController\:\:\$settings is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Http/Controllers/JsonExchangeController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/JsonExchangeController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/JsonExchangeController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$legal_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/KpiController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/KpiController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\Order\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/KpiController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\Order\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/KpiController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/LoyaltyController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/MarkingController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/ModuleController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: app/Http/Controllers/ModuleController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\ModuleController\:\:index\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/ModuleController.php
+
+		-
+			message: '#^Cannot cast array\|string to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: app/Http/Controllers/OneCExchangeController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/OneCSyncController.php
+
+		-
+			message: '#^Parameter \#1 \$path of static method Illuminate\\Contracts\\Filesystem\\Filesystem\:\:path\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/OneCSyncController.php
+
+		-
+			message: '#^Parameter \#1 \$paths of static method Illuminate\\Contracts\\Filesystem\\Filesystem\:\:delete\(\) expects array\|string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/OneCSyncController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/OneCSyncController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$brand\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$legal_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$model\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$plate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$vin\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\OrderController\:\:show\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Autometria\\Models\\Order\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,Autometria\\Models\\Order\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:values\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/OrderController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\PaymentController\:\:index\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Payroll/AccrualRuleController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Payroll/DeductionController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\Payroll\\PayrollPeriodController\:\:serialize\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/Payroll/PayrollPeriodController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Payroll/PayrollPeriodController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Payroll/PayslipController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Payroll/PayslipController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Payroll/PayslipController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Payroll/PayslipController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$source_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Payroll/PayslipController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Payroll/PayslipController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\Payroll\\PayslipController\:\:serialize\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/Payroll/PayslipController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Payroll/PayslipController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/Payroll/PayslipController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Payroll/PayslipController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PosController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/PosController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$qty\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PosController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PosController.php
+
+		-
+			message: '#^Cannot access property \$total on Autometria\\Models\\Order\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/PosController.php
+
+		-
+			message: '#^Cannot call method fresh\(\) on Autometria\\Models\\Order\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/PosController.php
+
+		-
+			message: '#^Parameter \#1 \$item of method Autometria\\Services\\ProductionService\:\:processCompositeSale\(\) expects Autometria\\Models\\OrderItem, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/PosController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/ProductionController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/ProductionController.php
+
+		-
+			message: '#^Call to static method render\(\) on an unknown class Inertia\\Inertia\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot access property \$email_verified_at on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot call method delete\(\) on Autometria\\Models\\User\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot call method fill\(\) on Autometria\\Models\\User\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot call method isDirty\(\) on Autometria\\Models\\User\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot call method save\(\) on Autometria\\Models\\User\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\ProfileController\:\:edit\(\) has invalid return type Inertia\\Response\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Purchasing/SupplierController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$planned_delivery\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$qty\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$received_qty\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit_price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Purchasing/SupplierOrderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/RecipeController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ingredient\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/RecipeController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ingredient_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/RecipeController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/RecipeController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$net_quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/RecipeController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/RecipeController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$waste_percentage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/RecipeController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/RecipeController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/RecipeController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/RecipeController.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/RefundController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/RefundController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$permissions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/SearchController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/SearchController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\SearchController\:\:__invoke\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/SearchController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>permissions" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/SearchController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\SettingController\:\:index\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/SettingController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\SettingController\:\:update\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/SettingController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/StockBatchController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>actual" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/StockBatchController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/StockBatchController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$article\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$base_price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$external_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_egais\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_marked\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$marking_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$radius_modifier\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Anonymous function has an unused use \$likeOp\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Autometria\\Models\\Stock\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,Autometria\\Models\\Stock\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:values\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>base_price" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>is_egais" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>is_marked" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/StockController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/StockReservationController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/StockReservationController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/StockTransferController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/StockTransferController.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: app/Http/Controllers/TaskController.php
+
+		-
+			message: '#^Cannot access property \$location_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/TaskController.php
+
+		-
+			message: '#^Cannot access property \$tenant_id on Autometria\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: app/Http/Controllers/TaskController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\TaskController\:\:index\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/TaskController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$permissions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TvBoardController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\TvBoardController\:\:__invoke\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/TvBoardController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>permissions" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/TvBoardController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/TvBoardController.php
+
+		-
+			message: '#^Call to static method render\(\) on an unknown class Inertia\\Inertia\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/TvBoardPageController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\TvBoardPageController\:\:__invoke\(\) has invalid return type Inertia\\Response\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/TvBoardPageController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\UserController\:\:present\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/UserManagementController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/UserManagementController.php
+
+		-
+			message: '#^Call to static method render\(\) on an unknown class Inertia\\Inertia\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/UserManagementController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\UserManagementController\:\:__invoke\(\) has invalid return type Inertia\\Response\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/UserManagementController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\User\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/UserManagementController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\User\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/UserManagementController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:all\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/UserManagementController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:values\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/UserManagementController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/UserManagementController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\VehicleController\:\:index\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/VehicleController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Controllers\\WarehouseController\:\:index\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/WarehouseController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Wms/WmsController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Wms/WmsController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 7
+			path: app/Http/Controllers/Wms/WmsController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Wms/WmsController.php
+
+		-
+			message: '#^Method Autometria\\Http\\Middleware\\EnforceAutometriaLicense\:\:handle\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Middleware/EnforceAutometriaLicense.php
+
+		-
+			message: '#^Method Autometria\\Http\\Middleware\\EnforceAutometriaLicense\:\:verifySignature\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Middleware/EnforceAutometriaLicense.php
+
+		-
+			message: '#^Parameter \#1 \$string of function base64_decode expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/EnforceAutometriaLicense.php
+
+		-
+			message: '#^Parameter \#3 \$public_key of function openssl_verify expects array\|OpenSSLAsymmetricKey\|OpenSSLCertificate\|string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/EnforceAutometriaLicense.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$permissions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/EnforceLocationAccess.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>permissions" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Middleware/EnforceLocationAccess.php
+
+		-
+			message: '#^Method Autometria\\Http\\Middleware\\EnforceTenantScope\:\:handle\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Middleware/EnforceTenantScope.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$permissions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/EnsurePermission.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>permissions" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Middleware/EnsurePermission.php
+
+		-
+			message: '#^Parameter \#1 \$key of static method Illuminate\\Support\\Facades\\RateLimiter\:\:clear\(\) expects string, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/RateLimitAuth.php
+
+		-
+			message: '#^Parameter \#1 \$key of static method Illuminate\\Support\\Facades\\RateLimiter\:\:hit\(\) expects string, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/RateLimitAuth.php
+
+		-
+			message: '#^Parameter \#1 \$key of static method Illuminate\\Support\\Facades\\RateLimiter\:\:tooManyAttempts\(\) expects string, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/RateLimitAuth.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\Tenant\:\:\$support_access_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/SupportAccess.php
+
+		-
+			message: '#^Method Autometria\\Http\\Requests\\StoreOrderRequest\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Requests/StoreOrderRequest.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>location_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Requests/StoreOrderRequest.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tenant_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Requests/StoreOrderRequest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_by\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Jobs/FiscalizeReceiptJob.php
+
+		-
+			message: '#^Undefined variable\: \$exception$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Jobs/FiscalizeReceiptJob.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>created_by" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Jobs/FiscalizeReceiptJob.php
+
+		-
+			message: '#^Method Autometria\\Models\\Booking\:\:customer\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Booking.php
+
+		-
+			message: '#^Method Autometria\\Models\\Booking\:\:post\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Booking.php
+
+		-
+			message: '#^Method Autometria\\Models\\Branch\:\:defaultWarehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Branch.php
+
+		-
+			message: '#^Method Autometria\\Models\\Branch\:\:warehouses\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Branch.php
+
+		-
+			message: '#^Method Autometria\\Models\\CashMovement\:\:payee\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CashMovement.php
+
+		-
+			message: '#^Method Autometria\\Models\\CashMovement\:\:shift\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CashMovement.php
+
+		-
+			message: '#^Method Autometria\\Models\\CashMovement\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CashMovement.php
+
+		-
+			message: '#^Method Autometria\\Models\\CashShift\:\:cashMovements\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CashShift.php
+
+		-
+			message: '#^Method Autometria\\Models\\CashShift\:\:payments\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CashShift.php
+
+		-
+			message: '#^Method Autometria\\Models\\CashShift\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CashShift.php
+
+		-
+			message: '#^Method Autometria\\Models\\CashShift\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CashShift.php
+
+		-
+			message: '#^Method Autometria\\Models\\Category\:\:products\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Category.php
+
+		-
+			message: '#^Method Autometria\\Models\\Customer\:\:bookings\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Method Autometria\\Models\\Customer\:\:loyaltyTransactions\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Method Autometria\\Models\\Customer\:\:orders\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Method Autometria\\Models\\Customer\:\:portalTokens\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Method Autometria\\Models\\Customer\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Method Autometria\\Models\\Customer\:\:vehicles\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Method Autometria\\Models\\CustomerMerge\:\:actor\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CustomerMerge.php
+
+		-
+			message: '#^Method Autometria\\Models\\CustomerMerge\:\:merged\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CustomerMerge.php
+
+		-
+			message: '#^Method Autometria\\Models\\CustomerMerge\:\:primary\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CustomerMerge.php
+
+		-
+			message: '#^Method Autometria\\Models\\CustomerPortalToken\:\:customer\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/CustomerPortalToken.php
+
+		-
+			message: '#^Method Autometria\\Models\\DeliverySchedule\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/DeliverySchedule.php
+
+		-
+			message: '#^Method Autometria\\Models\\DeliverySchedule\:\:supplierOrder\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/DeliverySchedule.php
+
+		-
+			message: '#^Method Autometria\\Models\\Device\:\:scopeActiveMobile\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Device.php
+
+		-
+			message: '#^Method Autometria\\Models\\Device\:\:scopeActiveMobile\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Device.php
+
+		-
+			message: '#^Method Autometria\\Models\\Device\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Device.php
+
+		-
+			message: '#^Method Autometria\\Models\\Device\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Device.php
+
+		-
+			message: '#^Method Autometria\\Models\\Dictionary\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Dictionary.php
+
+		-
+			message: '#^Method Autometria\\Models\\Earning\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Earning.php
+
+		-
+			message: '#^Method Autometria\\Models\\FiscalReceipt\:\:cashShift\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/FiscalReceipt.php
+
+		-
+			message: '#^Method Autometria\\Models\\FiscalReceipt\:\:order\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/FiscalReceipt.php
+
+		-
+			message: '#^Method Autometria\\Models\\FiscalReceipt\:\:payment\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/FiscalReceipt.php
+
+		-
+			message: '#^Method Autometria\\Models\\InventoryAlert\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/InventoryAlert.php
+
+		-
+			message: '#^Method Autometria\\Models\\InventoryAlert\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/InventoryAlert.php
+
+		-
+			message: '#^Method Autometria\\Models\\InventoryDocument\:\:creator\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/InventoryDocument.php
+
+		-
+			message: '#^Method Autometria\\Models\\InventoryDocument\:\:items\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/InventoryDocument.php
+
+		-
+			message: '#^Method Autometria\\Models\\InventoryDocument\:\:targetWarehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/InventoryDocument.php
+
+		-
+			message: '#^Method Autometria\\Models\\InventoryDocument\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/InventoryDocument.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sum\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: float\)\|string\|null, Closure\(Autometria\\Models\\InventoryDocumentItem\)\: float given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Models/InventoryDocument.php
+
+		-
+			message: '#^Method Autometria\\Models\\InventoryDocumentItem\:\:document\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/InventoryDocumentItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\InventoryDocumentItem\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/InventoryDocumentItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\Issuance\:\:issuer\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Issuance.php
+
+		-
+			message: '#^Method Autometria\\Models\\Issuance\:\:order\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Issuance.php
+
+		-
+			message: '#^Method Autometria\\Models\\Issuance\:\:orderItem\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Issuance.php
+
+		-
+			message: '#^Method Autometria\\Models\\Issuance\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Issuance.php
+
+		-
+			message: '#^Method Autometria\\Models\\Issuance\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Issuance.php
+
+		-
+			message: '#^Method Autometria\\Models\\KpiRule\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/KpiRule.php
+
+		-
+			message: '#^Class Autometria\\Models\\Location uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Location.php
+
+		-
+			message: '#^Method Autometria\\Models\\Location\:\:cashShifts\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Location.php
+
+		-
+			message: '#^Method Autometria\\Models\\Location\:\:orders\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Location.php
+
+		-
+			message: '#^Method Autometria\\Models\\Location\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Location.php
+
+		-
+			message: '#^Method Autometria\\Models\\Location\:\:warehouses\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Location.php
+
+		-
+			message: '#^Method Autometria\\Models\\LoginHistory\:\:tenant\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Models/LoginHistory.php
+
+		-
+			message: '#^Method Autometria\\Models\\LoginHistory\:\:user\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Models/LoginHistory.php
+
+		-
+			message: '#^Method Autometria\\Models\\LoyaltyTransaction\:\:customer\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/LoyaltyTransaction.php
+
+		-
+			message: '#^Method Autometria\\Models\\MarkingCode\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/MarkingCode.php
+
+		-
+			message: '#^Method Autometria\\Models\\MarkingCode\:\:receipt\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/MarkingCode.php
+
+		-
+			message: '#^Method Autometria\\Models\\Modifier\:\:options\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Modifier.php
+
+		-
+			message: '#^Method Autometria\\Models\\Modifier\:\:productLinks\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Modifier.php
+
+		-
+			message: '#^Method Autometria\\Models\\ModifierOption\:\:ingredient\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ModifierOption.php
+
+		-
+			message: '#^Method Autometria\\Models\\ModifierOption\:\:modifier\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ModifierOption.php
+
+		-
+			message: '#^Method Autometria\\Models\\MoneyRecipient\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/MoneyRecipient.php
+
+		-
+			message: '#^Method Autometria\\Models\\OneCSyncLog\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/OneCSyncLog.php
+
+		-
+			message: '#^Method Autometria\\Models\\Order\:\:customer\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Method Autometria\\Models\\Order\:\:orderItems\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Method Autometria\\Models\\Order\:\:payments\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Method Autometria\\Models\\Order\:\:scopeWithListStatusFilter\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Method Autometria\\Models\\Order\:\:scopeWithListStatusFilter\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Method Autometria\\Models\\Order\:\:scopeWithPaymentFilter\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Method Autometria\\Models\\Order\:\:scopeWithPaymentFilter\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Method Autometria\\Models\\Order\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Method Autometria\\Models\\Order\:\:vehicle\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Method Autometria\\Models\\OrderItem\:\:order\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/OrderItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\OrderItem\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/OrderItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\OrderItem\:\:reservations\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/OrderItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\OrderItemWorker\:\:orderItem\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/OrderItemWorker.php
+
+		-
+			message: '#^Method Autometria\\Models\\OrderItemWorker\:\:worker\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/OrderItemWorker.php
+
+		-
+			message: '#^Method Autometria\\Models\\Payment\:\:corrections\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Payment.php
+
+		-
+			message: '#^Method Autometria\\Models\\Payment\:\:order\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Payment.php
+
+		-
+			message: '#^Method Autometria\\Models\\Payment\:\:payee\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Payment.php
+
+		-
+			message: '#^Method Autometria\\Models\\Payment\:\:shift\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Payment.php
+
+		-
+			message: '#^Method Autometria\\Models\\PaymentCorrection\:\:payment\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/PaymentCorrection.php
+
+		-
+			message: '#^Method Autometria\\Models\\PaymentCorrection\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/PaymentCorrection.php
+
+		-
+			message: '#^Method Autometria\\Models\\PayrollPeriod\:\:payslips\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/PayrollPeriod.php
+
+		-
+			message: '#^Method Autometria\\Models\\Payslip\:\:items\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Payslip.php
+
+		-
+			message: '#^Method Autometria\\Models\\Payslip\:\:payrollPeriod\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Payslip.php
+
+		-
+			message: '#^Method Autometria\\Models\\Payslip\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Payslip.php
+
+		-
+			message: '#^Method Autometria\\Models\\PayslipItem\:\:payslip\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/PayslipItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\Permission\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Permission.php
+
+		-
+			message: '#^Method Autometria\\Models\\Post\:\:bookings\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Post.php
+
+		-
+			message: '#^Method Autometria\\Models\\Price\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Price.php
+
+		-
+			message: '#^Method Autometria\\Models\\Price\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Price.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductModifier\:\:modifier\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductModifier.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductModifier\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductModifier.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductService\:\:category\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductService.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductService\:\:prices\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductService.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductService\:\:recipe\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasOne does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductService.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductService\:\:stockLotDeductions\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductService.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductService\:\:stocks\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductService.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductVariant\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductVariant.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductionOrder\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductionOrder.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductionOrder\:\:recipe\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductionOrder.php
+
+		-
+			message: '#^Method Autometria\\Models\\ProductionOrder\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/ProductionOrder.php
+
+		-
+			message: '#^Method Autometria\\Models\\Recipe\:\:items\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Recipe.php
+
+		-
+			message: '#^Method Autometria\\Models\\Recipe\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Recipe.php
+
+		-
+			message: '#^Method Autometria\\Models\\RecipeItem\:\:ingredient\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/RecipeItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\RecipeItem\:\:recipe\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/RecipeItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\Refund\:\:fiscalReceipt\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Refund.php
+
+		-
+			message: '#^Method Autometria\\Models\\Refund\:\:items\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Refund.php
+
+		-
+			message: '#^Method Autometria\\Models\\Refund\:\:order\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Refund.php
+
+		-
+			message: '#^Method Autometria\\Models\\RefundItem\:\:orderItem\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/RefundItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\RefundItem\:\:refund\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/RefundItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\Reservation\:\:stock\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Reservation.php
+
+		-
+			message: '#^Method Autometria\\Models\\Reservation\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Reservation.php
+
+		-
+			message: '#^Class Autometria\\Models\\Role uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Method Autometria\\Models\\Role\:\:users\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Class Autometria\\Models\\Scopes\\BelongsToTenantScope implements generic interface Illuminate\\Database\\Eloquent\\Scope but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Scopes/BelongsToTenantScope.php
+
+		-
+			message: '#^Method Autometria\\Models\\SerialNumber\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SerialNumber.php
+
+		-
+			message: '#^Method Autometria\\Models\\SerialNumber\:\:stockBatch\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SerialNumber.php
+
+		-
+			message: '#^Method Autometria\\Models\\SerialNumber\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SerialNumber.php
+
+		-
+			message: '#^Method Autometria\\Models\\Stock\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Stock.php
+
+		-
+			message: '#^Method Autometria\\Models\\Stock\:\:reservations\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Stock.php
+
+		-
+			message: '#^Method Autometria\\Models\\Stock\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Stock.php
+
+		-
+			message: '#^Method Autometria\\Models\\Stock\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Stock.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockBatch\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockBatch.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockBatch\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockBatch.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockBatch\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockBatch.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockBatchCell\:\:cell\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockBatchCell.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockBatchCell\:\:stockBatch\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockBatchCell.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockConflict\:\:importJob\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockConflict.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockConflict\:\:stock\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockConflict.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockLotDeduction\:\:order\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockLotDeduction.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockLotDeduction\:\:orderItem\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockLotDeduction.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockLotDeduction\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockLotDeduction.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockLotDeduction\:\:stockBatch\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockLotDeduction.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockReservation\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockReservation.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockReservation\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockReservation.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockTransfer\:\:creator\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockTransfer.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockTransfer\:\:fromWarehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockTransfer.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockTransfer\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockTransfer.php
+
+		-
+			message: '#^Method Autometria\\Models\\StockTransfer\:\:toWarehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StockTransfer.php
+
+		-
+			message: '#^Method Autometria\\Models\\StorageCell\:\:batchPlacements\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StorageCell.php
+
+		-
+			message: '#^Method Autometria\\Models\\StorageCell\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/StorageCell.php
+
+		-
+			message: '#^Method Autometria\\Models\\Supplier\:\:orders\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Supplier.php
+
+		-
+			message: '#^Method Autometria\\Models\\SupplierInvoice\:\:supplierOrder\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SupplierInvoice.php
+
+		-
+			message: '#^Method Autometria\\Models\\SupplierOrder\:\:deliverySchedules\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SupplierOrder.php
+
+		-
+			message: '#^Method Autometria\\Models\\SupplierOrder\:\:invoices\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SupplierOrder.php
+
+		-
+			message: '#^Method Autometria\\Models\\SupplierOrder\:\:items\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SupplierOrder.php
+
+		-
+			message: '#^Method Autometria\\Models\\SupplierOrder\:\:supplier\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SupplierOrder.php
+
+		-
+			message: '#^Method Autometria\\Models\\SupplierOrder\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SupplierOrder.php
+
+		-
+			message: '#^Method Autometria\\Models\\SupplierOrderItem\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SupplierOrderItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\SupplierOrderItem\:\:supplierOrder\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/SupplierOrderItem.php
+
+		-
+			message: '#^Method Autometria\\Models\\Task\:\:assignee\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Task.php
+
+		-
+			message: '#^Method Autometria\\Models\\Task\:\:creator\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Task.php
+
+		-
+			message: '#^Method Autometria\\Models\\Task\:\:customer\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Task.php
+
+		-
+			message: '#^Method Autometria\\Models\\Task\:\:order\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Task.php
+
+		-
+			message: '#^Method Autometria\\Models\\Task\:\:vehicle\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Task.php
+
+		-
+			message: '#^Class Autometria\\Models\\Tenant uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Method Autometria\\Models\\Tenant\:\:customers\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Method Autometria\\Models\\Tenant\:\:locations\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Method Autometria\\Models\\Tenant\:\:users\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Call to function property_exists\(\) with \$this\(Autometria\\Models\\TenantModel\) and ''fillable'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Models/TenantModel.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/TenantModel.php
+
+		-
+			message: '#^Call to function property_exists\(\) with \$this\(Autometria\\Models\\User\) and ''fillable'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Class Autometria\\Models\\User uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method Autometria\\Models\\User\:\:devices\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method Autometria\\Models\\User\:\:location\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method Autometria\\Models\\User\:\:role\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method Autometria\\Models\\User\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method Autometria\\Models\\Vehicle\:\:customer\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Vehicle.php
+
+		-
+			message: '#^Method Autometria\\Models\\Warehouse\:\:branch\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Warehouse.php
+
+		-
+			message: '#^Method Autometria\\Models\\Warehouse\:\:location\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Warehouse.php
+
+		-
+			message: '#^Method Autometria\\Models\\Warehouse\:\:stocks\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Warehouse.php
+
+		-
+			message: '#^Method Autometria\\Models\\Warehouse\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Warehouse.php
+
+		-
+			message: '#^Method Autometria\\Models\\WarehouseProductPrice\:\:product\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/WarehouseProductPrice.php
+
+		-
+			message: '#^Method Autometria\\Models\\WarehouseProductPrice\:\:warehouse\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/WarehouseProductPrice.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$permissions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Policies/OrderPolicy.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>permissions" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Policies/OrderPolicy.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\OrderItem\:\:\$day\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\OrderItem\:\:\$qty_sold\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\OrderItem\:\:\$revenue\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\RefundItem\:\:\$day\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\StockLotDeduction\:\:\$cogs\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\StockLotDeduction\:\:\$day\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\StockLotDeduction\:\:\$qty\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$total\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Analytics\\AnalyticsReportService\:\:applySoldOrderConstraints\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Analytics\\AnalyticsReportService\:\:getAbcXyzAnalysis\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Analytics\\AnalyticsReportService\:\:getCogsBreakdown\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Analytics\\AnalyticsReportService\:\:getDashboard\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Analytics\\AnalyticsReportService\:\:getDashboardSummary\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Analytics\\AnalyticsReportService\:\:getInventoryTurnover\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Analytics\\AnalyticsReportService\:\:previousPeriodBounds\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Analytics\\AnalyticsReportService\:\:revenue\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Analytics\\AnalyticsReportService\:\:soldOrdersQuery\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Analytics\\AnalyticsReportService\:\:xyzByMonthlyDemand\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\Stock\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Possibly invalid array key type int\<0, max\>\|null\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\Stock\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:all\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>article" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Analytics/AnalyticsReportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\BookingService\:\:getAvailableSlots\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/BookingService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\Stock\:\:\$branch_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BranchWarehouseService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\Stock\:\:\$branch_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BranchWarehouseService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\Stock\:\:\$branch_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BranchWarehouseService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\Stock\:\:\$warehouse_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BranchWarehouseService.php
+
+		-
+			message: '#^Method Autometria\\Services\\BranchWarehouseService\:\:consolidatedStock\(\) should return list\<array\<string, mixed\>\> but returns array\<int, array\{product_id\: int, warehouse_id\: int, warehouse_name\: mixed, branch_id\: int\|null, branch_name\: mixed, branch_code\: mixed, actual\: float, reserved\: float, \.\.\.\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/BranchWarehouseService.php
+
+		-
+			message: '#^Method Autometria\\Services\\BranchWarehouseService\:\:updateBranch\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/BranchWarehouseService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\Stock\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/BranchWarehouseService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/BranchWarehouseService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\Stock\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/BranchWarehouseService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/BranchWarehouseService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Cash\\CashShiftService\:\:calculateTotals\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Cash/CashShiftService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 6
+			path: app/Services/Cash/CashShiftService.php
+
+		-
+			message: '#^Property Autometria\\Models\\CashShift\:\:\$closed_by \(int\<0, max\>\|null\) does not accept int\|string\|null\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/Cash/CashShiftService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>created_at" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/CommerceML/CommerceMLBatchUpsertService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$discount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$external_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$inn\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$qty\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\CommerceML\\CommerceMLExportService\:\:exportOffers\(\) should return array\{xml\: string, log\: Autometria\\Models\\OneCSyncLog, count\: int\} but returns array\{xml\: string, log\: Autometria\\Models\\OneCSyncLog\|null, count\: int\<0, max\>\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\CommerceML\\CommerceMLExportService\:\:exportOrders\(\) should return array\{xml\: string, log\: Autometria\\Models\\OneCSyncLog, count\: int\} but returns array\{xml\: string, log\: Autometria\\Models\\OneCSyncLog\|null, count\: int\<0, max\>\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\CommerceML\\CommerceMLExportService\:\:offersPayload\(\) should return list\<array\<string, mixed\>\> but returns array\<int, array\{product_id\: int\<0, max\>, external_id\: mixed, warehouse_id\: int\<0, max\>, warehouse_external_id\: mixed, available\: float, actual\: float, reserved\: float\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\CommerceML\\CommerceMLExportService\:\:ordersPayload\(\) should return list\<array\<string, mixed\>\> but returns array\<int, array\{id\: int, number\: string\|null, status\: string, payment_status\: string, total\: float, customer\: array\{id\: mixed, name\: mixed, inn\: mixed, phone\: mixed\}\|null, items\: array\<int, array\{product_id\: mixed, external_id\: mixed, qty\: float, price\: float\}\>, payments\: array\<int, array\{method\: string\|null, amount\: float\}\>, \.\.\.\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\CommerceML\\CommerceMLExportService\:\:pushSnapshot\(\) should return array\{orders\: list\<array\<string, mixed\>\>, offers\: list\<array\<string, mixed\>\>, log\: Autometria\\Models\\OneCSyncLog\} but returns array\{orders\: list\<array\<string, mixed\>\>, offers\: list\<array\<string, mixed\>\>, log\: Autometria\\Models\\OneCSyncLog\|null\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\Order\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\Stock\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{method\: string\|null, amount\: float\}, Closure\(Autometria\\Models\\Payment\)\: array\{method\: string\|null, amount\: float\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sum\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: float\)\|string\|null, Closure\(Autometria\\Models\\Payment\)\: float given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\Order\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\Stock\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:all\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 2
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:values\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 2
+			path: app/Services/CommerceML/CommerceMLExportService.php
+
+		-
+			message: '#^Comparison operation "\<" between int\<80300, 80599\> and 80200 is always false\.$#'
+			identifier: smaller.alwaysFalse
+			count: 1
+			path: app/Services/CommerceML/CommerceMLStreamParser.php
+
+		-
+			message: '#^Generator expects value type Autometria\\DTOs\\CommerceML\\CommerceMLProductDTO, object given\.$#'
+			identifier: generator.valueType
+			count: 1
+			path: app/Services/CommerceML/CommerceMLStreamParser.php
+
+		-
+			message: '#^Generator expects value type Autometria\\DTOs\\CommerceML\\StockBalanceDTO, object given\.$#'
+			identifier: generator.valueType
+			count: 1
+			path: app/Services/CommerceML/CommerceMLStreamParser.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/Services/CommerceML/CommerceMLStreamParser.php
+
+		-
+			message: '#^Anonymous function has an unused use \$meta\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/DeviceService.php
+
+		-
+			message: '#^Method Autometria\\Services\\DictionaryService\:\:deactivate\(\) should return Autometria\\Models\\Dictionary but returns Autometria\\Models\\Dictionary\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/DictionaryService.php
+
+		-
+			message: '#^Method Autometria\\Services\\DictionaryService\:\:list\(\) should return list\<Autometria\\Models\\Dictionary\> but returns array\<int, Autometria\\Models\\Dictionary\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/DictionaryService.php
+
+		-
+			message: '#^Method Autometria\\Services\\DictionaryService\:\:upsert\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/DictionaryService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Fiscal\\AtolOnlineDriver\:\:buildRequest\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Fiscal/AtolOnlineDriver.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Fiscal/AtolOnlineDriver.php
+
+		-
+			message: '#^Method Autometria\\Services\\Fiscal\\FiscalDiscountService\:\:allocate\(\) should return array\{items\: list\<array\{name\: string, price\: int, quantity\: int, vat_rate\: string, discount\: int, line_total\: int\}\>, total\: int\} but returns array\{items\: list\<array\{line_total\: int, discount\: int, \.\.\.\}\|array\{name\: string, price\: int, quantity\: int, vat_rate\: string, discount\: 0, line_total\: int\}\>, total\: int\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Fiscal/FiscalDiscountService.php
+
+		-
+			message: '#^Parameter &\$minorItems by\-ref type of method Autometria\\Services\\Fiscal\\FiscalDiscountService\:\:distributeDiscount\(\) expects array\<int, array\{line_total\: int, discount\: int, \.\.\.\}\>, non\-empty\-array\<''''\|int, array\{line_total\: int, discount\: int, \.\.\.\}\> given\.$#'
+			identifier: parameterByRef.type
+			count: 2
+			path: app/Services/Fiscal/FiscalDiscountService.php
+
+		-
+			message: '#^Possibly invalid array key type int\|null\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 4
+			path: app/Services/Fiscal/FiscalDiscountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Fiscal/FiscalReceiptService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Fiscal\\FiscalReceiptService\:\:createRefundReceipt\(\) has parameter \$itemsSnapshot with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Fiscal/FiscalReceiptService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Fiscal\\FiscalReceiptService\:\:createRefundReceipt\(\) should return Autometria\\Models\\FiscalReceipt but returns Autometria\\Models\\FiscalReceipt\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Fiscal/FiscalReceiptService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Fiscal/FiscalReceiptService.php
+
+		-
+			message: '#^Argument of an invalid type array\<SimpleXMLElement\>\|null supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 2
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Cannot call method getDocNamespaces\(\) on array\<string, mixed\>\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Cannot call method registerXPathNamespace\(\) on array\<string, mixed\>\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Cannot call method xpath\(\) on array\<string, mixed\>\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\CmlParser\:\:mergeOffersAndRemains\(\) has parameter \$offers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\CmlParser\:\:mergeOffersAndRemains\(\) has parameter \$remains with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\CmlParser\:\:mergeOffersAndRemains\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\CmlParser\:\:parseOffersXml\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\CmlParser\:\:parseRemains\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\CmlParser\:\:parseRemainsXml\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\CmlParser\:\:parseXml\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\CmlParser\:\:parseZipImport\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^PHPDoc tag @var with type array\<string, mixed\>\|false is not subtype of native type SimpleXMLElement\|false\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Parameter \#1 \$haystack of function str_contains expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Parameter \#1 \$name of method ZipArchive\:\:getFromName\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Variable \$note in PHPDoc tag @var does not match any variable in the foreach loop\: \$item$#'
+			identifier: varTag.differentVariable
+			count: 1
+			path: app/Services/Import/CmlParser.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\CommerceMLImportService\:\:importJsonRemains\(\) should return Autometria\\Models\\ImportJob but returns Autometria\\Models\\ImportJob\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Import/CommerceMLImportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\CommerceMLImportService\:\:importXmlStream\(\) should return Autometria\\Models\\ImportJob but returns Autometria\\Models\\ImportJob\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Import/CommerceMLImportService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\ImportCustomersService\:\:findDuplicate\(\) has parameter \$row with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/ImportCustomersService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\ImportCustomersService\:\:import\(\) should return Autometria\\Models\\ImportJob but returns Autometria\\Models\\ImportJob\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Import/ImportCustomersService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\ImportCustomersService\:\:processRow\(\) has parameter \$row with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/ImportCustomersService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\ValidationRules\:\:validateRow\(\) has parameter \$row with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/ValidationRules.php
+
+		-
+			message: '#^Method Autometria\\Services\\Import\\ValidationRules\:\:validateRow\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Import/ValidationRules.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Kpi/KpiService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$master_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Kpi/KpiService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Kpi/KpiService.php
+
+		-
+			message: '#^Access to undefined constant Autometria\\Models\\Earning\:\:SOURCE_ITEM\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Services/Kpi/KpiService.php
+
+		-
+			message: '#^Access to undefined constant Autometria\\Models\\Earning\:\:SOURCE_ORDER\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Services/Kpi/KpiService.php
+
+		-
+			message: '#^Call to static method write\(\) on an unknown class Autometria\\Services\\Kpi\\AuditLog\.$#'
+			identifier: class.notFound
+			count: 2
+			path: app/Services/Kpi/KpiService.php
+
+		-
+			message: '#^Cannot access property \$amount on Autometria\\Models\\KpiRule\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Services/Kpi/KpiService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Kpi\\KpiService\:\:snapshotRule\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Kpi/KpiService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>amount" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/Kpi/KpiService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>percent" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Kpi/KpiService.php
+
+		-
+			message: '#^Call to an undefined method Autometria\\Models\\OrderItem\:\:summary\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/KpiCalculationService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\Earning\:\:\$master_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/KpiService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\Earning\:\:\$service_sum\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/KpiService.php
+
+		-
+			message: '#^Access to an undefined property Autometria\\Models\\Earning\:\:\$shift_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/KpiService.php
+
+		-
+			message: '#^Call to an undefined method Autometria\\Models\\OrderItem\:\:summary\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/KpiService.php
+
+		-
+			message: '#^Cannot access property \$type on Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/KpiService.php
+
+		-
+			message: '#^Method Autometria\\Services\\KpiService\:\:calculateShiftEarnings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/KpiService.php
+
+		-
+			message: '#^Property Autometria\\Models\\Earning\:\:\$tenant_id \(int\<0, max\>\) does not accept int\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/KpiService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/LoyaltyService.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 1
+			path: app/Services/Marking/ChestnyZnakClient.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Marking/EgaisService.php
+
+		-
+			message: '#^Anonymous function should return Autometria\\Models\\MarkingCode but returns Autometria\\Models\\MarkingCode\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Marking/MarkingValidationService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/Marking/MarkingValidationService.php
+
+		-
+			message: '#^Anonymous function should return Autometria\\Models\\Module but returns Autometria\\Models\\Module\|null\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Services/ModuleService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ingredient\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/NestedBomService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ingredient_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/NestedBomService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/NestedBomService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/NestedBomService.php
+
+		-
+			message: '#^Method Autometria\\Services\\NestedBomService\:\:preview\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/NestedBomService.php
+
+		-
+			message: '#^Parameter &\$leaves by\-ref type of method Autometria\\Services\\NestedBomService\:\:expandRecipeNode\(\) expects list\<array\{product_id\: int, name\: string\|null, qty\: float\}\>, non\-empty\-list\<array\{product_id\: int, name\: mixed, qty\: float\}\> given\.$#'
+			identifier: parameterByRef.type
+			count: 1
+			path: app/Services/NestedBomService.php
+
+		-
+			message: '#^Method Autometria\\Services\\OneC\\OneCSyncLogger\:\:fail\(\) has parameter \$details with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/OneC/OneCSyncLogger.php
+
+		-
+			message: '#^Method Autometria\\Services\\OneC\\OneCSyncLogger\:\:fail\(\) should return Autometria\\Models\\OneCSyncLog but returns Autometria\\Models\\OneCSyncLog\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/OneC/OneCSyncLogger.php
+
+		-
+			message: '#^Method Autometria\\Services\\OneC\\OneCSyncLogger\:\:succeed\(\) should return Autometria\\Models\\OneCSyncLog but returns Autometria\\Models\\OneCSyncLog\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/OneC/OneCSyncLogger.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
+			identifier: parameter.notFound
+			count: 1
+			path: app/Services/OneC/OneCSyncLogger.php
+
+		-
+			message: '#^Anonymous function should return Autometria\\Models\\Order but returns Autometria\\Models\\Order\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/OrderLifecycleService.php
+
+		-
+			message: '#^Anonymous function should return Autometria\\Models\\Order but returns Autometria\\Models\\Order\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>warehouse_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Parameter \#2 \$order of method Autometria\\Services\\ReceiptService\:\:settleLoyaltyForOrder\(\) expects Autometria\\Models\\Order, Autometria\\Models\\Order\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/PaymentService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Payroll\\PayrollService\:\:createAccrualRule\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Payroll/PayrollService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Payroll\\PayrollService\:\:createDeduction\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Payroll/PayrollService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Payroll\\PayrollService\:\:createPeriod\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Payroll/PayrollService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Payroll\\PayrollService\:\:listAccrualRules\(\) return type with generic class Illuminate\\Support\\Collection does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Services/Payroll/PayrollService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Payroll\\PayrollService\:\:listDeductions\(\) return type with generic class Illuminate\\Support\\Collection does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Services/Payroll/PayrollService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Payroll\\PayrollService\:\:listPayslips\(\) return type with generic class Illuminate\\Support\\Collection does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Services/Payroll/PayrollService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Payroll\\PayrollService\:\:listPeriods\(\) return type with generic class Illuminate\\Support\\Collection does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Services/Payroll/PayrollService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/Payroll/PayrollService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ingredient\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ingredient_id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$net_quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$waste_percentage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Anonymous function should return Autometria\\Models\\Recipe but returns Autometria\\Models\\Recipe\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Method Autometria\\Services\\ProductionService\:\:listProductionOrders\(\) should return list\<array\<string, mixed\>\> but returns array\<int, array\{id\: int, recipe_id\: int\<0, max\>, product_id\: int\<0, max\>, product_name\: mixed, warehouse_id\: int\<0, max\>, warehouse_name\: mixed, qty\: float, unit_cost\: float, \.\.\.\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\ProductionOrder\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Autometria\\Models\\ProductionOrder\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:all\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/ProductionService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Purchasing\\SupplierOrderService\:\:createSupplier\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Purchasing/SupplierOrderService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Services/Purchasing/SupplierOrderService.php
+
+		-
+			message: '#^Anonymous function should return Autometria\\Models\\Refund but returns Autometria\\Models\\Refund\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/RefundService.php
+
+		-
+			message: '#^Method Autometria\\Services\\SearchService\:\:search\(\) should return array\{query\: string, customers\: list\<array\<string, mixed\>\>, vehicles\: list\<array\<string, mixed\>\>, orders\: list\<array\<string, mixed\>\>\} but returns array\{query\: non\-falsy\-string, customers\: array\<int, array\{id\: int, type\: string, name\: string\|null, phone\: string\|null, inn\: string\|null\}\>, vehicles\: array\<int, array\{id\: int, plate\: string\|null, brand\: string\|null, model\: string\|null, customer_id\: int\<0, max\>\|null\}\>, orders\: array\<int, array\{id\: int, number\: string\|null, status\: string, scenario\: string, customer_id\: int\<0, max\>\|null, vehicle_id\: int\<0, max\>\|null, total\: numeric\-string\}\>\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/SearchService.php
+
+		-
+			message: '#^Property Autometria\\Models\\CashShift\:\:\$closed_by \(int\<0, max\>\|null\) does not accept int\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/ShiftManagementService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 5
+			path: app/Services/StockBatchService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>cost_price" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/StockBatchService.php
+
+		-
+			message: '#^Cannot access property \$id on Autometria\\Models\\Reservation\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/StockReservationService.php
+
+		-
+			message: '#^Method Autometria\\Services\\StockReservationService\:\:release\(\) should return Autometria\\Models\\Reservation but returns Autometria\\Models\\Reservation\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/StockReservationService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/StockReservationService.php
+
+		-
+			message: '#^Property Autometria\\Models\\StockTransfer\:\:\$received_by \(int\<0, max\>\|null\) does not accept int\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/StockTransferService.php
+
+		-
+			message: '#^Property Autometria\\Models\\StockTransfer\:\:\$shipped_by \(int\<0, max\>\|null\) does not accept int\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/StockTransferService.php
+
+		-
+			message: '#^Anonymous function should return Autometria\\Models\\Task but returns Autometria\\Models\\Task\|null\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Services/TaskService.php
+
+		-
+			message: '#^Method Autometria\\Services\\TvBoardService\:\:buildBoard\(\) should return array\{location_id\: int\|null, columns\: array\<string, list\<array\<string, mixed\>\>\>\} but returns array\{location_id\: int\|null, columns\: array\{queue\: array\<int, array\{id\: int, number\: string\|null, status\: string, scenario\: string, plate\: string\|null, vehicle\: string\|null\}\>, in_progress\: array\<int, array\{id\: int, number\: string\|null, status\: string, scenario\: string, plate\: string\|null, vehicle\: string\|null\}\>, ready\: array\<int, array\{id\: int, number\: string\|null, status\: string, scenario\: string, plate\: string\|null, vehicle\: string\|null\}\>\}\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/TvBoardService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/Wms/SerialNumberService.php
+
+		-
+			message: '#^Anonymous function should return Autometria\\Models\\StockBatchCell but returns Autometria\\Models\\StockBatchCell\|null\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Services/Wms/StorageCellService.php
+
+		-
+			message: '#^Method Autometria\\Services\\Wms\\StorageCellService\:\:update\(\) should return Autometria\\Models\\StorageCell but returns Autometria\\Models\\StorageCell\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Wms/StorageCellService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of static method Autometria\\Support\\AuditLog\:\:write\(\) expects int\|null, int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 5
+			path: app/Services/Wms/StorageCellService.php
+
+		-
+			message: '#^Instanceof between Illuminate\\Http\\Request and Illuminate\\Http\\Request will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Support/AuditLog.php
+
+		-
+			message: '#^Method Autometria\\Support\\AuditLog\:\:write\(\) has parameter \$metadata with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Support/AuditLog.php
+
+		-
+			message: '#^Method Autometria\\Support\\AuditLog\:\:write\(\) has parameter \$new with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Support/AuditLog.php
+
+		-
+			message: '#^Method Autometria\\Support\\AuditLog\:\:write\(\) has parameter \$old with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Support/AuditLog.php

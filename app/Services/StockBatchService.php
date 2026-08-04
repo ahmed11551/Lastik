@@ -16,6 +16,7 @@ namespace Autometria\Services;
 use Autometria\Exceptions\Domain\InsufficientStockException;
 use Autometria\Models\Stock;
 use Autometria\Models\StockBatch;
+use Autometria\Services\Traits\BcMathDecimal;
 use Autometria\Support\AuditLog;
 use InvalidArgumentException;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class StockBatchService
 {
+    use BcMathDecimal;
     /**
      * Приход товара партией. Возвращает созданную партию.
      */
@@ -64,8 +66,9 @@ final class StockBatchService
             ]);
 
             $stock = $this->ensureStock($tenantId, $warehouseId, $productId);
-            $stock->actual = (float) $stock->actual + $qty;
-            $stock->available = (float) $stock->actual - (float) $stock->reserved;
+            $stock->actual = (float) $this->bcAdd($stock->actual, $qty);
+            $stock->available = (float) $this->bcSub($stock->actual, $stock->reserved);
+            $stock->quantity = (float) $this->bcAdd((float) $stock->quantity, $qty);
             $stock->save();
 
             AuditLog::write(
@@ -146,8 +149,8 @@ final class StockBatchService
                 $unitCost = round((float) $batch->cost_price, 2);
                 $totalCost = round($take * $unitCost, 2);
 
-                $writtenOff += $take;
-                $cost += $totalCost;
+                $writtenOff = $this->bcAdd($writtenOff, $take);
+                $cost = $this->bcAdd($cost, $totalCost);
                 $batchTrace[(int) $batch->id] = round($take, 3);
 
                 \Autometria\Models\StockLotDeduction::query()->withoutGlobalScopes()->forceCreate([
@@ -199,8 +202,8 @@ final class StockBatchService
 
                 $unitCost = round($lastCost, 2);
                 $totalCost = round($shortfall * $unitCost, 2);
-                $writtenOff += $shortfall;
-                $cost += $totalCost;
+                $writtenOff = $this->bcAdd($writtenOff, $shortfall);
+                $cost = $this->bcAdd($cost, $totalCost);
                 $batchTrace[(int) $overdraftBatch->id] = -$shortfall;
 
                 \Autometria\Models\StockLotDeduction::query()->withoutGlobalScopes()->forceCreate([
@@ -237,6 +240,7 @@ final class StockBatchService
             // Уменьшаем суммарный остаток склада (может уйти в минус при overdraft).
             $stock->actual = (float) $stock->actual - $writtenOff;
             $stock->available = (float) $stock->actual - (float) $stock->reserved;
+            $stock->quantity = (float) $stock->quantity - $writtenOff;
             $stock->save();
 
             AuditLog::write(
@@ -341,7 +345,7 @@ final class StockBatchService
 
                 $unitCost = round((float) $deduction->unit_cost, 2);
                 $restored += $take;
-                $cost += round($take * $unitCost, 2);
+                $cost = $this->bcAdd($cost, round($take * $unitCost, 2));
                 $batchTrace[(int) $batch->id] = round(($batchTrace[(int) $batch->id] ?? 0) + $take, 3);
                 $remaining = round($remaining - $take, 3);
             }

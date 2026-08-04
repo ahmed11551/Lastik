@@ -52,12 +52,14 @@ class Stock extends TenantModel
         'actual',
         'reserved',
         'available',
+        'quantity',
     ];
 
     protected $casts = [
-        'actual' => 'decimal:2',
-        'reserved' => 'decimal:2',
-        'available' => 'decimal:2',
+        'actual' => 'decimal:3',
+        'reserved' => 'decimal:3',
+        'available' => 'decimal:3',
+        'quantity' => 'decimal:2',
     ];
 
     public function tenant(): BelongsTo

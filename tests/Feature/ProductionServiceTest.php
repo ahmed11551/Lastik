@@ -176,9 +176,9 @@ it('writes off ingredients on composite POS sale (not finished good)', function 
         ->where('product_id', $patty->id)
         ->value('available');
 
-    // 2 portions × 1.0 gross each
+    // 2 portions × 1.0 gross each; patty has waste_percentage=10 → net 0.9/portion
     expect($bunStockBefore - $bunStockAfter)->toBe(2.0);
-    expect(10.0 - $pattyStockAfter)->toBe(2.0);
+    expect(round(10.0 - $pattyStockAfter, 3))->toBe(1.8);
 
     // Finished dish stock should not be required / written off
     $dishStock = Stock::query()->withoutGlobalScopes()
@@ -324,11 +324,11 @@ it('processCompositeSale accounts for waste in gross write-off', function (): vo
 
     expect($result)->not->toBeNull();
     expect($result['composite'])->toBeTrue();
-    // 2 * 0.25 gross = 0.5 written off (waste already baked into брутто)
-    expect($result['ingredients'][0]['qty'])->toBe(0.5);
-    expect($result['cost'])->toBe(50.0); // 0.5 * 100
+    // 2 * net(0.25, waste 20%) = 2 * 0.2 = 0.4
+    expect($result['ingredients'][0]['qty'])->toBe(0.4);
+    expect($result['cost'])->toBe(40.0); // 0.4 * 100
 
     $avail = (float) Stock::query()->withoutGlobalScopes()
         ->where('product_id', $meat->id)->value('available');
-    expect($avail)->toBe(9.5);
+    expect($avail)->toBe(9.6);
 });

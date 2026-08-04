@@ -25,9 +25,9 @@ it('creates stock from catalog batch', function (): void {
 
     $stock = Stock::query()->withoutGlobalScopes()->where('tenant_id', $fx->tenant->id)->where('product_id', $product->id)->first();
     expect($stock)->not->toBeNull();
-    expect($stock->actual)->toBe('12.00');
-    expect($stock->reserved)->toBe('2.00');
-    expect($stock->available)->toBe('10.00');
+    expect($stock->actual)->toBe('12.000');
+    expect($stock->reserved)->toBe('2.000');
+    expect($stock->available)->toBe('10.000');
     expect((float) app('db')->table('prices')->where('tenant_id', $fx->tenant->id)->where('product_id', $product->id)->value('amount'))->toBe(4500.0);
 });
 
@@ -40,9 +40,9 @@ it('updates stock and price on repeat import', function (): void {
     $stock = Stock::query()->withoutGlobalScopes()->where('tenant_id', $fx->tenant->id)->where('product_id', $fx->product->id)->first();
     expect($stock)->not->toBeNull();
     expect(Stock::query()->withoutGlobalScopes()->where('tenant_id', $fx->tenant->id)->where('product_id', $fx->product->id)->count())->toBe(1);
-    expect($stock->actual)->toBe('8.00');
-    expect($stock->reserved)->toBe('3.00');
-    expect($stock->available)->toBe('5.00');
+    expect($stock->actual)->toBe('8.000');
+    expect($stock->reserved)->toBe('3.000');
+    expect($stock->available)->toBe('5.000');
 
     expect((float) app('db')->table('prices')->where('tenant_id', $fx->tenant->id)->where('product_id', $fx->product->id)->value('amount'))->toBe(3899.0);
 });

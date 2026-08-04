@@ -102,8 +102,8 @@ it('test_claim_update_prevents_double_fiscalization_under_race', function (): vo
     $service = new FiscalReceiptService($driver);
 
     // Два "одновременных" воркера.
-    (new FiscalizeReceiptJob($receipt->id))->handle($service);
-    (new FiscalizeReceiptJob($receipt->id))->handle($service);
+    (new FiscalizeReceiptJob($receipt->id, $receipt->tenant_id))->handle($service);
+    (new FiscalizeReceiptJob($receipt->id, $receipt->tenant_id))->handle($service);
 
     $receipt->refresh();
     // shouldReceive('sell')->once() выше гарантирует ровно 1 вызов драйвера:
@@ -142,7 +142,7 @@ it('test_network_timeout_transitions_to_needs_reconcile_and_reconciles_successfu
     \Illuminate\Support\Facades\Queue::fake();
 
     // Первый прогон: sell бросает timeout -> NEEDS_RECONCILE + планируется ReconcileReceiptJob.
-    (new FiscalizeReceiptJob($receipt->id))->handle($service);
+    (new FiscalizeReceiptJob($receipt->id, $receipt->tenant_id))->handle($service);
     $receipt->refresh();
     expect($receipt->status)->toEqual(FiscalReceiptStatus::NEEDS_RECONCILE);
     \Illuminate\Support\Facades\Queue::assertPushed(ReconcileReceiptJob::class, fn ($job) => $job->fiscalReceiptId === $receipt->id);

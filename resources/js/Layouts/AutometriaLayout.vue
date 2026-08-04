@@ -85,6 +85,9 @@ const sections = [
       { id: 'purchases', label: 'Закупки' },
       { id: 'replenishment', label: 'План пополнения' },
       { id: 'production', label: 'Производство / BOM' },
+      { id: 'nested_bom', label: 'Nested BOM' },
+      { id: 'wms_cells', label: 'WMS · Ячейки' },
+      { id: 'wms_serials', label: 'WMS · Серийники' },
     ],
   },
   {

@@ -24,6 +24,9 @@ import RegulatoryEgaisIndex from '@/Pages/Regulatory/Egais/Index.vue'
 import BranchesIndex from '@/Pages/Settings/Branches/Index.vue'
 import WarehousePrices from '@/Pages/Inventory/WarehousePrices.vue'
 import ProductionIndex from '@/Pages/Production/Index.vue'
+import NestedBomTree from '@/Pages/Production/NestedBomTree.vue'
+import StorageCells from '@/Pages/Wms/StorageCells.vue'
+import SerialNumbers from '@/Pages/Wms/SerialNumbers.vue'
 import AnalyticsDashboard from '@/Pages/Dashboard.vue'
 import PurchasesIndex from '@/Pages/Purchases/Index.vue'
 import SupplierOrderForm from '@/Pages/Purchases/SupplierOrderForm.vue'
@@ -57,6 +60,9 @@ const VIEW_TITLES = {
   payroll_rules: 'Правила зарплаты',
   payslip: 'Расчётный лист',
   production: 'Производство / BOM',
+  nested_bom: 'Nested BOM',
+  wms_cells: 'WMS · Ячейки',
+  wms_serials: 'WMS · Серийники',
   branches: 'Филиалы',
   regulatory: 'Маркировка (Честный Знак)',
   egais: 'ЕГАИС',
@@ -124,6 +130,15 @@ const breadcrumbs = computed(() => {
   }
   if (view.value === 'production') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Производство' }]
+  }
+  if (view.value === 'nested_bom') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'Nested BOM' }]
+  }
+  if (view.value === 'wms_cells') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'WMS · Ячейки' }]
+  }
+  if (view.value === 'wms_serials') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Склад' }, { label: 'WMS · Серийники' }]
   }
   if (view.value === 'branches') {
     return [{ label: 'AUTOMETRIA' }, { label: 'Настройки' }, { label: 'Филиалы' }]
@@ -370,6 +385,21 @@ function onLoginSuccess() {
 
       <ProductionIndex
         v-else-if="view === 'production'"
+        embedded
+      />
+
+      <NestedBomTree
+        v-else-if="view === 'nested_bom'"
+        embedded
+      />
+
+      <StorageCells
+        v-else-if="view === 'wms_cells'"
+        embedded
+      />
+
+      <SerialNumbers
+        v-else-if="view === 'wms_serials'"
         embedded
       />
 

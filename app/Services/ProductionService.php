@@ -13,11 +13,13 @@ namespace Autometria\Services;
 use Autometria\Models\ModifierOption;
 use Autometria\Models\OrderItem;
 use Autometria\Models\Price;
+use Autometria\Models\ProductService;
 use Autometria\Models\ProductionOrder;
 use Autometria\Models\Recipe;
 use Autometria\Models\RecipeItem;
 use Autometria\Models\StockBatch;
 use Autometria\Support\AuditLog;
+use Autometria\Services\Traits\BcMathDecimal;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -26,8 +28,11 @@ use InvalidArgumentException;
  */
 final class ProductionService
 {
+    use BcMathDecimal;
+
     public function __construct(
         private readonly StockBatchService $batches,
+        private readonly NestedBomService $nestedBom,
     ) {}
 
     /**
@@ -58,8 +63,8 @@ final class ProductionService
             }
 
             $lineCost = $this->estimateFifoCost($tenantId, $warehouseId, (int) $item->ingredient_id, $gross);
-            $unit = $gross > 0 ? round($lineCost / $gross, 4) : 0.0;
-            $total += $lineCost;
+            $unit = $gross > 0 ? (float) $this->bcRound($this->bcDiv($lineCost, $gross), 4) : 0.0;
+            $total = $this->bcAdd($total, $lineCost);
 
             $lines[] = [
                 'ingredient_id' => (int) $item->ingredient_id,
@@ -120,7 +125,10 @@ final class ProductionService
             $trace = [];
 
             foreach ($recipe->items as $ri) {
-                $need = round((float) $ri->quantity * $scale, 3);
+                // Списываем net_quantity (чистый расход с учётом потерь waste),
+                // брутто quantity — fallback, если net_quantity не задан.
+                $base = (float) ($ri->net_quantity ?? $ri->quantity);
+                $need = round($base * $scale, 3);
                 if ($need <= 0) {
                     continue;
                 }
@@ -134,8 +142,8 @@ final class ProductionService
                     (int) $item->id,
                     $allowOverdraft,
                 );
-                $totalCost += (float) $result['cost'];
-                $totalWritten += (float) $result['written_off'];
+                $totalCost = $this->bcAdd($totalCost, (float) $result['cost']);
+                $totalWritten = $this->bcAdd($totalWritten, (float) $result['written_off']);
                 $hasOverdraft = $hasOverdraft || (($result['has_overdraft'] ?? false) === true);
                 $trace[] = [
                     'ingredient_id' => (int) $ri->ingredient_id,
@@ -156,8 +164,8 @@ final class ProductionService
                     (int) $item->id,
                     $allowOverdraft,
                 );
-                $totalCost += (float) $result['cost'];
-                $totalWritten += (float) $result['written_off'];
+                $totalCost = $this->bcAdd($totalCost, (float) $result['cost']);
+                $totalWritten = $this->bcAdd($totalWritten, (float) $result['written_off']);
                 $hasOverdraft = $hasOverdraft || (($result['has_overdraft'] ?? false) === true);
                 $trace[] = [
                     'ingredient_id' => $mod['ingredient_id'],
@@ -188,7 +196,7 @@ final class ProductionService
     }
 
     /**
-     * Акт производства: списание сырья + приход готового полуфабриката/блюда.
+     * Акт производства: nested BOM → списание leaf-сырья FIFO + приход ГП/полуфабриката.
      *
      * @return array{batch_id: int, qty: float, unit_cost: float, total_cost: float, ingredients: list<array>}
      */
@@ -207,36 +215,36 @@ final class ProductionService
             ->with('items')
             ->firstOrFail();
 
-        $yield = max(0.001, (float) $recipe->yield_quantity);
-        $scale = $qty / $yield;
+        $leaves = $this->nestedBom->expandToLeaves($tenantId, $recipeId, $qty);
 
         return DB::transaction(function () use (
-            $recipe, $tenantId, $warehouseId, $qty, $scale, $createdBy
+            $recipe, $tenantId, $warehouseId, $qty, $leaves, $createdBy
         ): array {
             $totalCost = 0.0;
             $trace = [];
 
-            foreach ($recipe->items as $ri) {
-                $need = round((float) $ri->quantity * $scale, 3);
+            foreach ($leaves as $leaf) {
+                $need = round((float) $leaf['qty'], 3);
                 if ($need <= 0) {
                     continue;
                 }
                 $result = $this->batches->writeOff(
                     $tenantId,
                     $warehouseId,
-                    (int) $ri->ingredient_id,
+                    (int) $leaf['product_id'],
                     $need,
                     $createdBy,
                 );
-                $totalCost += (float) $result['cost'];
+                $totalCost = $this->bcAdd($totalCost, (float) $result['cost']);
                 $trace[] = [
-                    'ingredient_id' => (int) $ri->ingredient_id,
+                    'ingredient_id' => (int) $leaf['product_id'],
                     'qty' => $need,
                     'cost' => (float) $result['cost'],
+                    'leaf' => true,
                 ];
             }
 
-            $unitCost = round($totalCost / $qty, 4);
+            $unitCost = (float) $this->bcRound($this->bcDiv($totalCost, $qty), 4);
             $batch = $this->batches->ingress(
                 $tenantId,
                 $warehouseId,
@@ -246,6 +254,8 @@ final class ProductionService
                 'PROD-'.$recipe->id.'-'.now()->format('YmdHis'),
                 $createdBy,
             );
+
+            $this->markSemiFinished($tenantId, (int) $recipe->product_id);
 
             $order = ProductionOrder::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $tenantId,
@@ -275,6 +285,7 @@ final class ProductionService
                     'total_cost' => round($totalCost, 2),
                     'batch_id' => $batch->id,
                     'ingredients' => $trace,
+                    'nested' => true,
                 ],
             );
 
@@ -287,6 +298,14 @@ final class ProductionService
                 'ingredients' => $trace,
             ];
         });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function nestedPreview(int $tenantId, int $recipeId, float $qty): array
+    {
+        return $this->nestedBom->preview($tenantId, $recipeId, $qty);
     }
 
     /**
@@ -381,8 +400,29 @@ final class ProductionService
                 ]);
             }
 
+            $this->markSemiFinished($tenantId, $productId);
+
+            foreach ($items as $row) {
+                $ingredientId = (int) $row['ingredient_id'];
+                $hasChildRecipe = Recipe::query()->withoutGlobalScopes()
+                    ->where('tenant_id', $tenantId)
+                    ->where('product_id', $ingredientId)
+                    ->exists();
+                if ($hasChildRecipe) {
+                    $this->markSemiFinished($tenantId, $ingredientId);
+                }
+            }
+
             return $recipe->fresh(['items.ingredient', 'product']);
         });
+    }
+
+    private function markSemiFinished(int $tenantId, int $productId): void
+    {
+        ProductService::query()->withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereKey($productId)
+            ->update(['is_semi_finished' => true]);
     }
 
     /**
