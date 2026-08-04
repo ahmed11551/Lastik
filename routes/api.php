@@ -57,6 +57,7 @@ use Autometria\Http\Controllers\StockTransferController;
 use Autometria\Http\Controllers\TaskController;
 use Autometria\Http\Controllers\TvBoardController;
 use Autometria\Http\Controllers\UserController;
+use Autometria\Http\Controllers\DemoAuthController;
 use Autometria\Http\Controllers\VehicleController;
 use Autometria\Http\Controllers\WarehouseController;
 use Autometria\Http\Middleware\EnforceLocationAccess;
@@ -66,6 +67,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     Route::post('auth/login', [AuthController::class, 'login'])
+        ->middleware([RateLimitAuth::class, 'throttle:auth-api']);
+
+    // Демо-вход в 1 клик (только DEMO_MODE=true).
+    Route::post('demo/login', [DemoAuthController::class, 'login'])
         ->middleware([RateLimitAuth::class, 'throttle:auth-api']);
 
     // CommerceML 2.10 exchange — HTTP Basic Auth (no Sanctum)

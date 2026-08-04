@@ -43,6 +43,12 @@ return [
 
     'timezone' => 'UTC',
 
+    /*
+     * Демо-режим: разрешает авторизацию в 1 клик (DemoAuthController) без пароля.
+     * Включается ТОЛЬКО на демо-стенде (DEMO_MODE=1 в .env). В проде = false.
+     */
+    'demo_mode' => (bool) env('DEMO_MODE', false),
+
     'locale' => 'ru',
 
     'fallback_locale' => 'en',
