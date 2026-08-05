@@ -77,7 +77,7 @@ class CashShiftController extends Controller
             $query->where('location_id', $locationId);
         }
 
-        return ['data' => $query->latest('id')->get()];
+        return ['data' => $query->with(['user:id,name', 'location:id,name'])->latest('id')->get()];
     }
 
     public function current(Request $request): JsonResponse

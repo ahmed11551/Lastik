@@ -89,6 +89,11 @@ class CashShift extends TenantModel
         return $this->belongsTo(User::class);
     }
 
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
+    }
+
     public function cashMovements(): HasMany
     {
         return $this->hasMany(CashMovement::class);
