@@ -270,6 +270,18 @@ onMounted(async () => {
     toast.warning('Смена недоступна', 'Shift')
   }
   await pos.loadCatalog()
+
+  try {
+    const user = getStoredUser() as { id?: number } | null
+    const cashierId = Number(user?.id || 0)
+    const restored = await pos.restoreCartDraft(cashierId, Number(shiftId.value || 0))
+    if (restored) {
+      toast.info('Черновик корзины восстановлен', 'POS Offline')
+    }
+  } catch {
+    /* draft restore is best-effort */
+  }
+
   await nextTick()
   focusSearch()
 })
@@ -284,12 +296,12 @@ onUnmounted(() => {
 <template>
   <div
     class="flex min-h-[calc(100vh-4rem)] flex-col gap-2 p-2 sm:gap-3 sm:p-3 lg:p-4"
-    style="background: var(--autometria-bg, #0b0d10)"
+    style="background: var(--brand-desk, var(--autometria-bg, #090d16))"
   >
     <!-- 1. Status bar -->
     <header
       class="flex flex-wrap items-center justify-between gap-2 border px-3 py-2"
-      style="background: #11151a; border-color: #1f2937; border-radius: 4px"
+      style="background: #0f172a; border-color: #1e293b; border-radius: 4px"
     >
       <div class="flex flex-wrap items-center gap-2 font-mono text-[11px]" style="color: #9ca3af">
         <span class="text-white">
@@ -410,12 +422,12 @@ onUnmounted(() => {
     <!-- 4. Action bar -->
     <footer
       class="flex flex-wrap items-center gap-2 border p-2 sm:p-3"
-      style="background: #11151a; border-color: #1f2937; border-radius: 4px"
+      style="background: #0f172a; border-color: #1e293b; border-radius: 4px"
     >
       <button
         type="button"
         class="h-12 min-w-[120px] flex-1 border px-3 font-mono text-xs sm:flex-none"
-        style="border-color: #1f2937; color: #fff; border-radius: 4px; background: #0b0d10"
+        style="border-color: #1e293b; color: #fff; border-radius: 4px; background: #090d16"
         @click="focusSearch"
       >
         <kbd class="mr-1" style="color: #f59e0b">F2</kbd> Поиск
@@ -423,7 +435,7 @@ onUnmounted(() => {
       <button
         type="button"
         class="h-12 min-w-[140px] flex-[2] border px-3 font-mono text-xs font-bold uppercase disabled:opacity-40 sm:flex-none"
-        style="background: #f59e0b; color: #0b0d10; border-color: #f59e0b; border-radius: 4px"
+        style="background: #f59e0b; color: #090d16; border-color: #f59e0b; border-radius: 4px"
         :disabled="checkingOut || !cart.length"
         @click="requestPay"
       >
@@ -432,7 +444,7 @@ onUnmounted(() => {
       <button
         type="button"
         class="h-12 min-w-[120px] flex-1 border px-3 font-mono text-xs sm:flex-none"
-        style="border-color: #ef4444; color: #fca5a5; border-radius: 4px; background: #0b0d10"
+        style="border-color: #ef4444; color: #fca5a5; border-radius: 4px; background: #090d16"
         data-testid="pos-refund-open"
         :disabled="!shiftOpen"
         @click="refundOpen = true"
@@ -442,7 +454,7 @@ onUnmounted(() => {
       <button
         type="button"
         class="h-12 min-w-[100px] flex-1 border px-3 font-mono text-xs sm:flex-none"
-        style="border-color: #374151; color: #9ca3af; border-radius: 4px; background: #0b0d10"
+        style="border-color: #1e293b; color: #a8b3c7; border-radius: 4px; background: #090d16"
         @click="pos.clearCart()"
       >
         <kbd class="mr-1">Esc</kbd> Отмена

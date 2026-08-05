@@ -6,6 +6,7 @@
  * Работаешь ТОЛЬКО в resources/js/. Бэкенд не трогать!
  */
 import { ref } from 'vue'
+import CosmicBackground from '@/Components/UI/CosmicBackground.vue'
 import { apiPost, setAuthSession } from '@/autometria/api/client'
 import { toast } from '@/autometria/api/toast'
 import DsLoadingBadge from '@/autometria/components/DsLoadingBadge.vue'
@@ -102,51 +103,49 @@ async function demoOneClick() {
 </script>
 
 <template>
-  <div
-    class="-m-4 flex min-h-[70vh] items-center justify-center p-4 lg:-m-6 lg:p-6"
-    style="background: var(--autometria-bg, #0b0d10)"
-  >
-    <div class="w-full max-w-md space-y-4">
+  <div class="relative -m-4 flex min-h-[70vh] items-center justify-center p-4 lg:-m-6 lg:p-6">
+    <CosmicBackground :fixed="false" />
+    <div class="relative z-10 w-full max-w-md space-y-4">
       <form
         class="w-full space-y-3 border p-5"
-        style="background: #11151a; border-color: #1f2937; border-radius: 4px"
+        style="background: #0f172a; border-color: #1e293b; border-radius: 4px"
         data-testid="login-form"
         @submit.prevent="submit"
       >
         <div
           class="font-mono text-[10px] font-medium uppercase tracking-[0.14em]"
-          style="color: #f59e0b"
+          style="color: #93c5fd"
         >
           Auth // Bearer session
         </div>
         <h2 class="text-sm font-medium text-white">
           Вход в AUTOMETRIA
         </h2>
-        <p class="text-xs" style="color: #9ca3af">
+        <p class="text-xs" style="color: #a8b3c7">
           Токен Sanctum сохраняется локально для /api/v1
         </p>
 
         <label class="block space-y-1">
-          <span class="font-mono text-[10px]" style="color: #6b7280">Email</span>
+          <span class="font-mono text-[10px]" style="color: #64748b">Email</span>
           <input
             v-model="email"
             type="email"
             required
             class="ds-input w-full font-mono text-xs"
-            style="border-radius: 4px; background: #161b22; border-color: #1f2937"
+            style="border-radius: 4px; background: #090d16; border-color: #1e293b"
             autocomplete="username"
             data-testid="login-email"
           >
         </label>
 
         <label class="block space-y-1">
-          <span class="font-mono text-[10px]" style="color: #6b7280">Password</span>
+          <span class="font-mono text-[10px]" style="color: #64748b">Password</span>
           <input
             v-model="password"
             type="password"
             required
             class="ds-input w-full font-mono text-xs"
-            style="border-radius: 4px; background: #161b22; border-color: #1f2937"
+            style="border-radius: 4px; background: #090d16; border-color: #1e293b"
             autocomplete="current-password"
             data-testid="login-password"
           >
@@ -155,7 +154,7 @@ async function demoOneClick() {
         <p
           v-if="error"
           class="text-xs"
-          style="color: #ef4444"
+          style="color: #fca5a5"
           data-testid="login-error"
         >
           {{ error }}
@@ -165,7 +164,7 @@ async function demoOneClick() {
           <button
             type="submit"
             class="border px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-wide disabled:opacity-50"
-            style="background: #f59e0b; color: #0b0d10; border-color: #f59e0b; border-radius: 4px"
+            style="background: #f59e0b; color: #090d16; border-color: #f59e0b; border-radius: 4px"
             :disabled="loading || demoLoading"
             data-testid="login-submit"
           >
@@ -181,14 +180,14 @@ async function demoOneClick() {
       <!-- 1-Click Demo — POST /api/v1/demo/login -->
       <section
         class="border p-4"
-        style="background: #11151a; border-color: #f59e0b; border-radius: 4px"
+        style="background: #0f172a; border-color: #1a3c8c; border-radius: 4px"
         data-testid="demo-login"
       >
         <div class="mb-3 flex flex-wrap items-start justify-between gap-2">
           <div>
             <div
               class="mb-1 font-mono text-[10px] font-medium uppercase tracking-[0.14em]"
-              style="color: #f59e0b"
+              style="color: #93c5fd"
             >
               Demo // 1-Click
             </div>
@@ -198,7 +197,7 @@ async function demoOneClick() {
           </div>
           <span
             class="inline-flex max-w-[220px] border px-2 py-1 font-mono text-[10px] leading-snug"
-            style="border-color: #1f2937; border-radius: 4px; color: #9ca3af; background: #0b0d10"
+            style="border-color: #1e293b; border-radius: 4px; color: #a8b3c7; background: #090d16"
             data-testid="demo-stand-badge"
           >
             Тестовый стенд: tenant demo · admin@demo.local · 8 заказов · 4 ячейки WMS
@@ -207,8 +206,8 @@ async function demoOneClick() {
 
         <button
           type="button"
-          class="flex w-full items-center justify-center gap-2 border px-4 py-3.5 font-mono text-[12px] font-bold uppercase tracking-wide shadow-[0_0_24px_rgba(245,158,11,0.25)] transition-opacity disabled:opacity-50"
-          style="background: #f59e0b; color: #0b0d10; border-color: #f59e0b; border-radius: 4px"
+          class="flex w-full items-center justify-center gap-2 border px-4 py-3.5 font-mono text-[12px] font-bold uppercase tracking-wide shadow-[0_0_24px_rgba(26,60,140,0.35)] transition-opacity disabled:opacity-50"
+          style="background: #f59e0b; color: #090d16; border-color: #f59e0b; border-radius: 4px"
           :disabled="loading || demoLoading"
           data-testid="demo-login-one-click"
           @click="demoOneClick"

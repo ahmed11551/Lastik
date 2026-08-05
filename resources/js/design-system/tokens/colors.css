@@ -1,28 +1,36 @@
 /**
- * AUTOMETRIA ERP — Industrial Amber + High Density
- * Multi-theme design tokens (Dark default / Light)
+ * AUTOMETRIA ERP — Cosmic Navy + High Density
+ * Brand gradient: #000000 → #050a1f → #0d1b3d · accent #1a3c8c
+ * Workspace desk: #090d16 · cards #0f172a · border #1e293b
  */
 
 :root,
 [data-theme="dark"] {
-  --autometria-bg: #0b0d10;
-  --autometria-surface: #11151a;
-  --autometria-surface-2: #161b22;
-  --color-bg: #0b0d10;
-  --color-surface: #11151a;
-  --color-surface-elevated: #161b22;
+  /* Brand primitives */
+  --brand-black: #000000;
+  --brand-dark: #050a1f;
+  --brand-navy: #0d1b3d;
+  --brand-accent: #1a3c8c;
+  --brand-desk: #090d16;
 
+  --autometria-bg: var(--brand-desk);
+  --autometria-surface: #0f172a;
+  --autometria-surface-2: #13203a;
+  --color-bg: var(--brand-desk);
+  --color-surface: #0f172a;
+  --color-surface-elevated: #13203a;
 
   --color-primary: #f59e0b;
   --color-primary-hover: #d97706;
   --color-warning: #f59e0b;
 
-  --color-text-primary: #e5e7eb;
-  --color-text-secondary: #9ca3af;
+  /* WCAG AA on #090d16 / #0f172a */
+  --color-text-primary: #e8edf5;
+  --color-text-secondary: #a8b3c7;
 
   --color-success: #10b981;
   --color-danger: #ef4444;
-  --color-border: #1f2937;
+  --color-border: #1e293b;
   --color-focus: #f59e0b;
 
   /* B2B CRM status palette */
@@ -40,27 +48,34 @@
   --ds-row-comfortable: 48px;
   --ds-sidebar-width: 260px;
 
-  /* Table chrome — amber-aligned (no indigo) */
-  --ds-table-surface: color-mix(in srgb, var(--color-surface-elevated) 82%, #1f2937);
-  --ds-row-selected: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface));
-  --ds-row-hover: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface-elevated));
+  --ds-table-surface: color-mix(in srgb, var(--color-surface-elevated) 78%, var(--brand-navy));
+  --ds-row-selected: color-mix(in srgb, var(--brand-accent) 22%, var(--color-surface));
+  --ds-row-hover: color-mix(in srgb, var(--brand-accent) 12%, var(--color-surface-elevated));
   --ds-row-accent: var(--color-primary);
 
-  --ds-sidebar-active-bg: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
-  --ds-sidebar-active-fg: var(--color-primary);
-  --ds-sidebar-hover: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  --ds-sidebar-bg: color-mix(in srgb, var(--brand-navy) 55%, var(--brand-desk));
+  --ds-header-bg: color-mix(in srgb, var(--brand-navy) 42%, var(--brand-desk));
+  --ds-sidebar-active-bg: color-mix(in srgb, var(--brand-accent) 28%, var(--color-surface));
+  --ds-sidebar-active-fg: #dbeafe;
+  --ds-sidebar-hover: color-mix(in srgb, var(--brand-accent) 14%, transparent);
 
-  --ds-zebra: rgba(255, 255, 255, 0.02);
-  --ds-hover-tint: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface-elevated));
+  --ds-zebra: rgba(255, 255, 255, 0.025);
+  --ds-hover-tint: color-mix(in srgb, var(--brand-accent) 10%, var(--color-surface-elevated));
 }
 
 [data-theme="light"] {
-  --autometria-bg: #f8fafc;
+  --brand-black: #000000;
+  --brand-dark: #050a1f;
+  --brand-navy: #0d1b3d;
+  --brand-accent: #1a3c8c;
+  --brand-desk: #f1f5f9;
+
+  --autometria-bg: #f1f5f9;
   --autometria-surface: #ffffff;
-  --autometria-surface-2: #f1f5f9;
-  --color-bg: #f8fafc;
+  --autometria-surface-2: #e8eef7;
+  --color-bg: #f1f5f9;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f1f5f9;
+  --color-surface-elevated: #e8eef7;
 
   --color-primary: #d97706;
   --color-primary-hover: #b45309;
@@ -71,7 +86,7 @@
 
   --color-success: #059669;
   --color-danger: #dc2626;
-  --color-border: #e2e8f0;
+  --color-border: #cbd5e1;
   --color-focus: #d97706;
 
   --color-status-accepted: #059669;
@@ -80,23 +95,29 @@
   --color-status-review: #6366f1;
 
   --ds-table-surface: #e2e8f0;
-  --ds-row-selected: color-mix(in srgb, var(--color-primary) 12%, #ffffff);
-  --ds-row-hover: color-mix(in srgb, var(--color-primary) 6%, #ffffff);
+  --ds-row-selected: color-mix(in srgb, var(--brand-accent) 10%, #ffffff);
+  --ds-row-hover: color-mix(in srgb, var(--brand-accent) 6%, #ffffff);
   --ds-row-accent: var(--color-primary);
 
-  --ds-sidebar-active-bg: color-mix(in srgb, var(--color-primary) 10%, #ffffff);
-  --ds-sidebar-active-fg: var(--color-primary);
-  --ds-sidebar-hover: color-mix(in srgb, var(--color-primary) 5%, transparent);
+  --ds-sidebar-bg: color-mix(in srgb, var(--brand-navy) 6%, #ffffff);
+  --ds-header-bg: color-mix(in srgb, var(--brand-navy) 4%, #ffffff);
+  --ds-sidebar-active-bg: color-mix(in srgb, var(--brand-accent) 12%, #ffffff);
+  --ds-sidebar-active-fg: var(--brand-navy);
+  --ds-sidebar-hover: color-mix(in srgb, var(--brand-accent) 6%, transparent);
 
   --ds-zebra: rgba(15, 23, 42, 0.03);
-  --ds-hover-tint: color-mix(in srgb, var(--color-primary) 6%, #ffffff);
+  --ds-hover-tint: color-mix(in srgb, var(--brand-accent) 6%, #ffffff);
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --color-bg: #f8fafc;
+    --brand-desk: #f1f5f9;
+    --autometria-bg: #f1f5f9;
+    --autometria-surface: #ffffff;
+    --autometria-surface-2: #e8eef7;
+    --color-bg: #f1f5f9;
     --color-surface: #ffffff;
-    --color-surface-elevated: #f1f5f9;
+    --color-surface-elevated: #e8eef7;
     --color-primary: #d97706;
     --color-primary-hover: #b45309;
     --color-warning: #d97706;
@@ -104,20 +125,22 @@
     --color-text-secondary: #475569;
     --color-success: #059669;
     --color-danger: #dc2626;
-    --color-border: #e2e8f0;
+    --color-border: #cbd5e1;
     --color-focus: #d97706;
     --color-status-accepted: #059669;
     --color-status-negotiation: #d97706;
     --color-status-rejected: #dc2626;
     --color-status-review: #6366f1;
     --ds-table-surface: #e2e8f0;
-    --ds-row-selected: color-mix(in srgb, var(--color-primary) 12%, #ffffff);
-    --ds-row-hover: color-mix(in srgb, var(--color-primary) 6%, #ffffff);
+    --ds-row-selected: color-mix(in srgb, var(--brand-accent) 10%, #ffffff);
+    --ds-row-hover: color-mix(in srgb, var(--brand-accent) 6%, #ffffff);
     --ds-row-accent: var(--color-primary);
-    --ds-sidebar-active-bg: color-mix(in srgb, var(--color-primary) 10%, #ffffff);
-    --ds-sidebar-active-fg: var(--color-primary);
-    --ds-sidebar-hover: color-mix(in srgb, var(--color-primary) 5%, transparent);
+    --ds-sidebar-bg: color-mix(in srgb, var(--brand-navy) 6%, #ffffff);
+    --ds-header-bg: color-mix(in srgb, var(--brand-navy) 4%, #ffffff);
+    --ds-sidebar-active-bg: color-mix(in srgb, var(--brand-accent) 12%, #ffffff);
+    --ds-sidebar-active-fg: var(--brand-navy);
+    --ds-sidebar-hover: color-mix(in srgb, var(--brand-accent) 6%, transparent);
     --ds-zebra: rgba(15, 23, 42, 0.03);
-    --ds-hover-tint: color-mix(in srgb, var(--color-primary) 6%, #ffffff);
+    --ds-hover-tint: color-mix(in srgb, var(--brand-accent) 6%, #ffffff);
   }
 }

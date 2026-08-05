@@ -2,7 +2,7 @@
 type: concept
 created: 2026-08-05
 updated: 2026-08-05
-sources: ["[[TECH-DEBT-v1.1.0]"]
+sources: ["[[TECH-DEBT-v1.1.0]]"]
 tags: [tech-debt,quality]
 aliases: ["Техдолг v1.1.0", "Tech Debt"]
 title: "Tech Debt V1.1.0"
@@ -19,17 +19,22 @@ title: "Tech Debt V1.1.0"
 - Acceptance pipeline: Core / TV / CommerceML batch / E2E (`run-acceptance-smoke.sh`).
 - Event bus scaffold: `app/Events`, `app/Listeners`, `EventServiceProvider`.
 - Immediate TV board invalidation: `OrderStatusChanged` → `InvalidateTvBoardCache` via `DB::afterCommit` (no Redis inside open order transactions).
+- float → bcmath in Production / StockBatch / NestedBom (`BcMathDecimal` string API + `StockBatchPrecisionTest`).
+- PWA offline queue: cartDraft restore on POS mount/online; sync payload parity (`customer_id` / `bonus_spend`).
+- N+1 guards: stock/orders query-count Pest + Product/CashShift eager-load tests.
+- Audit hardening: tenant-scoped POS `Rule::exists`, NestedBom recipe index, Loyalty BCMath, draft tenant guard.
 
 ## Next implementation (priority)
 
-### 1. float → bcmath (п.2)
+### 1. float → bcmath (п.2) — CLOSED
 
-Replace floating-point stock/BOM arithmetic with `bcmath` in:
+Stock/BOM arithmetic migrated to `BcMathDecimal` (`bcAdd`/`bcMul`/`bcComp`/`bcRound` half-up):
 
-- `ProductionService` (nested BOM produce / write-off)
-- `StockBatchService` (WMS Light batch qty / FIFO)
+- `ProductionService` (recipe cost, composite sale, produceBatch, FIFO estimate)
+- `StockBatchService` (ingress / writeOff / reverse / adjust / transferFifo)
+- `NestedBomService` (scale / leaf aggregation)
 
-Vector 4 code is already on this branch — migrate in place; keep Pest coverage for decimal(14,3) quantities.
+Coverage: `StockBatchPrecisionTest`, `BcMathDecimalTraitTest`, existing Production/NestedBom/FIFO Pest.
 
 ### 2. Fitment Data (2.1)
 

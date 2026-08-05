@@ -29,6 +29,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use RuntimeException;
 
 class PosController extends Controller
@@ -83,16 +84,40 @@ class PosController extends Controller
         $user = $request->user();
         abort_unless($user !== null, 401);
 
+        $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
+        $locationId = (int) (location_id() ?? $user->location_id ?? 0);
+        abort_unless($tenantId > 0 && $locationId > 0, 422, 'Tenant/location context required');
+
         $data = $request->validate([
-            'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
-            'vehicle_id' => ['nullable', 'integer', 'exists:vehicles,id'],
-            'assigned_seller_id' => ['nullable', 'integer', 'exists:users,id'],
+            'customer_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('customers', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId)),
+            ],
+            'vehicle_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('vehicles', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId)),
+            ],
+            'assigned_seller_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId)),
+            ],
             'method' => ['required', 'string', 'max:40'],
             'amount_tendered' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'integer', 'exists:products_services,id'],
+            'items.*.product_id' => [
+                'required',
+                'integer',
+                Rule::exists('products_services', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId)),
+            ],
             'items.*.qty' => ['required', 'numeric', 'min:0.001'],
-            'items.*.warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
+            'items.*.warehouse_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('warehouses', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId)),
+            ],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
             'items.*.type' => ['nullable', 'string', 'in:product,service'],
             'items.*.vat_rate' => ['nullable', 'string', 'max:10'],
@@ -106,9 +131,6 @@ class PosController extends Controller
             'bonus_spend' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $tenantId = (int) ($user->tenant_id ?? tenant_id() ?? 0);
-        $locationId = (int) (location_id() ?? $user->location_id ?? 0);
-        abort_unless($tenantId > 0 && $locationId > 0, 422, 'Tenant/location context required');
         abort_unless(
             Location::query()->whereKey($locationId)->where('tenant_id', $tenantId)->exists(),
             403,

@@ -19,8 +19,8 @@ title: "Acceptance Checklist"
 3. [ ] **Выдача (issuance)** — проведение выдачи фиксирует списание; AuditLog `issuance.created`.
 4. [ ] **Оплата** — cash/card через POS/кассу; `payment_status=paid`; AuditLog `payment.created`.
 5. [ ] **Фискализация** — создаётся `fiscal_receipts` (или NullFiscalDriver в test); статус не «завис» в pending без причины.
-6. [ ] **Offline-черновик чека** — при обрыве сети корзина POS сохраняется в IndexedDB (`cartDrafts`); индикатор NetworkStatus/offline виден.
-7. [ ] **Offline sync** — после восстановления сети очередь `localReceipts` уходит в `POST /api/v1/pos/offline-receipts` с `X-Idempotency-Key`.
+6. [x] **Offline-черновик чека** — при обрыве сети корзина POS сохраняется в IndexedDB (`cartDrafts`); индикатор NetworkStatus/offline виден; restore на mount / online.
+7. [x] **Offline sync** — после восстановления сети очередь `localReceipts` уходит в `POST /api/v1/pos/offline-receipts` с `X-Idempotency-Key` (+ `customer_id` / `bonus_spend`).
 
 ## B. Смена и KPI
 
@@ -38,9 +38,9 @@ title: "Acceptance Checklist"
 
 14. [ ] **TV Board UI** — `#/tv_display` или `/tv-board` показывает 3 колонки: Очередь / В работе / Готово.
 15. [ ] **TV Board API** — `GET /api/v1/tv/board` возвращает `data.columns.{queue,in_progress,ready}`; polling ~15с обновляет UI.
-16. [ ] **PWA Service Worker** — `/sw.js` зарегистрирован; статика shell в Cache Storage; `/api/*` не кэшируется.
+16. [x] **PWA Service Worker** — `/sw.js` зарегистрирован; статика shell в Cache Storage; `/api/*` не кэшируется.
 17. [ ] **ErrorBoundary** — искусственная ошибка Vue не даёт White Screen of Death; toast/UI recovery.
-18. [ ] **NetworkStatus** — offline → индикатор; online → восстановление.
+18. [x] **NetworkStatus** — offline → индикатор; online → восстановление (+ sync flush / cart draft restore).
 
 ## E. Сборка и регрессия
 

@@ -14,6 +14,8 @@ export default defineConfig({
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:5178',
     trace: 'on-first-retry',
+    // PWA SW network-first /api/* bypasses page.route() mocks → flaky 401/empty catalog.
+    serviceWorkers: 'block',
     ...devices['Desktop Chrome'],
     channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
   },

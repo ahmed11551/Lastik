@@ -112,7 +112,7 @@ final class OrderService
                 'created_by' => $createdBy,
             ]);
 
-            $total = 0.0;
+            $total = '0';
 
             foreach ($dto->items as $itemPayload) {
                 $productId = (int) $itemPayload['product_id'];
@@ -318,6 +318,6 @@ final class OrderService
 
         $amount = $row->amount ?? $row->price;
 
-        return $this->bcRound($amount);
+        return $this->bcToFloat($this->bcRound($amount));
     }
 }

@@ -51,7 +51,7 @@ final class PayrollService
 
             $rules = $this->listAccrualRules($tenantId, true);
             $deductions = $this->listDeductions($tenantId, true);
-            $totals = ['gross' => 0.0, 'deductions' => 0.0, 'net' => 0.0];
+            $totals = ['gross' => '0', 'deductions' => '0', 'net' => '0'];
             $from = Carbon::parse($period->period_from)->startOfDay();
             $to = Carbon::parse($period->period_to)->endOfDay();
 
@@ -61,8 +61,8 @@ final class PayrollService
                         ->where('tenant_id', $tenantId)
                         ->where('user_id', $employee->id)
                         ->whereBetween('created_at', [$from, $to]);
-                    $base = $this->bcRound((float) (clone $earnings)->sum('amount'));
-                    $bonus = $this->bcRound((float) (clone $earnings)
+                    $base = $this->bcRound((clone $earnings)->sum('amount'));
+                    $bonus = $this->bcRound((clone $earnings)
                         ->whereRaw("LOWER(COALESCE(source, '')) LIKE ?", ['%bonus%'])
                         ->sum('amount'));
 
@@ -76,38 +76,42 @@ final class PayrollService
                         'status' => PayrollPeriod::STATUS_CALCULATED,
                     ]);
 
-                    $gross = 0.0;
-                    if ($base > 0) {
-                        $this->item($tenantId, $payslip->id, PayslipItem::TYPE_EARNING, 'Выработка (KPI)', $base);
+                    $gross = '0';
+                    if ($this->bcComp($base, '0') > 0) {
+                        $this->item($tenantId, $payslip->id, PayslipItem::TYPE_EARNING, 'Выработка (KPI)', $this->bcToFloat($base));
                         $gross = $this->bcAdd($gross, $base);
                     }
                     foreach ($rules as $rule) {
                         $amount = match ($rule->type) {
-                            AccrualRule::TYPE_KPI_PERCENT => $this->bcDiv($this->bcMul((string) $base, (string) $rule->value), '100'),
-                            AccrualRule::TYPE_FIXED => (float) $rule->value,
+                            AccrualRule::TYPE_KPI_PERCENT => $this->bcDiv($this->bcMul($base, (string) $rule->value), '100'),
+                            AccrualRule::TYPE_FIXED => $this->bcNormalize((string) $rule->value),
                             AccrualRule::TYPE_BONUS => $bonus,
-                            default => 0,
+                            default => '0',
                         };
                         $amount = $this->bcRound($amount);
-                        if ($amount > 0) {
-                            $this->item($tenantId, $payslip->id, PayslipItem::TYPE_EARNING, $rule->name, $amount, $rule->id);
+                        if ($this->bcComp($amount, '0') > 0) {
+                            $this->item($tenantId, $payslip->id, PayslipItem::TYPE_EARNING, $rule->name, $this->bcToFloat($amount), $rule->id);
                             $gross = $this->bcAdd($gross, $amount);
                         }
                     }
                     $gross = $this->bcRound($gross);
-                    $deductionTotal = 0.0;
+                    $deductionTotal = '0';
                     foreach ($deductions as $deduction) {
                         $amount = $deduction->type === Deduction::TYPE_PERCENT
-                            ? $this->bcDiv($this->bcMul((string) $gross, (string) $deduction->value), '100')
-                            : (float) $deduction->value;
+                            ? $this->bcDiv($this->bcMul($gross, (string) $deduction->value), '100')
+                            : $this->bcNormalize((string) $deduction->value);
                         $amount = $this->bcRound($amount);
-                        if ($amount > 0) {
-                            $this->item($tenantId, $payslip->id, PayslipItem::TYPE_DEDUCTION, $deduction->name, $amount, $deduction->id);
+                        if ($this->bcComp($amount, '0') > 0) {
+                            $this->item($tenantId, $payslip->id, PayslipItem::TYPE_DEDUCTION, $deduction->name, $this->bcToFloat($amount), $deduction->id);
                             $deductionTotal = $this->bcAdd($deductionTotal, $amount);
                         }
                     }
-                    $net = $this->bcRound($this->bcSub((string) $gross, (string) $deductionTotal));
-                    $payslip->forceFill(['gross' => $gross, 'deductions_total' => $deductionTotal, 'net' => $net])->save();
+                    $net = $this->bcRound($this->bcSub($gross, $deductionTotal));
+                    $payslip->forceFill([
+                        'gross' => $this->bcToFloat($gross),
+                        'deductions_total' => $this->bcToFloat($deductionTotal),
+                        'net' => $this->bcToFloat($net),
+                    ])->save();
                     $totals['gross'] = $this->bcAdd($totals['gross'], $gross);
                     $totals['deductions'] = $this->bcAdd($totals['deductions'], $deductionTotal);
                     $totals['net'] = $this->bcAdd($totals['net'], $net);
@@ -116,9 +120,9 @@ final class PayrollService
 
             $period->forceFill([
                 'status' => PayrollPeriod::STATUS_CALCULATED,
-                'total_gross' => $this->bcRound($totals['gross']),
-                'total_deductions' => $this->bcRound($totals['deductions']),
-                'total_net' => $this->bcRound($totals['net']),
+                'total_gross' => $this->bcToFloat($this->bcRound($totals['gross'])),
+                'total_deductions' => $this->bcToFloat($this->bcRound($totals['deductions'])),
+                'total_net' => $this->bcToFloat($this->bcRound($totals['net'])),
             ])->save();
             AuditLog::write($tenantId, $userId ?? auth()->id(), 'payroll.calculated', PayrollPeriod::class, (int) $period->id, [], $period->only(['status', 'total_gross', 'total_deductions', 'total_net']));
 

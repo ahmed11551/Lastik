@@ -2,30 +2,35 @@
 @config "../../tailwind.config.js";
 @import "../js/design-system/styles/design-system.css";
 
-/* Bridge legacy HSL tokens → Industrial Amber defaults */
+/* Bridge legacy HSL tokens → Cosmic Navy / desk workspace */
 :root {
   --font-sans: var(--font-ui);
   --radius: 4px;
-  --background: 220 14% 4%;
-  --foreground: 220 13% 91%;
-  --card: 210 18% 8%;
-  --card-foreground: 220 13% 91%;
+  /* #090d16 desk */
+  --background: 222 30% 6%;
+  --foreground: 214 33% 94%;
+  /* #0f172a cards */
+  --card: 217 33% 12%;
+  --card-foreground: 214 33% 94%;
   --primary: 38 92% 50%;
-  --primary-foreground: 220 14% 4%;
-  --secondary: 215 19% 12%;
-  --secondary-foreground: 220 13% 91%;
-  --muted: 215 19% 12%;
-  --muted-foreground: 220 9% 65%;
-  --accent: 215 19% 12%;
-  --accent-foreground: 220 13% 91%;
+  --primary-foreground: 222 30% 6%;
+  /* navy-tinted chrome */
+  --secondary: 221 55% 14%;
+  --secondary-foreground: 214 33% 94%;
+  --muted: 221 40% 12%;
+  --muted-foreground: 215 20% 70%;
+  --accent: 221 55% 14%;
+  --accent-foreground: 214 33% 94%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 217 19% 17%;
-  --input: 217 19% 17%;
+  /* #1e293b */
+  --border: 215 25% 18%;
+  --input: 215 25% 18%;
   --ring: 38 92% 50%;
-  --surface-0: 210 18% 8%;
-  --surface-1: 220 14% 4%;
-  --surface-2: 215 19% 12%;
+  --sidebar: 222 48% 10%;
+  --surface-0: 217 33% 12%;
+  --surface-1: 222 30% 6%;
+  --surface-2: 221 55% 14%;
 }
 
 [data-theme="light"] {

@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\DB;
 final class StockBatchService
 {
     use BcMathDecimal;
+
     /**
      * Приход товара партией. Возвращает созданную партию.
      */
@@ -39,17 +40,20 @@ final class StockBatchService
         int $tenantId,
         int $warehouseId,
         int $productId,
-        float $qty,
-        float $costPrice,
+        float|int|string $qty,
+        float|int|string $costPrice,
         ?string $batchNumber = null,
         ?int $createdBy = null,
     ): StockBatch {
-        if ($qty <= 0) {
+        if ($this->bcComp($qty, '0') <= 0) {
             throw new InvalidArgumentException('Ingress qty must be positive');
         }
-        if ($costPrice < 0) {
+        if ($this->bcComp($costPrice, '0') < 0) {
             throw new InvalidArgumentException('Cost price cannot be negative');
         }
+
+        $qty = $this->bcRound($qty, 3);
+        $costPrice = $this->bcRound($costPrice, 2);
 
         return DB::transaction(function () use (
             $tenantId, $warehouseId, $productId, $qty, $costPrice, $batchNumber, $createdBy
@@ -59,16 +63,16 @@ final class StockBatchService
                 'warehouse_id' => $warehouseId,
                 'product_id' => $productId,
                 'batch_number' => $batchNumber,
-                'qty' => round($qty, 3),
-                'remaining_qty' => round($qty, 3),
-                'cost_price' => round($costPrice, 2),
+                'qty' => $qty,
+                'remaining_qty' => $qty,
+                'cost_price' => $costPrice,
                 'received_at' => now(),
             ]);
 
             $stock = $this->ensureStock($tenantId, $warehouseId, $productId);
-            $stock->actual = (float) $this->bcAdd($stock->actual, $qty);
-            $stock->available = (float) $this->bcSub($stock->actual, $stock->reserved);
-            $stock->quantity = (float) $this->bcAdd((float) $stock->quantity, $qty);
+            $stock->actual = $this->bcAdd($stock->actual, $qty);
+            $stock->available = $this->bcSub($stock->actual, $stock->reserved);
+            $stock->quantity = $this->bcAdd($stock->quantity, $qty);
             $stock->save();
 
             AuditLog::write(
@@ -95,26 +99,23 @@ final class StockBatchService
         int $tenantId,
         int $warehouseId,
         int $productId,
-        float $qty,
+        float|int|string $qty,
         ?int $createdBy = null,
         ?int $orderId = null,
         ?int $orderItemId = null,
         bool $allowOverdraft = false,
     ): array {
-        if ($qty <= 0) {
+        if ($this->bcComp($qty, '0') <= 0) {
             throw new InvalidArgumentException('Write-off qty must be positive');
         }
 
         return DB::transaction(function () use ($tenantId, $warehouseId, $productId, $qty, $createdBy, $orderId, $orderItemId, $allowOverdraft): array {
-            // Блокируем остаток склада (пессимистичная блокировка).
             $stock = $this->lockStock($tenantId, $warehouseId, $productId);
 
-            if (! $allowOverdraft && (float) $stock->available + 0.0001 < $qty) {
+            if (! $allowOverdraft && $this->bcComp($this->bcAdd($stock->available, '0.0001'), $qty) < 0) {
                 throw new InsufficientStockException('available_less_than_qty');
             }
 
-            // FIFO: самые старые партии первыми. Блокируем их.
-            // Овердрафт-партии (отрицательные) не участвуют в покрытии продаж.
             $batches = StockBatch::query()->withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)
                 ->where('warehouse_id', $warehouseId)
@@ -128,30 +129,30 @@ final class StockBatchService
                 ->lockForUpdate()
                 ->get();
 
-            $remaining = round($qty, 3);
-            $writtenOff = 0.0;
-            $cost = 0.0;
+            $remaining = $this->bcRound($qty, 3);
+            $writtenOff = '0';
+            $cost = '0';
             $batchTrace = [];
             $hasOverdraft = false;
-            $shortfall = 0.0;
+            $shortfall = '0';
 
             foreach ($batches as $batch) {
-                if ($remaining <= 0) {
+                if ($this->bcComp($remaining, '0') <= 0) {
                     break;
                 }
 
-                $availableInBatch = (float) $batch->remaining_qty;
-                $take = min($availableInBatch, $remaining);
+                $availableInBatch = $this->bcRound($batch->remaining_qty, 3);
+                $take = $this->bcMin($availableInBatch, $remaining);
 
-                $batch->remaining_qty = round($availableInBatch - $take, 3);
+                $batch->remaining_qty = $this->bcSub($availableInBatch, $take);
                 $batch->save();
 
-                $unitCost = round((float) $batch->cost_price, 2);
-                $totalCost = round($take * $unitCost, 2);
+                $unitCost = $this->bcRound($batch->cost_price, 2);
+                $totalCost = $this->bcRound($this->bcMul($take, $unitCost), 2);
 
                 $writtenOff = $this->bcAdd($writtenOff, $take);
                 $cost = $this->bcAdd($cost, $totalCost);
-                $batchTrace[(int) $batch->id] = round($take, 3);
+                $batchTrace[(int) $batch->id] = $this->bcRound($take, 3);
 
                 \Autometria\Models\StockLotDeduction::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
@@ -160,20 +161,19 @@ final class StockBatchService
                     'stock_batch_id' => $batch->id,
                     'warehouse_id' => $warehouseId,
                     'product_id' => $productId,
-                    'quantity' => round($take, 3),
+                    'quantity' => $this->bcRound($take, 3),
                     'unit_cost' => $unitCost,
                     'total_cost' => $totalCost,
                 ]);
 
-                $remaining = round($remaining - $take, 3);
+                $remaining = $this->bcSub($remaining, $take);
             }
 
-            if ($remaining > 0.0001) {
+            if (! $this->bcAlmostZero($remaining)) {
                 if (! $allowOverdraft) {
                     throw new InsufficientStockException('batch_coverage_gap');
                 }
 
-                // Overdraft fallback (offline / fiscal priority).
                 $lastCost = (float) (StockBatch::query()->withoutGlobalScopes()
                     ->where('tenant_id', $tenantId)
                     ->where('warehouse_id', $warehouseId)
@@ -185,7 +185,7 @@ final class StockBatchService
                     ->orderByDesc('id')
                     ->value('cost_price') ?? ($batches->last()?->cost_price ?? 0));
 
-                $shortfall = round($remaining, 3);
+                $shortfall = $this->bcRound($remaining, 3);
                 $hasOverdraft = true;
 
                 $overdraftBatch = StockBatch::query()->withoutGlobalScopes()->forceCreate([
@@ -193,18 +193,18 @@ final class StockBatchService
                     'warehouse_id' => $warehouseId,
                     'product_id' => $productId,
                     'batch_number' => 'OVERDRAFT-'.\Illuminate\Support\Str::uuid()->toString(),
-                    'qty' => -$shortfall,
-                    'remaining_qty' => -$shortfall,
-                    'cost_price' => round($lastCost, 2),
+                    'qty' => $this->bcSub('0', $shortfall),
+                    'remaining_qty' => $this->bcSub('0', $shortfall),
+                    'cost_price' => $this->bcRound($lastCost, 2),
                     'is_overdraft' => true,
                     'received_at' => now(),
                 ]);
 
-                $unitCost = round($lastCost, 2);
-                $totalCost = round($shortfall * $unitCost, 2);
+                $unitCost = $this->bcRound($lastCost, 2);
+                $totalCost = $this->bcRound($this->bcMul($shortfall, $unitCost), 2);
                 $writtenOff = $this->bcAdd($writtenOff, $shortfall);
                 $cost = $this->bcAdd($cost, $totalCost);
-                $batchTrace[(int) $overdraftBatch->id] = -$shortfall;
+                $batchTrace[(int) $overdraftBatch->id] = $this->bcSub('0', $shortfall);
 
                 \Autometria\Models\StockLotDeduction::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
@@ -234,13 +234,12 @@ final class StockBatchService
                     ]);
                 }
 
-                $remaining = 0.0;
+                $remaining = '0';
             }
 
-            // Уменьшаем суммарный остаток склада (может уйти в минус при overdraft).
-            $stock->actual = (float) $stock->actual - $writtenOff;
-            $stock->available = (float) $stock->actual - (float) $stock->reserved;
-            $stock->quantity = (float) $stock->quantity - $writtenOff;
+            $stock->actual = $this->bcSub($stock->actual, $writtenOff);
+            $stock->available = $this->bcSub($stock->actual, $stock->reserved);
+            $stock->quantity = $this->bcSub($stock->quantity, $writtenOff);
             $stock->save();
 
             AuditLog::write(
@@ -262,12 +261,12 @@ final class StockBatchService
             );
 
             return [
-                'written_off' => round($writtenOff, 3),
-                'cost' => round($cost, 2),
+                'written_off' => $this->bcToFloat($this->bcRound($writtenOff, 3)),
+                'cost' => $this->bcToFloat($this->bcRound($cost, 2)),
                 'batches' => $batchTrace,
                 'overdraft' => $hasOverdraft,
                 'has_overdraft' => $hasOverdraft,
-                'shortfall' => round($shortfall, 3),
+                'shortfall' => $this->bcToFloat($this->bcRound($shortfall, 3)),
             ];
         });
     }
@@ -281,10 +280,10 @@ final class StockBatchService
         int $tenantId,
         int $orderId,
         int $orderItemId,
-        float $qty,
+        float|int|string $qty,
         ?int $createdBy = null,
     ): array {
-        if ($qty <= 0) {
+        if ($this->bcComp($qty, '0') <= 0) {
             throw new InvalidArgumentException('Reverse qty must be positive');
         }
 
@@ -293,7 +292,7 @@ final class StockBatchService
                 ->where('tenant_id', $tenantId)
                 ->where('order_id', $orderId)
                 ->where('order_item_id', $orderItemId)
-                ->orderByDesc('id') // LIFO restore: last deducted first
+                ->orderByDesc('id')
                 ->lockForUpdate()
                 ->get();
 
@@ -301,9 +300,9 @@ final class StockBatchService
                 throw new InsufficientStockException('no_lot_deductions_for_refund');
             }
 
-            $remaining = round($qty, 3);
-            $restored = 0.0;
-            $cost = 0.0;
+            $remaining = $this->bcRound($qty, 3);
+            $restored = '0';
+            $cost = '0';
             $batchTrace = [];
             $warehouseId = (int) $deductions->first()->warehouse_id;
             $productId = (int) $deductions->first()->product_id;
@@ -311,17 +310,17 @@ final class StockBatchService
             $stock = $this->lockStock($tenantId, $warehouseId, $productId);
 
             foreach ($deductions as $deduction) {
-                if ($remaining <= 0.0001) {
+                if ($this->bcAlmostZero($remaining)) {
                     break;
                 }
 
-                $already = (float) ($deduction->refunded_qty ?? 0);
-                $availableToRestore = round((float) $deduction->quantity - $already, 3);
-                if ($availableToRestore <= 0.0001) {
+                $already = $deduction->refunded_qty ?? 0;
+                $availableToRestore = $this->bcSub($deduction->quantity, $already);
+                if ($this->bcAlmostZero($availableToRestore) || $this->bcComp($availableToRestore, '0') <= 0) {
                     continue;
                 }
 
-                $take = min($availableToRestore, $remaining);
+                $take = $this->bcMin($availableToRestore, $remaining);
                 $batch = StockBatch::query()->withoutGlobalScopes()
                     ->whereKey($deduction->stock_batch_id)
                     ->lockForUpdate()
@@ -332,30 +331,29 @@ final class StockBatchService
                 }
 
                 if ((bool) $batch->is_overdraft) {
-                    // Overdraft batch: move remaining_qty toward zero (less negative).
-                    $batch->remaining_qty = round((float) $batch->remaining_qty + $take, 3);
-                    $batch->qty = round((float) $batch->qty + $take, 3);
+                    $batch->remaining_qty = $this->bcAdd($batch->remaining_qty, $take);
+                    $batch->qty = $this->bcAdd($batch->qty, $take);
                 } else {
-                    $batch->remaining_qty = round((float) $batch->remaining_qty + $take, 3);
+                    $batch->remaining_qty = $this->bcAdd($batch->remaining_qty, $take);
                 }
                 $batch->save();
 
-                $deduction->refunded_qty = round($already + $take, 3);
+                $deduction->refunded_qty = $this->bcAdd($already, $take);
                 $deduction->save();
 
-                $unitCost = round((float) $deduction->unit_cost, 2);
-                $restored += $take;
-                $cost = $this->bcAdd($cost, round($take * $unitCost, 2));
-                $batchTrace[(int) $batch->id] = round(($batchTrace[(int) $batch->id] ?? 0) + $take, 3);
-                $remaining = round($remaining - $take, 3);
+                $unitCost = $this->bcRound($deduction->unit_cost, 2);
+                $restored = $this->bcAdd($restored, $take);
+                $cost = $this->bcAdd($cost, $this->bcRound($this->bcMul($take, $unitCost), 2));
+                $batchTrace[(int) $batch->id] = $this->bcAdd($batchTrace[(int) $batch->id] ?? 0, $take);
+                $remaining = $this->bcSub($remaining, $take);
             }
 
-            if ($remaining > 0.0001) {
+            if (! $this->bcAlmostZero($remaining)) {
                 throw new InsufficientStockException('refund_qty_exceeds_deductions');
             }
 
-            $stock->actual = (float) $stock->actual + $restored;
-            $stock->available = (float) $stock->actual - (float) $stock->reserved;
+            $stock->actual = $this->bcAdd($stock->actual, $restored);
+            $stock->available = $this->bcSub($stock->actual, $stock->reserved);
             $stock->save();
 
             AuditLog::write(
@@ -375,8 +373,8 @@ final class StockBatchService
             );
 
             return [
-                'restored' => round($restored, 3),
-                'cost' => round($cost, 2),
+                'restored' => $this->bcToFloat($this->bcRound($restored, 3)),
+                'cost' => $this->bcToFloat($this->bcRound($cost, 2)),
                 'batches' => $batchTrace,
             ];
         });
@@ -390,13 +388,15 @@ final class StockBatchService
         int $tenantId,
         int $warehouseId,
         int $productId,
-        float $newQty,
+        float|int|string $newQty,
         ?string $reason = null,
         ?int $createdBy = null,
     ): StockBatch {
-        if ($newQty < 0) {
+        if ($this->bcComp($newQty, '0') < 0) {
             throw new InvalidArgumentException('Adjusted qty cannot be negative');
         }
+
+        $newQty = $this->bcRound($newQty, 3);
 
         return DB::transaction(function () use ($tenantId, $warehouseId, $productId, $newQty, $reason, $createdBy): StockBatch {
             $stock = $this->lockStock($tenantId, $warehouseId, $productId);
@@ -412,25 +412,24 @@ final class StockBatchService
                 ->first();
 
             if ($batch === null) {
-                // Создаём корректировочную партию.adjustment (без закупочной цены = 0).
                 $batch = StockBatch::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
                     'warehouse_id' => $warehouseId,
                     'product_id' => $productId,
                     'batch_number' => 'ADJ-' . now()->format('YmdHis'),
-                    'qty' => round($newQty, 3),
-                    'remaining_qty' => round($newQty, 3),
+                    'qty' => $newQty,
+                    'remaining_qty' => $newQty,
                     'cost_price' => 0,
                     'received_at' => now(),
                 ]);
             } else {
-                $batch->remaining_qty = round($newQty, 3);
-                $batch->qty = round($newQty, 3);
+                $batch->remaining_qty = $newQty;
+                $batch->qty = $newQty;
                 $batch->save();
             }
 
-            $stock->actual = round($newQty, 3);
-            $stock->available = (float) $stock->actual - (float) $stock->reserved;
+            $stock->actual = $newQty;
+            $stock->available = $this->bcSub($stock->actual, $stock->reserved);
             $stock->save();
 
             AuditLog::write(
@@ -459,14 +458,14 @@ final class StockBatchService
         int $fromWarehouseId,
         int $toWarehouseId,
         int $productId,
-        float $qty,
+        float|int|string $qty,
         ?int $createdBy = null,
         ?string $docRef = null,
     ): array {
         if ($fromWarehouseId === $toWarehouseId) {
             throw new InvalidArgumentException('Source and destination warehouses must differ');
         }
-        if ($qty <= 0) {
+        if ($this->bcComp($qty, '0') <= 0) {
             throw new InvalidArgumentException('Transfer qty must be positive');
         }
 
@@ -474,7 +473,7 @@ final class StockBatchService
             $tenantId, $fromWarehouseId, $toWarehouseId, $productId, $qty, $createdBy, $docRef
         ): array {
             $fromStock = $this->lockStock($tenantId, $fromWarehouseId, $productId);
-            if ((float) $fromStock->available + 0.0001 < $qty) {
+            if ($this->bcComp($this->bcAdd($fromStock->available, '0.0001'), $qty) < 0) {
                 throw new InsufficientStockException('available_less_than_qty');
             }
 
@@ -493,28 +492,29 @@ final class StockBatchService
                 ->lockForUpdate()
                 ->get();
 
-            $remaining = round($qty, 3);
-            $moved = 0.0;
+            $remaining = $this->bcRound($qty, 3);
+            $moved = '0';
             $trace = [];
             $ref = $docRef ?: ('TR-'.now()->format('YmdHis'));
 
             foreach ($batches as $batch) {
-                if ($remaining <= 0.0001) {
+                if ($this->bcAlmostZero($remaining)) {
                     break;
                 }
-                $available = (float) $batch->remaining_qty;
-                $take = min($available, $remaining);
-                $batch->remaining_qty = round($available - $take, 3);
+                $available = $this->bcRound($batch->remaining_qty, 3);
+                $take = $this->bcMin($available, $remaining);
+                $batch->remaining_qty = $this->bcSub($available, $take);
                 $batch->save();
 
+                $costPrice = $this->bcRound($batch->cost_price, 2);
                 $toBatch = StockBatch::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
                     'warehouse_id' => $toWarehouseId,
                     'product_id' => $productId,
                     'batch_number' => $ref.'-'.$batch->id,
-                    'qty' => round($take, 3),
-                    'remaining_qty' => round($take, 3),
-                    'cost_price' => round((float) $batch->cost_price, 2),
+                    'qty' => $this->bcRound($take, 3),
+                    'remaining_qty' => $this->bcRound($take, 3),
+                    'cost_price' => $costPrice,
                     'received_at' => $batch->received_at ?? now(),
                     'is_overdraft' => false,
                 ]);
@@ -522,25 +522,25 @@ final class StockBatchService
                 $trace[] = [
                     'from_batch_id' => (int) $batch->id,
                     'to_batch_id' => (int) $toBatch->id,
-                    'qty' => round($take, 3),
-                    'cost_price' => round((float) $batch->cost_price, 2),
+                    'qty' => $this->bcRound($take, 3),
+                    'cost_price' => $costPrice,
                 ];
 
-                $moved += $take;
-                $remaining = round($remaining - $take, 3);
+                $moved = $this->bcAdd($moved, $take);
+                $remaining = $this->bcSub($remaining, $take);
             }
 
-            if ($remaining > 0.0001) {
+            if (! $this->bcAlmostZero($remaining)) {
                 throw new InsufficientStockException('batch_coverage_gap');
             }
 
-            $fromStock->actual = round((float) $fromStock->actual - $moved, 3);
-            $fromStock->available = round((float) $fromStock->actual - (float) $fromStock->reserved, 3);
+            $fromStock->actual = $this->bcSub($fromStock->actual, $moved);
+            $fromStock->available = $this->bcSub($fromStock->actual, $fromStock->reserved);
             $fromStock->save();
 
             $toStock = $this->lockStock($tenantId, $toWarehouseId, $productId);
-            $toStock->actual = round((float) $toStock->actual + $moved, 3);
-            $toStock->available = round((float) $toStock->actual - (float) $toStock->reserved, 3);
+            $toStock->actual = $this->bcAdd($toStock->actual, $moved);
+            $toStock->available = $this->bcSub($toStock->actual, $toStock->reserved);
             $toStock->save();
 
             AuditLog::write(
@@ -559,7 +559,7 @@ final class StockBatchService
                 ],
             );
 
-            return ['moved' => $moved, 'batches' => $trace];
+            return ['moved' => $this->bcToFloat($this->bcRound($moved, 3)), 'batches' => $trace];
         });
     }
 
@@ -579,8 +579,8 @@ final class StockBatchService
             })
             ->sum('remaining_qty');
 
-        $gap = round((float) $stock->actual - $batchSum, 3);
-        if ($gap <= 0.0001) {
+        $gap = $this->bcSub($stock->actual, $batchSum);
+        if ($this->bcAlmostZero($gap) || $this->bcComp($gap, '0') <= 0) {
             return;
         }
 

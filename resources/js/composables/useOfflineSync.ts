@@ -106,6 +106,8 @@ export async function syncPendingReceipts(): Promise<{ synced: number; failed: n
             })),
             method: mapMethod(receipt),
             payment_parts: receipt.payment_parts,
+            customer_id: receipt.customer_id || undefined,
+            bonus_spend: receipt.bonus_spend || undefined,
             created_at: receipt.created_at,
           },
           {

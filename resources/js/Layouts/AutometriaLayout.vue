@@ -178,7 +178,7 @@ function onQuickSearchKeydown(e) {
 <template>
   <div
     class="flex min-h-screen overflow-hidden"
-    style="background: var(--autometria-bg, #0B0D10); color: var(--color-text-primary); font-family: var(--font-ui)"
+    style="background: var(--autometria-bg, #090d16); color: var(--color-text-primary); font-family: var(--font-ui)"
   >
     <div
       v-if="mobileNav"
@@ -206,7 +206,7 @@ function onQuickSearchKeydown(e) {
         class="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b px-4 lg:px-6"
         style="
           border-color: var(--color-border);
-          background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+          background: color-mix(in srgb, var(--ds-header-bg, var(--brand-navy, #0d1b3d)) 92%, transparent);
           backdrop-filter: blur(10px);
         "
       >
@@ -288,7 +288,7 @@ function onQuickSearchKeydown(e) {
         </div>
       </header>
 
-      <main class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 lg:p-6" style="background: var(--autometria-bg, #0b0d10)">
+      <main class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 lg:p-6" style="background: var(--brand-desk, var(--autometria-bg, #090d16))">
         <slot />
       </main>
     </div>

@@ -23,7 +23,8 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      # Host 6380 — avoid clash with other local Redis on 6379; in-network still redis:6379
+      - "6380:6379"
     volumes:
       - redisdata:/data
     healthcheck:

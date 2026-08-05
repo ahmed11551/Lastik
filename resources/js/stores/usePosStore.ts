@@ -269,6 +269,64 @@ export const usePosStore = defineStore('pos', {
       this.bonusError = ''
     },
 
+    /**
+     * Restore POS cart from IndexedDB draft (Sprint A offline draft).
+     * No-op when cart already has lines or draft is empty.
+     */
+    async restoreCartDraft(cashierId = 0, shiftId = 0): Promise<boolean> {
+      if (this.cart.length > 0) return false
+
+      const offline = useOfflineStore()
+      const draft = await offline.loadCartDraft(cashierId, shiftId)
+      if (!draft?.items?.length) return false
+
+      const user = getStoredUser() as { tenant_id?: number } | null
+      const currentTenant = Number(user?.tenant_id || 0)
+      if (currentTenant > 0 && Number(draft.tenant_id || 0) !== currentTenant) {
+        await offline.clearCartDraft(cashierId, shiftId)
+        this.lastOp = { status: 'warning', label: 'Черновик другого тенанта отклонён' }
+        return false
+      }
+
+      this.cart = draft.items.map((r, idx) => {
+        const qty = Number(r.qty || 0)
+        const price = Number(r.price || 0)
+        const discount = Number(r.discount || 0)
+        const markKey = r.marking_code || r.markingCode
+          ? `-m-${String(r.marking_code || r.markingCode).slice(0, 32)}`
+          : ''
+        return {
+          key: `p-${r.product_id}${markKey}-d${idx}`,
+          product_id: Number(r.product_id),
+          warehouse_id: r.warehouse_id ?? null,
+          sku: String(r.sku || ''),
+          title: String(r.title || ''),
+          qty,
+          price,
+          discount,
+          vat_rate: String(r.vat_rate || 'none'),
+          line: lineSum(price, qty, discount),
+          is_marked: Boolean(r.is_marked || r.marking_code || r.markingCode),
+          marking_code: r.marking_code || r.markingCode || null,
+        } satisfies PosCartLine
+      })
+
+      if (draft.customer_id != null) {
+        this.selectedCustomer = {
+          id: Number(draft.customer_id),
+          name: `Клиент #${draft.customer_id}`,
+          phone: '',
+          discount_card_number: null,
+          bonus_balance: 0,
+          tier: null,
+        }
+        this.bonusSpend = Number(draft.bonus_spend || 0)
+      }
+
+      this.lastOp = { status: 'warning', label: 'Корзина восстановлена из offline-черновика' }
+      return true
+    },
+
     /** Block 4.3 — select existing customer from search result. */
     selectCustomer(c: {
       id: number
@@ -465,6 +523,11 @@ export const usePosStore = defineStore('pos', {
           payment_type: payload.payment_type,
         }
         this.clearCart()
+        try {
+          await offline.clearCartDraft(cashierId, payload.shift_id)
+        } catch {
+          /* draft clear is best-effort */
+        }
         return snapshot
       } finally {
         this.checkingOut = false

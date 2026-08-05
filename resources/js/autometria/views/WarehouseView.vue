@@ -280,11 +280,11 @@ onUnmounted(() => {
 <template>
   <div
     class="min-w-0 max-w-full space-y-3 overflow-x-hidden p-3 sm:space-y-4 sm:p-4 lg:p-6"
-    style="background: var(--autometria-bg, #0b0d10); min-height: 100%"
+    style="background: var(--brand-desk, var(--autometria-bg, #090d16)); min-height: 100%"
   >
     <div
       class="flex flex-col gap-3 border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
-      style="background: #11151a; border-color: #1f2937; border-radius: 4px"
+      style="background: #0f172a; border-color: #1e293b; border-radius: 4px"
     >
       <div class="min-w-0">
         <div class="mb-1 font-mono text-[10px] font-medium uppercase tracking-[0.14em]" style="color: #f59e0b">
@@ -299,22 +299,22 @@ onUnmounted(() => {
       <div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
         <DsLoadingBadge v-if="loading || bulkPending || opPending" label="Fetching" />
         <DsBadge v-if="degraded" status="warning" label="Degraded" variant="warning" dot />
-        <span class="border px-2 py-1.5" style="border-color: #1f2937; border-radius: 4px; color: #9ca3af">SKU {{ stats.skus }}</span>
-        <span class="border px-2 py-1.5" style="border-color: #1f2937; border-radius: 4px; color: #f59e0b">Низкий {{ stats.low }}</span>
-        <span class="border px-2 py-1.5" style="border-color: #1f2937; border-radius: 4px; color: #ef4444">Дефицит {{ stats.critical }}</span>
+        <span class="border px-2 py-1.5" style="border-color: #1e293b; border-radius: 4px; color: #a8b3c7">SKU {{ stats.skus }}</span>
+        <span class="border px-2 py-1.5" style="border-color: #1e293b; border-radius: 4px; color: #f59e0b">Низкий {{ stats.low }}</span>
+        <span class="border px-2 py-1.5" style="border-color: #1e293b; border-radius: 4px; color: #ef4444">Дефицит {{ stats.critical }}</span>
       </div>
     </div>
 
     <div
       class="sticky top-0 z-10 flex flex-col gap-2 border p-3 sm:flex-row sm:flex-wrap sm:items-center"
-      style="background: #11151a; border-color: #1f2937; border-radius: 4px"
+      style="background: #0f172a; border-color: #1e293b; border-radius: 4px"
     >
       <div class="relative w-full min-w-0 flex-1">
         <input
           ref="searchRef"
           v-model="query"
           class="ds-input h-12 w-full pr-20 font-mono text-base sm:h-10 sm:text-xs"
-          style="border-radius: 4px; background: #161b22; border-color: #1f2937"
+          style="border-radius: 4px; background: #090d16; border-color: #1e293b"
           type="search"
           inputmode="search"
           enterkeyhint="search"
@@ -324,7 +324,7 @@ onUnmounted(() => {
         <button
           type="button"
           class="absolute right-1.5 top-1/2 h-9 -translate-y-1/2 border px-2.5 font-mono text-[11px] sm:h-8"
-          style="border-color: #f59e0b; color: #f59e0b; border-radius: 4px; background: #11151a"
+          style="border-color: #f59e0b; color: #f59e0b; border-radius: 4px; background: #0f172a"
           title="Фокус на ввод артикула"
           @click="focusScan"
         >
@@ -335,7 +335,7 @@ onUnmounted(() => {
       <select
         v-model="category"
         class="ds-select h-11 w-full text-sm sm:h-9 sm:w-auto sm:text-xs"
-        style="border-radius: 4px; background: #161b22; border-color: #1f2937"
+        style="border-radius: 4px; background: #090d16; border-color: #1e293b"
       >
         <option v-for="c in categoryOptions" :key="c" :value="c">
           {{ c === 'all' ? 'Все категории' : c }}
@@ -345,7 +345,7 @@ onUnmounted(() => {
       <select
         v-model="warehouse"
         class="ds-select h-11 w-full text-sm sm:h-9 sm:w-auto sm:text-xs"
-        style="border-radius: 4px; background: #161b22; border-color: #1f2937"
+        style="border-radius: 4px; background: #090d16; border-color: #1e293b"
       >
         <option v-for="w in warehouseOptions" :key="w" :value="w">
           {{ w === 'all' ? 'Все склады' : w }}
@@ -356,7 +356,7 @@ onUnmounted(() => {
         <button
           type="button"
           class="h-11 flex-1 border px-3 font-mono text-[11px] sm:h-9 sm:flex-none"
-          style="border-color: #f59e0b; color: #f59e0b; border-radius: 4px; background: #0b0d10"
+          style="border-color: #f59e0b; color: #f59e0b; border-radius: 4px; background: #090d16"
           :disabled="!selectedKeys.length || opPending"
           @click="openInventoryFromSelection"
         >
@@ -365,7 +365,7 @@ onUnmounted(() => {
         <button
           type="button"
           class="h-11 flex-1 border px-3 font-mono text-[11px] sm:h-9 sm:flex-none"
-          style="border-color: #10B981; color: #10B981; border-radius: 4px; background: #0b0d10"
+          style="border-color: #10B981; color: #10B981; border-radius: 4px; background: #090d16"
           :disabled="!selectedKeys.length || opPending"
           @click="openTransfer"
         >
@@ -378,7 +378,7 @@ onUnmounted(() => {
     <div
       v-if="selectedKeys.length"
       class="flex flex-col gap-2 border px-3 py-2 sm:hidden"
-      style="background: color-mix(in srgb, #1e1b4b 72%, #11151a); border-color: #1f2937; border-radius: 4px"
+      style="background: color-mix(in srgb, #1a3c8c 28%, #0f172a); border-color: #1e293b; border-radius: 4px"
     >
       <span class="font-mono text-[12px]" style="color: #9ca3af">{{ selectedKeys.length }} выбрано</span>
       <div class="flex gap-2">
@@ -391,7 +391,7 @@ onUnmounted(() => {
     <div
       v-if="loading && !rows.length"
       class="space-y-2 border p-3"
-      style="background: #11151a; border-color: #1f2937; border-radius: 4px"
+      style="background: #0f172a; border-color: #1e293b; border-radius: 4px"
     >
       <div v-for="n in 6" :key="n" class="h-16 animate-pulse sm:h-8" style="background: #161b22; border-radius: 4px" />
     </div>
@@ -437,7 +437,7 @@ onUnmounted(() => {
               <button
                 type="button"
                 class="mt-1 h-9 border px-2 font-mono text-[11px]"
-                style="border-color: #1f2937; color: #f59e0b; border-radius: 4px"
+                style="border-color: #1e293b; color: #f59e0b; border-radius: 4px"
                 @click.stop="openInventory(row)"
               >
                 Переучёт
@@ -474,7 +474,7 @@ onUnmounted(() => {
               <select
                 v-model="bulkCategory"
                 class="ds-select py-1 text-xs"
-                style="border-radius: 4px; background: #161b22; border-color: #1f2937; min-width: 110px"
+                style="border-radius: 4px; background: #090d16; border-color: #1e293b; min-width: 110px"
                 :disabled="bulkPending"
               >
                 <option v-for="c in bulkCategoryOptions" :key="c" :value="c">{{ c }}</option>
@@ -490,7 +490,7 @@ onUnmounted(() => {
                 type="number"
                 step="1"
                 class="ds-input w-16 py-1 text-center font-mono text-xs"
-                style="border-radius: 4px; background: #161b22; border-color: #1f2937"
+                style="border-radius: 4px; background: #090d16; border-color: #1e293b"
                 :disabled="bulkPending"
               >
               <button type="button" class="ds-btn ds-btn-ghost ds-btn-sm" :disabled="bulkPending" @click="applyAdjustment(Math.abs(Number(bulkAdjustment) || 1))">+</button>

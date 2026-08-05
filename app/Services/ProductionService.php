@@ -48,39 +48,43 @@ final class ProductionService
     public function calculateRecipeCost(Recipe $recipe, ?int $warehouseId = null): array
     {
         $tenantId = (int) $recipe->tenant_id;
-        $yield = max(0.001, (float) $recipe->yield_quantity);
+        $yield = $this->bcMax($recipe->yield_quantity, '0.001');
         $recipe->loadMissing(['items.ingredient']);
 
         $lines = [];
-        $total = 0.0;
+        $total = '0';
 
         foreach ($recipe->items as $item) {
-            $gross = (float) $item->quantity;
-            $waste = (float) $item->waste_percentage;
-            $net = (float) $item->net_quantity;
-            if ($net <= 0 && $gross > 0) {
-                $net = round($gross * (1 - max(0, min(99.999, $waste)) / 100), 3);
+            $gross = $this->bcRound($item->quantity, 3);
+            $waste = $this->bcRound($item->waste_percentage, 3);
+            $net = $this->bcRound($item->net_quantity, 3);
+            if ($this->bcComp($net, '0') <= 0 && $this->bcComp($gross, '0') > 0) {
+                $clamped = $this->bcMin($this->bcMax($waste, '0'), '99.999');
+                $factor = $this->bcSub('1', $this->bcDiv($clamped, '100'));
+                $net = $this->bcRound($this->bcMul($gross, $factor), 3);
             }
 
             $lineCost = $this->estimateFifoCost($tenantId, $warehouseId, (int) $item->ingredient_id, $gross);
-            $unit = $gross > 0 ? (float) $this->bcRound($this->bcDiv($lineCost, $gross), 4) : 0.0;
+            $unit = $this->bcComp($gross, '0') > 0
+                ? $this->bcRound($this->bcDiv($lineCost, $gross, 4), 4)
+                : '0';
             $total = $this->bcAdd($total, $lineCost);
 
             $lines[] = [
                 'ingredient_id' => (int) $item->ingredient_id,
                 'name' => $item->ingredient?->name,
-                'gross_qty' => round($gross, 3),
-                'waste_percentage' => round($waste, 3),
-                'net_qty' => round($net, 3),
-                'unit_cost' => round($unit, 4),
-                'line_cost' => round($lineCost, 2),
+                'gross_qty' => $this->bcToFloat($this->bcRound($gross, 3)),
+                'waste_percentage' => $this->bcToFloat($this->bcRound($waste, 3)),
+                'net_qty' => $this->bcToFloat($this->bcRound($net, 3)),
+                'unit_cost' => $this->bcToFloat($this->bcRound($unit, 4)),
+                'line_cost' => $this->bcToFloat($this->bcRound($lineCost, 2)),
             ];
         }
 
         return [
-            'total_cost' => round($total, 2),
-            'unit_cost' => round($total / $yield, 4),
-            'yield_quantity' => round($yield, 3),
+            'total_cost' => $this->bcToFloat($this->bcRound($total, 2)),
+            'unit_cost' => $this->bcToFloat($this->bcRound($this->bcDiv($total, $yield, 4), 4)),
+            'yield_quantity' => $this->bcToFloat($this->bcRound($yield, 3)),
             'lines' => $lines,
         ];
     }
@@ -112,24 +116,22 @@ final class ProductionService
             return null;
         }
 
-        $saleQty = (float) $item->qty;
-        $yield = max(0.001, (float) $recipe->yield_quantity);
-        $scale = $saleQty / $yield;
+        $saleQty = $this->bcRound($item->qty, 3);
+        $yield = $this->bcMax($recipe->yield_quantity, '0.001');
+        $scale = $this->bcDiv($saleQty, $yield, 6);
 
         return DB::transaction(function () use (
             $recipe, $item, $tenantId, $warehouseId, $scale, $saleQty, $allowOverdraft, $createdBy
         ): array {
-            $totalCost = 0.0;
-            $totalWritten = 0.0;
+            $totalCost = '0';
+            $totalWritten = '0';
             $hasOverdraft = false;
             $trace = [];
 
             foreach ($recipe->items as $ri) {
-                // Списываем net_quantity (чистый расход с учётом потерь waste),
-                // брутто quantity — fallback, если net_quantity не задан.
-                $base = (float) ($ri->net_quantity ?? $ri->quantity);
-                $need = round($base * $scale, 3);
-                if ($need <= 0) {
+                $base = $ri->net_quantity ?? $ri->quantity;
+                $need = $this->bcRound($this->bcMul($base, $scale, 6), 3);
+                if ($this->bcComp($need, '0') <= 0) {
                     continue;
                 }
                 $result = $this->batches->writeOff(
@@ -142,17 +144,16 @@ final class ProductionService
                     (int) $item->id,
                     $allowOverdraft,
                 );
-                $totalCost = $this->bcAdd($totalCost, (float) $result['cost']);
-                $totalWritten = $this->bcAdd($totalWritten, (float) $result['written_off']);
+                $totalCost = $this->bcAdd($totalCost, $result['cost']);
+                $totalWritten = $this->bcAdd($totalWritten, $result['written_off']);
                 $hasOverdraft = $hasOverdraft || (($result['has_overdraft'] ?? false) === true);
                 $trace[] = [
                     'ingredient_id' => (int) $ri->ingredient_id,
-                    'qty' => $need,
+                    'qty' => $this->bcToFloat($need),
                     'cost' => (float) $result['cost'],
                 ];
             }
 
-            // Modifier ingredient write-offs from snapshot.modifiers / modifier_option_ids
             foreach ($this->modifierWriteOffsFromSnapshot($item, $saleQty) as $mod) {
                 $result = $this->batches->writeOff(
                     $tenantId,
@@ -164,12 +165,12 @@ final class ProductionService
                     (int) $item->id,
                     $allowOverdraft,
                 );
-                $totalCost = $this->bcAdd($totalCost, (float) $result['cost']);
-                $totalWritten = $this->bcAdd($totalWritten, (float) $result['written_off']);
+                $totalCost = $this->bcAdd($totalCost, $result['cost']);
+                $totalWritten = $this->bcAdd($totalWritten, $result['written_off']);
                 $hasOverdraft = $hasOverdraft || (($result['has_overdraft'] ?? false) === true);
                 $trace[] = [
                     'ingredient_id' => $mod['ingredient_id'],
-                    'qty' => $mod['qty'],
+                    'qty' => $this->bcToFloat($mod['qty']),
                     'cost' => (float) $result['cost'],
                     'modifier' => true,
                 ];
@@ -182,13 +183,13 @@ final class ProductionService
                 OrderItem::class,
                 (int) $item->id,
                 [],
-                ['recipe_id' => $recipe->id, 'sale_qty' => $saleQty, 'cost' => round($totalCost, 2)],
+                ['recipe_id' => $recipe->id, 'sale_qty' => $this->bcToFloat($saleQty), 'cost' => $this->bcToFloat($this->bcRound($totalCost, 2))],
             );
 
             return [
                 'composite' => true,
-                'written_off' => round($totalWritten, 3),
-                'cost' => round($totalCost, 2),
+                'written_off' => $this->bcToFloat($this->bcRound($totalWritten, 3)),
+                'cost' => $this->bcToFloat($this->bcRound($totalCost, 2)),
                 'ingredients' => $trace,
                 'has_overdraft' => $hasOverdraft,
             ];
@@ -200,9 +201,9 @@ final class ProductionService
      *
      * @return array{batch_id: int, qty: float, unit_cost: float, total_cost: float, ingredients: list<array>}
      */
-    public function produceBatch(int $recipeId, float $qty, int $warehouseId, ?int $createdBy = null): array
+    public function produceBatch(int $recipeId, float|int|string $qty, int $warehouseId, ?int $createdBy = null): array
     {
-        if ($qty <= 0) {
+        if ($this->bcComp($qty, '0') <= 0) {
             throw new InvalidArgumentException('Production qty must be positive');
         }
 
@@ -215,17 +216,18 @@ final class ProductionService
             ->with('items')
             ->firstOrFail();
 
+        $qty = $this->bcRound($qty, 3);
         $leaves = $this->nestedBom->expandToLeaves($tenantId, $recipeId, $qty);
 
         return DB::transaction(function () use (
             $recipe, $tenantId, $warehouseId, $qty, $leaves, $createdBy
         ): array {
-            $totalCost = 0.0;
+            $totalCost = '0';
             $trace = [];
 
             foreach ($leaves as $leaf) {
-                $need = round((float) $leaf['qty'], 3);
-                if ($need <= 0) {
+                $need = $this->bcRound($leaf['qty'], 3);
+                if ($this->bcComp($need, '0') <= 0) {
                     continue;
                 }
                 $result = $this->batches->writeOff(
@@ -235,22 +237,22 @@ final class ProductionService
                     $need,
                     $createdBy,
                 );
-                $totalCost = $this->bcAdd($totalCost, (float) $result['cost']);
+                $totalCost = $this->bcAdd($totalCost, $result['cost']);
                 $trace[] = [
                     'ingredient_id' => (int) $leaf['product_id'],
-                    'qty' => $need,
+                    'qty' => $this->bcToFloat($need),
                     'cost' => (float) $result['cost'],
                     'leaf' => true,
                 ];
             }
 
-            $unitCost = (float) $this->bcRound($this->bcDiv($totalCost, $qty), 4);
+            $unitCost = $this->bcRound($this->bcDiv($totalCost, $qty, 4), 4);
             $batch = $this->batches->ingress(
                 $tenantId,
                 $warehouseId,
                 (int) $recipe->product_id,
-                $qty,
-                round($unitCost, 2),
+                $this->bcToFloat($qty),
+                $this->bcToFloat($this->bcRound($unitCost, 2)),
                 'PROD-'.$recipe->id.'-'.now()->format('YmdHis'),
                 $createdBy,
             );
@@ -262,9 +264,9 @@ final class ProductionService
                 'recipe_id' => $recipe->id,
                 'product_id' => $recipe->product_id,
                 'warehouse_id' => $warehouseId,
-                'qty' => round($qty, 3),
-                'unit_cost' => $unitCost,
-                'total_cost' => round($totalCost, 2),
+                'qty' => $this->bcToFloat($qty),
+                'unit_cost' => $this->bcToFloat($unitCost),
+                'total_cost' => $this->bcToFloat($this->bcRound($totalCost, 2)),
                 'batch_id' => $batch->id,
                 'created_by' => $createdBy,
                 'status' => 'COMPLETED',
@@ -280,9 +282,9 @@ final class ProductionService
                 [],
                 [
                     'recipe_id' => $recipe->id,
-                    'qty' => $qty,
-                    'unit_cost' => $unitCost,
-                    'total_cost' => round($totalCost, 2),
+                    'qty' => $this->bcToFloat($qty),
+                    'unit_cost' => $this->bcToFloat($unitCost),
+                    'total_cost' => $this->bcToFloat($this->bcRound($totalCost, 2)),
                     'batch_id' => $batch->id,
                     'ingredients' => $trace,
                     'nested' => true,
@@ -292,9 +294,9 @@ final class ProductionService
             return [
                 'id' => (int) $order->id,
                 'batch_id' => (int) $batch->id,
-                'qty' => round($qty, 3),
-                'unit_cost' => $unitCost,
-                'total_cost' => round($totalCost, 2),
+                'qty' => $this->bcToFloat($qty),
+                'unit_cost' => $this->bcToFloat($unitCost),
+                'total_cost' => $this->bcToFloat($this->bcRound($totalCost, 2)),
                 'ingredients' => $trace,
             ];
         });
@@ -303,7 +305,7 @@ final class ProductionService
     /**
      * @return array<string, mixed>
      */
-    public function nestedPreview(int $tenantId, int $recipeId, float $qty): array
+    public function nestedPreview(int $tenantId, int $recipeId, float|int|string $qty): array
     {
         return $this->nestedBom->preview($tenantId, $recipeId, $qty);
     }
@@ -326,9 +328,9 @@ final class ProductionService
                 'product_name' => $o->product?->name,
                 'warehouse_id' => $o->warehouse_id,
                 'warehouse_name' => $o->warehouse?->name,
-                'qty' => round((float) $o->qty, 3),
-                'unit_cost' => round((float) $o->unit_cost, 4),
-                'total_cost' => round((float) $o->total_cost, 2),
+                'qty' => $this->bcToFloat($this->bcRound($o->qty, 3)),
+                'unit_cost' => $this->bcToFloat($this->bcRound($o->unit_cost, 4)),
+                'total_cost' => $this->bcToFloat($this->bcRound($o->total_cost, 2)),
                 'batch_id' => $o->batch_id,
                 'status' => $o->status,
                 'created_at' => optional($o->created_at)?->toIso8601String(),
@@ -388,15 +390,17 @@ final class ProductionService
             }
 
             foreach ($items as $row) {
-                $gross = (float) $row['quantity'];
-                $waste = (float) ($row['waste_percentage'] ?? 0);
+                $gross = $this->bcRound($row['quantity'], 3);
+                $waste = $this->bcRound($row['waste_percentage'] ?? 0, 3);
+                $clamped = $this->bcMin($this->bcMax($waste, '0'), '99.999');
+                $factor = $this->bcSub('1', $this->bcDiv($clamped, '100'));
                 RecipeItem::query()->withoutGlobalScopes()->forceCreate([
                     'tenant_id' => $tenantId,
                     'recipe_id' => $recipe->id,
                     'ingredient_id' => (int) $row['ingredient_id'],
                     'quantity' => $gross,
                     'waste_percentage' => $waste,
-                    'net_quantity' => round($gross * (1 - max(0, min(99.999, $waste)) / 100), 3),
+                    'net_quantity' => $this->bcRound($this->bcMul($gross, $factor), 3),
                 ]);
             }
 
@@ -428,9 +432,9 @@ final class ProductionService
     /**
      * FIFO cost estimate for qty (read-only walk). Falls back to prices.cost_price.
      */
-    private function estimateFifoCost(int $tenantId, ?int $warehouseId, int $productId, float $qty): float
+    private function estimateFifoCost(int $tenantId, ?int $warehouseId, int $productId, float|int|string $qty): float
     {
-        if ($qty <= 0) {
+        if ($this->bcComp($qty, '0') <= 0) {
             return 0.0;
         }
 
@@ -449,35 +453,35 @@ final class ProductionService
         }
 
         $batches = $query->get(['remaining_qty', 'cost_price']);
-        $need = $qty;
-        $cost = 0.0;
+        $need = $this->bcRound($qty, 3);
+        $cost = '0';
 
         foreach ($batches as $batch) {
-            if ($need <= 0) {
+            if ($this->bcComp($need, '0') <= 0) {
                 break;
             }
-            $take = min((float) $batch->remaining_qty, $need);
-            $cost += $take * (float) $batch->cost_price;
-            $need -= $take;
+            $take = $this->bcMin($batch->remaining_qty, $need);
+            $cost = $this->bcAdd($cost, $this->bcMul($take, $batch->cost_price));
+            $need = $this->bcSub($need, $take);
         }
 
-        if ($need > 0.0001) {
+        if (! $this->bcAlmostZero($need)) {
             $fallback = (float) (Price::query()->withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)
                 ->where('product_id', $productId)
                 ->where('type', 'retail')
                 ->orderByDesc('id')
                 ->value('cost_price') ?? 0);
-            $cost += $need * $fallback;
+            $cost = $this->bcAdd($cost, $this->bcMul($need, $fallback));
         }
 
-        return round($cost, 2);
+        return $this->bcToFloat($this->bcRound($cost, 2));
     }
 
     /**
      * @return list<array{ingredient_id: int, qty: float}>
      */
-    private function modifierWriteOffsFromSnapshot(OrderItem $item, float $saleQty): array
+    private function modifierWriteOffsFromSnapshot(OrderItem $item, float|int|string $saleQty): array
     {
         $snapshot = is_array($item->snapshot) ? $item->snapshot : [];
         $optionIds = $snapshot['modifier_option_ids'] ?? $snapshot['modifiers'] ?? [];
@@ -501,7 +505,7 @@ final class ProductionService
         foreach ($options as $opt) {
             $out[] = [
                 'ingredient_id' => (int) $opt->ingredient_id,
-                'qty' => round((float) $opt->ingredient_qty * $saleQty, 3),
+                'qty' => $this->bcToFloat($this->bcRound($this->bcMul($opt->ingredient_qty, $saleQty), 3)),
             ];
         }
 

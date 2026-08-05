@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { router } from '@inertiajs/vue3'
 import ApplicationLogo from '@/Components/ApplicationLogo.vue'
+import Breadcrumbs from '@/Components/Breadcrumbs.vue'
 import Dropdown from '@/Components/Dropdown.vue'
+import TenantSelector from '@/Components/UI/TenantSelector.vue'
 
 interface NavItem {
   label: string
@@ -21,7 +24,7 @@ const baseIconSetups: Record<string, string> = {
   settings: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     title?: string
     currentShiftOpen?: boolean
@@ -39,6 +42,7 @@ withDefaults(
 )
 
 const sidebarOpen = ref(false)
+const tenantPickerOpen = ref(false)
 
 const navigation: NavItem[] = [
   { label: 'Заказы', icon: baseIconSetups.orders, href: route('orders.index') },
@@ -59,16 +63,13 @@ const navigation: NavItem[] = [
   { label: 'Настройки', icon: baseIconSetups.settings, href: route('settings.index') },
 ]
 
-const selectedTenantId = computed({
-  get: () => props.currentTenant?.id ?? '',
-  set: (value: number | '') => {
-    if (!value) return
-    router.post(route('tenant.switch'), { tenant_id: value }, {
-      preserveScroll: true,
-      preserveState: false,
-    })
-  },
-})
+function switchTenant(tenant: { id: number }) {
+  router.post(route('tenant.switch'), { tenant_id: tenant.id }, {
+    preserveScroll: true,
+    preserveState: false,
+  })
+  tenantPickerOpen.value = false
+}
 
 const shiftDurationText = computed(() => {
   if (!props.currentShiftOpen || !props.shiftStartedAt) return '—'
@@ -82,7 +83,30 @@ const shiftDurationText = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-foreground transition-colors duration-200">
+  <div
+    v-if="tenantPickerOpen"
+    class="fixed inset-0 z-[60]"
+  >
+    <TenantSelector
+      :tenants="tenants"
+      :current-id="currentTenant?.id"
+      @select="switchTenant"
+    >
+      <button
+        type="button"
+        class="mx-auto block border px-3 py-2 font-mono text-[11px] uppercase tracking-wide"
+        style="border-color: #1e293b; color: #a8b3c7; background: #0f172a; border-radius: 4px"
+        @click="tenantPickerOpen = false"
+      >
+        Отмена
+      </button>
+    </TenantSelector>
+  </div>
+
+  <div
+    v-else
+    class="min-h-screen bg-brand-desk text-foreground transition-colors duration-200"
+  >
     <div
       v-if="sidebarOpen"
       class="fixed inset-0 z-40 bg-black/50 lg:hidden"
@@ -91,9 +115,10 @@ const shiftDurationText = computed(() => {
 
     <aside
       :class="[
-        'fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-sidebar transition-transform duration-200 ease-in-out lg:translate-x-0',
+        'fixed inset-y-0 left-0 z-50 w-64 border-r border-brand-border transition-transform duration-200 ease-in-out lg:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
       ]"
+      style="background: color-mix(in srgb, #0d1b3d 55%, #090d16)"
     >
       <div class="flex h-16 items-center justify-between gap-3 border-b border-border px-4">
         <a :href="route('dashboard')" class="flex items-center gap-2">
@@ -194,7 +219,10 @@ const shiftDurationText = computed(() => {
     </aside>
 
     <div class="lg:pl-64">
-      <header class="sticky top-0 z-30 h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <header
+        class="sticky top-0 z-30 h-16 border-b border-brand-border backdrop-blur"
+        style="background: color-mix(in srgb, #0d1b3d 42%, #090d16)"
+      >
         <div class="flex h-full items-center justify-between px-4 lg:px-8">
           <div class="flex items-center gap-3">
             <button
@@ -209,39 +237,17 @@ const shiftDurationText = computed(() => {
           </div>
 
           <div class="flex items-center gap-2 lg:gap-4">
-            <Dropdown v-if="tenants.length > 1">
-              <template #trigger>
-                <button class="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground">
-                  <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5" />
-                  </svg>
-                  <span class="max-w-[100px] truncate">{{ currentTenant?.name ?? 'Tenant' }}</span>
-                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </template>
-              <template #content>
-                <div class="w-56">
-                  <div class="border-b border-border px-3 py-2">
-                    <p class="text-xs font-medium text-muted-foreground">Переключение филиала</p>
-                  </div>
-                  <div class="max-h-64 overflow-y-auto py-1">
-                    <button
-                      v-for="tenant in tenants"
-                      :key="tenant.id"
-                      :class="[
-                        'w-full text-left px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground',
-                        currentTenant?.id === tenant.id ? 'bg-accent font-medium text-accent-foreground' : '',
-                      ]"
-                      @click="selectedTenantId = tenant.id"
-                    >
-                      {{ tenant.name }}
-                    </button>
-                  </div>
-                </div>
-              </template>
-            </Dropdown>
+            <button
+              v-if="tenants.length > 1"
+              type="button"
+              class="flex items-center gap-2 rounded-md border border-brand-border px-2.5 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground"
+              @click="tenantPickerOpen = true"
+            >
+              <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5" />
+              </svg>
+              <span class="max-w-[100px] truncate">{{ currentTenant?.name ?? 'Tenant' }}</span>
+            </button>
 
             <Dropdown>
               <template #trigger>

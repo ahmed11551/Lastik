@@ -90,12 +90,12 @@ final class PaymentService
             }
 
             $created = [];
-            $orderTotal = $this->bcRound((float) $order->total);
-            $paidSum = 0.0;
+            $orderTotal = $this->bcRound($order->total ?? '0');
+            $paidSum = '0';
 
             foreach ($parts as $part) {
-                $amount = $this->bcRound((float) $part['amount']);
-                if ($amount <= 0) {
+                $amount = $this->bcRound($part['amount'] ?? '0');
+                if ($this->bcComp($amount, '0') <= 0) {
                     throw new \InvalidArgumentException('Payment amount must be positive');
                 }
 
@@ -112,7 +112,7 @@ final class PaymentService
                     'shift_id' => $shift->id,
                     'method' => $method,
                     'type' => count($parts) > 1 ? 'mixed' : 'single',
-                    'amount' => $amount,
+                    'amount' => $this->bcToFloat($amount),
                     'status' => 'paid',
                     'payee_id' => $part['payee_id'] ?? $createdBy,
                     'created_by' => $createdBy,
@@ -127,7 +127,7 @@ final class PaymentService
                     [],
                     [
                         'method' => $method,
-                        'amount' => $amount,
+                        'amount' => $this->bcToFloat($amount),
                         'order_id' => $order->id,
                         'payee_id' => $payment->payee_id,
                     ],
@@ -139,13 +139,14 @@ final class PaymentService
 
                 // P0: hard overpayment guard (financial safety). Catch within the
                 // loop so a single inflated part in a mixed batch is rejected before commit.
-                if ($paidSum > $orderTotal + 0.001) {
-                    throw new OverpaymentException($orderTotal, $paidSum);
+                if ($this->bcComp($paidSum, $this->bcAdd($orderTotal, '0.001')) > 0) {
+                    throw new OverpaymentException($this->bcToFloat($orderTotal), $this->bcToFloat($paidSum));
                 }
             }
 
+            $covered = $this->bcAdd($paidSum, (string) $loyaltyCredit);
             $paymentStatus = match (true) {
-                ($paidSum + $loyaltyCredit) + 0.001 < $orderTotal => 'partial',
+                $this->bcComp($covered, $this->bcSub($orderTotal, '0.001')) < 0 => 'partial',
                 default => 'paid',
             };
 
@@ -210,13 +211,13 @@ final class PaymentService
                 }
             }
 
-            $oldAmount = $this->bcRound((float) $payment->amount);
+            $oldAmount = $this->bcRound($payment->amount ?? '0');
 
             $correction = PaymentCorrection::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $payment->tenant_id,
                 'payment_id' => $payment->id,
-                'amount' => $this->bcRound($this->bcSub((string) $newAmount, (string) $oldAmount)),
-                'old_amount' => $oldAmount,
+                'amount' => $this->bcToFloat($this->bcRound($this->bcSub((string) $newAmount, $oldAmount))),
+                'old_amount' => $this->bcToFloat($oldAmount),
                 'new_amount' => $newAmount,
                 'reason' => $reason,
                 'created_by' => $createdBy,

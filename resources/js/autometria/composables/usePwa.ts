@@ -94,8 +94,23 @@ export function usePwa(): PwaStatus {
   function onOnline() {
     online.value = true
     void import('@/stores/useOfflineStore')
-      .then(({ useOfflineStore }) => {
+      .then(async ({ useOfflineStore }) => {
         useOfflineStore().setOnline(true)
+        try {
+          const { usePosStore } = await import('@/stores/usePosStore')
+          const { getStoredUser } = await import('@/autometria/api/client')
+          const user = getStoredUser() as { id?: number } | null
+          let shiftId = 0
+          try {
+            const { useShiftStore } = await import('@/autometria/stores/cashierStore')
+            shiftId = Number(useShiftStore().shiftId || 0)
+          } catch {
+            shiftId = 0
+          }
+          await usePosStore().restoreCartDraft(Number(user?.id || 0), shiftId)
+        } catch {
+          /* restore is best-effort on reconnect */
+        }
       })
       .catch(() => undefined)
   }

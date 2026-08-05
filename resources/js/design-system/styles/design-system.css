@@ -46,7 +46,7 @@
 
   .ds-btn-primary {
     background: var(--color-primary);
-    color: #0b0d10;
+    color: var(--brand-desk, #090d16);
     border-color: var(--color-primary);
   }
 
@@ -221,7 +221,7 @@
   .ds-sidebar {
     width: var(--ds-sidebar-width);
     border-right: 1px solid var(--color-border);
-    background: var(--color-surface);
+    background: var(--ds-sidebar-bg, var(--color-surface));
   }
 
   .ds-sidebar__brand {
@@ -310,7 +310,7 @@
   .ds-sidebar__item--active {
     background: var(--ds-sidebar-active-bg);
     color: var(--ds-sidebar-active-fg);
-    border-left-color: var(--color-primary);
+    border-left-color: var(--brand-accent, var(--color-primary));
     font-weight: 500;
   }
 

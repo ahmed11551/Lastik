@@ -14,6 +14,7 @@ use Autometria\Exceptions\Domain\CircularBomException;
 use Autometria\Models\ProductService;
 use Autometria\Models\Recipe;
 use Autometria\Models\Tenant;
+use Autometria\Services\Traits\BcMathDecimal;
 use InvalidArgumentException;
 
 /**
@@ -21,6 +22,8 @@ use InvalidArgumentException;
  */
 final class NestedBomService
 {
+    use BcMathDecimal;
+
     /**
      * Дерево потребностей + суммарные leaf-qty для выпуска qty готовой продукции по рецепту.
      *
@@ -35,23 +38,29 @@ final class NestedBomService
      *   leaves: list<array{product_id: int, name: ?string, qty: float}>
      * }
      */
-    public function preview(int $tenantId, int $recipeId, float $qty): array
+    public function preview(int $tenantId, int $recipeId, float|int|string $qty): array
     {
-        if ($qty <= 0) {
+        if ($this->bcComp($qty, '0') <= 0) {
             throw new InvalidArgumentException('Preview qty must be positive');
         }
 
-        $recipe = $this->loadRecipe($tenantId, $recipeId);
+        $index = $this->loadRecipeIndex($tenantId);
+        $recipe = $index['by_id'][$recipeId] ?? null;
+        if ($recipe === null) {
+            throw (new \Illuminate\Database\Eloquent\ModelNotFoundException)->setModel(Recipe::class, [$recipeId]);
+        }
+
         $maxDepth = $this->maxBomDepth($tenantId);
         $leaves = [];
         $tree = $this->expandRecipeNode(
             $tenantId,
             $recipe,
-            $qty,
+            $this->bcRound($qty, 3),
             $maxDepth,
             0,
             [],
             $leaves,
+            $index['by_product'],
         );
 
         $aggregated = [];
@@ -61,21 +70,30 @@ final class NestedBomService
                 $aggregated[$pid] = [
                     'product_id' => $pid,
                     'name' => $row['name'],
-                    'qty' => 0.0,
+                    'qty' => '0',
                 ];
             }
-            $aggregated[$pid]['qty'] = round($aggregated[$pid]['qty'] + (float) $row['qty'], 3);
+            $aggregated[$pid]['qty'] = $this->bcAdd($aggregated[$pid]['qty'], $row['qty']);
+        }
+
+        $leafList = [];
+        foreach ($aggregated as $row) {
+            $leafList[] = [
+                'product_id' => $row['product_id'],
+                'name' => $row['name'],
+                'qty' => $this->bcToFloat($this->bcRound($row['qty'], 3)),
+            ];
         }
 
         return [
             'recipe_id' => (int) $recipe->id,
             'product_id' => (int) $recipe->product_id,
             'product_name' => $recipe->product?->name,
-            'qty' => round($qty, 3),
-            'yield_quantity' => round((float) $recipe->yield_quantity, 3),
+            'qty' => $this->bcToFloat($this->bcRound($qty, 3)),
+            'yield_quantity' => $this->bcToFloat($this->bcRound($recipe->yield_quantity ?? '0', 3)),
             'max_bom_depth' => $maxDepth,
             'tree' => $tree,
-            'leaves' => array_values($aggregated),
+            'leaves' => $leafList,
         ];
     }
 
@@ -84,17 +102,39 @@ final class NestedBomService
      *
      * @return list<array{product_id: int, qty: float}>
      */
-    public function expandToLeaves(int $tenantId, int $recipeId, float $qty): array
+    public function expandToLeaves(int $tenantId, int $recipeId, float|int|string $qty): array
     {
         $preview = $this->preview($tenantId, $recipeId, $qty);
 
         return array_map(
             static fn (array $row): array => [
                 'product_id' => (int) $row['product_id'],
-                'qty' => round((float) $row['qty'], 3),
+                'qty' => (float) $row['qty'],
             ],
             $preview['leaves'],
         );
+    }
+
+    /**
+     * One batch load of all tenant recipes → O(1) lookups during expand.
+     *
+     * @return array{by_id: array<int, Recipe>, by_product: array<int, Recipe>}
+     */
+    private function loadRecipeIndex(int $tenantId): array
+    {
+        $recipes = Recipe::query()->withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->with(['items.ingredient', 'product'])
+            ->get();
+
+        $byId = [];
+        $byProduct = [];
+        foreach ($recipes as $recipe) {
+            $byId[(int) $recipe->id] = $recipe;
+            $byProduct[(int) $recipe->product_id] = $recipe;
+        }
+
+        return ['by_id' => $byId, 'by_product' => $byProduct];
     }
 
     private function maxBomDepth(int $tenantId): int
@@ -104,37 +144,21 @@ final class NestedBomService
         return max(1, (int) ($depth ?? 5));
     }
 
-    private function loadRecipe(int $tenantId, int $recipeId): Recipe
-    {
-        return Recipe::query()->withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->whereKey($recipeId)
-            ->with(['items.ingredient', 'product'])
-            ->firstOrFail();
-    }
-
-    private function recipeForProduct(int $tenantId, int $productId): ?Recipe
-    {
-        return Recipe::query()->withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->where('product_id', $productId)
-            ->with(['items.ingredient', 'product'])
-            ->first();
-    }
-
     /**
      * @param  list<int>  $path
-     * @param  list<array{product_id: int, name: ?string, qty: float}>  $leaves
+     * @param  list<array{product_id: int, name: ?string, qty: string}>  $leaves
+     * @param  array<int, Recipe>  $byProduct
      * @return array<string, mixed>
      */
     private function expandRecipeNode(
         int $tenantId,
         Recipe $recipe,
-        float $outputQty,
+        string $outputQty,
         int $maxDepth,
         int $depth,
         array $path,
         array &$leaves,
+        array $byProduct,
     ): array {
         $productId = (int) $recipe->product_id;
         if (in_array($productId, $path, true)) {
@@ -144,26 +168,25 @@ final class NestedBomService
             throw CircularBomException::depthExceeded($maxDepth);
         }
 
-        $yield = max(0.001, (float) $recipe->yield_quantity);
-        $scale = $outputQty / $yield;
+        $yield = $this->bcMax($recipe->yield_quantity ?? '0', '0.001');
+        $scale = $this->bcDiv($outputQty, $yield, 6);
         $nextPath = [...$path, $productId];
         $children = [];
 
         foreach ($recipe->items as $item) {
             $ingredientId = (int) $item->ingredient_id;
-            $waste = max(0.0, min(99.999, (float) ($item->waste_percentage ?? 0)));
-            // net_quantity — расход с учётом waste; quantity — брутто-fallback
-            $base = (float) ($item->net_quantity ?? 0);
-            if ($base <= 0) {
-                $base = (float) $item->quantity;
+            $waste = $this->bcMin($this->bcMax($item->waste_percentage ?? '0', '0'), '99.999');
+            $base = $this->bcNormalize($item->net_quantity ?? '0');
+            if ($this->bcComp($base, '0') <= 0) {
+                $base = $this->bcNormalize($item->quantity ?? '0');
             }
-            $need = round($base * $scale, 3);
-            if ($need <= 0) {
+            $need = $this->bcRound($this->bcMul($base, $scale, 6), 3);
+            if ($this->bcComp($need, '0') <= 0) {
                 continue;
             }
 
             $name = $item->ingredient?->name;
-            $childRecipe = $this->recipeForProduct($tenantId, $ingredientId);
+            $childRecipe = $byProduct[$ingredientId] ?? null;
 
             if ($childRecipe === null) {
                 $leaves[] = [
@@ -174,8 +197,8 @@ final class NestedBomService
                 $children[] = [
                     'product_id' => $ingredientId,
                     'name' => $name,
-                    'qty' => $need,
-                    'waste_percentage' => round($waste, 3),
+                    'qty' => $this->bcToFloat($need),
+                    'waste_percentage' => $this->bcToFloat($this->bcRound($waste, 3)),
                     'is_leaf' => true,
                     'is_semi_finished' => false,
                     'depth' => $depth + 1,
@@ -197,12 +220,12 @@ final class NestedBomService
             $children[] = [
                 'product_id' => $ingredientId,
                 'name' => $name,
-                'qty' => $need,
-                'waste_percentage' => round($waste, 3),
+                'qty' => $this->bcToFloat($need),
+                'waste_percentage' => $this->bcToFloat($this->bcRound($waste, 3)),
                 'is_leaf' => false,
                 'is_semi_finished' => true,
                 'recipe_id' => (int) $childRecipe->id,
-                'yield_quantity' => round((float) $childRecipe->yield_quantity, 3),
+                'yield_quantity' => $this->bcToFloat($this->bcRound($childRecipe->yield_quantity ?? '0', 3)),
                 'depth' => $depth + 1,
                 'children' => $this->expandRecipeNode(
                     $tenantId,
@@ -212,6 +235,7 @@ final class NestedBomService
                     $depth + 1,
                     $nextPath,
                     $leaves,
+                    $byProduct,
                 )['children'] ?? [],
             ];
         }
@@ -219,9 +243,9 @@ final class NestedBomService
         return [
             'product_id' => $productId,
             'name' => $recipe->product?->name,
-            'qty' => round($outputQty, 3),
+            'qty' => $this->bcToFloat($this->bcRound($outputQty, 3)),
             'recipe_id' => (int) $recipe->id,
-            'yield_quantity' => round($yield, 3),
+            'yield_quantity' => $this->bcToFloat($this->bcRound($yield, 3)),
             'is_leaf' => false,
             'is_semi_finished' => $depth > 0,
             'depth' => $depth,
