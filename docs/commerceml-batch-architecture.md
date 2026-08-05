@@ -1,3 +1,13 @@
+---
+type: concept
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[commerceml-batch-architecture]"]
+tags: [architecture,integration,1c]
+aliases: ["CommerceML", "1С интеграция"]
+title: "Commerceml Batch Architecture"
+---
+
 # CommerceML 2.08 — Stream Parser & Batched Upsert
 
 ```

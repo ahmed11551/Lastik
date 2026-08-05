@@ -1,8 +1,18 @@
+---
+type: concept
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[ARCHITECTURE-OVERVIEW]"]
+tags: [architecture,overview]
+aliases: ["Архитектура AUTOMETRIA", "Обзор системы"]
+title: "Architecture Overview"
+---
+
 # AUTOMETRIA ERP / LASTIK — Architecture Overview
 
 Обзор ключевых архитектурных решений ядра для передачи заказчику и сопровождения production.
 
-Детали ADR: [ADR-001-multi-tenancy-strategy.md](./ADR-001-multi-tenancy-strategy.md). Целевые слои: [ARCHITECTURE.md](./ARCHITECTURE.md).
+Детали ADR: [[ADR-001-multi-tenancy-strategy|ADR-001]]. Целевые слои: [[ARCHITECTURE|Архитектура]].
 
 ---
 

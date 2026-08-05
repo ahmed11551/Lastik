@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[ACCEPTANCE-CHECKLIST]"]
+tags: [acceptance,qa]
+aliases: ["Чек-лист приёмки", "Acceptance Checklist"]
+title: "Acceptance Checklist"
+---
+
 # AUTOMETRIA ERP/POS — Acceptance Checklist (21 пунктов ТЗ)
 
 Чек-лист UI/API-приёмки Sprint A. Отмечать `[x]` после проверки на стенде.

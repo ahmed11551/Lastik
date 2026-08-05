@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[sprint1-review]"]
+tags: [sprint,review]
+aliases: ["Спринт 1 ревью", "Sprint 1"]
+title: "Sprint1 Review"
+---
+
 # LASTIK Sprint 1 — CTO Review & Governance Report
 Дата: 2026-07-31
 

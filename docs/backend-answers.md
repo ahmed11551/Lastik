@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[backend-answers]"]
+tags: [sprint,backend]
+aliases: ["Ответы бэкенда", "Backend Answers"]
+title: "Backend Answers"
+---
+
 # LASTIK Backend — ответы по 6 Check-in задачам
 
 Документ построен по системному промпту `backend.md` и `backend-checkin.md`. Все фрагменты ориентированы на Laravel 13, PHP 8.3, PostgreSQL, single-database multi-tenancy.

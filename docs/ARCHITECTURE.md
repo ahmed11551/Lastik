@@ -1,3 +1,13 @@
+---
+type: concept
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[ARCHITECTURE]"]
+tags: [architecture,backend]
+aliases: ["Архитектура", "Стек Laravel PostgreSQL"]
+title: "Architecture"
+---
+
 # LASTIK — Architecture
 
 ## Назначение документа

@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[DEPLOYMENT-RUNBOOK]"]
+tags: [deploy,runbook]
+aliases: ["Ранбук деплоя", "Deployment Runbook"]
+title: "Deployment Runbook"
+---
+
 # AUTOMETRIA ERP / LASTIK — Deployment Runbook
 
 Полное руководство по развёртыванию ядра на чистом Linux-сервере заказчика (self-hosted / production) **без участия вендора**.

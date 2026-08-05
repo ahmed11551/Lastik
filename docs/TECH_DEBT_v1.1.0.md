@@ -1,3 +1,13 @@
+---
+type: concept
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[TECH-DEBT-v1.1.0]"]
+tags: [tech-debt,quality]
+aliases: ["Техдолг v1.1.0", "Tech Debt"]
+title: "Tech Debt V1.1.0"
+---
+
 # Tech Debt & Handover — v1.1.0 (post-P0)
 
 **Branch:** `feature/v11-nested-bom-wms`  

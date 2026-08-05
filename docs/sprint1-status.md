@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[sprint1-status]"]
+tags: [sprint,status]
+aliases: ["Статус спринта 1", "Sprint 1 Status"]
+title: "Sprint1 Status"
+---
+
 # LASTIK Sprint 1 — Final Status & Gap Analysis
 Дата: 2026-07-31
 
