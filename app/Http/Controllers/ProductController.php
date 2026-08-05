@@ -37,7 +37,9 @@ class ProductController extends Controller
         }
 
         return response()->json([
-            'data' => $query->limit(200)->get(),
+            'data' => $query->with(['prices' => function ($q): void {
+                $q->where('type', 'retail')->limit(1);
+            }])->limit(200)->get(),
         ]);
     }
 }

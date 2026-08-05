@@ -152,7 +152,7 @@ test.describe('POS offline sync flow', () => {
     if (await email.count()) {
       await email.fill('cashier@autometria.test')
       await password.fill('password')
-      await page.getByRole('button', { name: /войти|вход|login/i }).click()
+      await page.getByTestId('login-submit').click()
       await page.waitForTimeout(400)
     } else {
       // Fallback: seed session if login form markup differs
