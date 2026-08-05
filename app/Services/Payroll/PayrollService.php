@@ -11,6 +11,7 @@ use Autometria\Models\PayrollPeriod;
 use Autometria\Models\Payslip;
 use Autometria\Models\PayslipItem;
 use Autometria\Models\User;
+use Autometria\Services\Traits\BcMathDecimal;
 use Autometria\Support\AuditLog;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -19,6 +20,8 @@ use InvalidArgumentException;
 
 final class PayrollService
 {
+    use BcMathDecimal;
+
     public function createPeriod(int $tenantId, array $data, ?int $userId = null): PayrollPeriod
     {
         return DB::transaction(function () use ($tenantId, $data): PayrollPeriod {
@@ -58,10 +61,10 @@ final class PayrollService
                         ->where('tenant_id', $tenantId)
                         ->where('user_id', $employee->id)
                         ->whereBetween('created_at', [$from, $to]);
-                    $base = round((float) (clone $earnings)->sum('amount'), 2);
-                    $bonus = round((float) (clone $earnings)
+                    $base = $this->bcRound((float) (clone $earnings)->sum('amount'));
+                    $bonus = $this->bcRound((float) (clone $earnings)
                         ->whereRaw("LOWER(COALESCE(source, '')) LIKE ?", ['%bonus%'])
-                        ->sum('amount'), 2);
+                        ->sum('amount'));
 
                     $payslip = Payslip::query()->withoutGlobalScopes()->forceCreate([
                         'tenant_id' => $tenantId,
@@ -76,46 +79,46 @@ final class PayrollService
                     $gross = 0.0;
                     if ($base > 0) {
                         $this->item($tenantId, $payslip->id, PayslipItem::TYPE_EARNING, 'Выработка (KPI)', $base);
-                        $gross += $base;
+                        $gross = $this->bcAdd($gross, $base);
                     }
                     foreach ($rules as $rule) {
                         $amount = match ($rule->type) {
-                            AccrualRule::TYPE_KPI_PERCENT => $base * (float) $rule->value / 100,
+                            AccrualRule::TYPE_KPI_PERCENT => $this->bcDiv($this->bcMul((string) $base, (string) $rule->value), '100'),
                             AccrualRule::TYPE_FIXED => (float) $rule->value,
                             AccrualRule::TYPE_BONUS => $bonus,
                             default => 0,
                         };
-                        $amount = round($amount, 2);
+                        $amount = $this->bcRound($amount);
                         if ($amount > 0) {
                             $this->item($tenantId, $payslip->id, PayslipItem::TYPE_EARNING, $rule->name, $amount, $rule->id);
-                            $gross += $amount;
+                            $gross = $this->bcAdd($gross, $amount);
                         }
                     }
-                    $gross = round($gross, 2);
+                    $gross = $this->bcRound($gross);
                     $deductionTotal = 0.0;
                     foreach ($deductions as $deduction) {
                         $amount = $deduction->type === Deduction::TYPE_PERCENT
-                            ? $gross * (float) $deduction->value / 100
+                            ? $this->bcDiv($this->bcMul((string) $gross, (string) $deduction->value), '100')
                             : (float) $deduction->value;
-                        $amount = round($amount, 2);
+                        $amount = $this->bcRound($amount);
                         if ($amount > 0) {
                             $this->item($tenantId, $payslip->id, PayslipItem::TYPE_DEDUCTION, $deduction->name, $amount, $deduction->id);
-                            $deductionTotal += $amount;
+                            $deductionTotal = $this->bcAdd($deductionTotal, $amount);
                         }
                     }
-                    $net = round($gross - $deductionTotal, 2);
+                    $net = $this->bcRound($this->bcSub((string) $gross, (string) $deductionTotal));
                     $payslip->forceFill(['gross' => $gross, 'deductions_total' => $deductionTotal, 'net' => $net])->save();
-                    $totals['gross'] += $gross;
-                    $totals['deductions'] += $deductionTotal;
-                    $totals['net'] += $net;
+                    $totals['gross'] = $this->bcAdd($totals['gross'], $gross);
+                    $totals['deductions'] = $this->bcAdd($totals['deductions'], $deductionTotal);
+                    $totals['net'] = $this->bcAdd($totals['net'], $net);
                 }
             );
 
             $period->forceFill([
                 'status' => PayrollPeriod::STATUS_CALCULATED,
-                'total_gross' => round($totals['gross'], 2),
-                'total_deductions' => round($totals['deductions'], 2),
-                'total_net' => round($totals['net'], 2),
+                'total_gross' => $this->bcRound($totals['gross']),
+                'total_deductions' => $this->bcRound($totals['deductions']),
+                'total_net' => $this->bcRound($totals['net']),
             ])->save();
             AuditLog::write($tenantId, $userId ?? auth()->id(), 'payroll.calculated', PayrollPeriod::class, (int) $period->id, [], $period->only(['status', 'total_gross', 'total_deductions', 'total_net']));
 

@@ -48,12 +48,15 @@ use Autometria\Models\Payment;
 use Autometria\Models\PaymentCorrection;
 use Autometria\Services\Fiscal\FiscalReceiptService;
 use Autometria\Services\ReceiptService;
+use Autometria\Services\Traits\BcMathDecimal;
 use Autometria\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 final class PaymentService
 {
+    use BcMathDecimal;
+
     public function __construct(
         private readonly DictionaryService $dictionaries = new DictionaryService,
     ) {}
@@ -87,11 +90,11 @@ final class PaymentService
             }
 
             $created = [];
-            $orderTotal = (float) $order->total;
+            $orderTotal = $this->bcRound((float) $order->total);
             $paidSum = 0.0;
 
             foreach ($parts as $part) {
-                $amount = round((float) $part['amount'], 2);
+                $amount = $this->bcRound((float) $part['amount']);
                 if ($amount <= 0) {
                     throw new \InvalidArgumentException('Payment amount must be positive');
                 }
@@ -132,7 +135,7 @@ final class PaymentService
                 );
 
                 $created[] = $payment;
-                $paidSum += $amount;
+                $paidSum = $this->bcAdd($paidSum, $amount);
 
                 // P0: hard overpayment guard (financial safety). Catch within the
                 // loop so a single inflated part in a mixed batch is rejected before commit.
@@ -207,12 +210,12 @@ final class PaymentService
                 }
             }
 
-            $oldAmount = (float) $payment->amount;
+            $oldAmount = $this->bcRound((float) $payment->amount);
 
             $correction = PaymentCorrection::query()->withoutGlobalScopes()->forceCreate([
                 'tenant_id' => $payment->tenant_id,
                 'payment_id' => $payment->id,
-                'amount' => round($newAmount - $oldAmount, 2),
+                'amount' => $this->bcRound($this->bcSub((string) $newAmount, (string) $oldAmount)),
                 'old_amount' => $oldAmount,
                 'new_amount' => $newAmount,
                 'reason' => $reason,

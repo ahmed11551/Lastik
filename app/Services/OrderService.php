@@ -51,11 +51,14 @@ use Autometria\Models\ProductService;
 use Autometria\Models\Recipe;
 use Autometria\Models\Stock;
 use Autometria\Services\Marking\EgaisAndMarkingService;
+use Autometria\Services\Traits\BcMathDecimal;
 use Autometria\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 
 final class OrderService
 {
+    use BcMathDecimal;
+
     public function __construct(
         private readonly StockReservationService $reservations,
         private readonly EgaisAndMarkingService $marking,
@@ -143,8 +146,8 @@ final class OrderService
                     ->first();
 
                 $kpiPercent = $kpiRule ? (float) $kpiRule->percent : (float) ($itemPayload['commission_rate'] ?? 0);
-                $lineSum = round(($price * $qty) - $discount, 2);
-                $kpiAmount = round($lineSum * $kpiPercent / 100, 2);
+                $lineSum = $this->bcRound($this->bcSub($this->bcMul((string) $price, (string) $qty), (string) $discount));
+                $kpiAmount = $this->bcRound($this->bcDiv($this->bcMul((string) $lineSum, (string) $kpiPercent), '100'));
 
                 $snapshot = [
                     'type' => $type,
@@ -251,10 +254,10 @@ final class OrderService
                     }
                 }
 
-                $total += $lineSum;
+                $total = $this->bcAdd($total, $lineSum);
             }
 
-            $order->update(['total' => round($total, 2)]);
+            $order->update(['total' => $this->bcRound($total)]);
 
             AuditLog::write(
                 $dto->tenantId,
@@ -315,6 +318,6 @@ final class OrderService
 
         $amount = $row->amount ?? $row->price;
 
-        return round((float) $amount, 2);
+        return $this->bcRound($amount);
     }
 }
