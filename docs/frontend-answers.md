@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[frontend-answers]"]
+tags: [sprint,frontend]
+aliases: ["Ответы фронта", "Frontend Answers"]
+title: "Frontend Answers"
+---
+
 # LASTIK Frontend — архитектурный ответ
 
 ## 1. Структура директорий

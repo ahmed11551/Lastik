@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[DELIVERY-PACKAGE]"]
+tags: [delivery,sales]
+aliases: ["Сдаточный пакет", "Delivery Package"]
+title: "Delivery Package"
+---
+
 # AUTOMETRIA ERP — Сдаточный пакет v1.x
 
 Платформа шинного центра / автосервиса (бывш. LASTIK). Уровень зрелости: **v1.x — монолитная рабочая система, готовая к сдаче заказчику**.
@@ -42,13 +52,13 @@
 ## Состав пакета
 | Артефакт | Назначение |
 |---|---|
-| [DELIVERY_ACT.md](./DELIVERY_ACT.md) | Акт сдачи-приёмки (подпись заказчика) |
-| [ACCEPTANCE_CHECKLIST.md](./ACCEPTANCE_CHECKLIST.md) | 21 пункт приёмки через UI/API |
-| [release-notes-v1.0.0.md](./release-notes-v1.0.0.md) | Release Notes ядра + API-спецификация |
-| [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) | Архитектурный обзор |
-| [ADR-001-multi-tenancy-strategy.md](./ADR-001-multi-tenancy-strategy.md) | ADR по мультитенантности |
-| [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md) | Runbook развёртывания у заказчика |
-| [acceptance-run.md](./acceptance-run.md) | Сценарии прогона приёмки |
+| [[DELIVERY-ACT|DELIVERY_ACT]] | Акт сдачи-приёмки (подпись заказчика) |
+| [[ACCEPTANCE-CHECKLIST|ACCEPTANCE_CHECKLIST]] | 21 пункт приёмки через UI/API |
+| [[RELEASE-NOTES-V1-0-0|release-notes-v1.0.0]] | Release Notes ядра + API-спецификация |
+| [[ARCHITECTURE-OVERVIEW|ARCHITECTURE_OVERVIEW]] | Архитектурный обзор |
+| [[ADR-001-MULTI-TENANCY-STRATEGY|ADR-001-multi-tenancy-strategy]] | ADR по мультитенантности |
+| [[DEPLOYMENT-RUNBOOK|DEPLOYMENT_RUNBOOK]] | Runbook развёртывания у заказчика |
+| [[ACCEPTANCE-RUN|acceptance-run]] | Сценарии прогона приёмки |
 
 ## Greenfield-модули (НЕ входили в базовый WIP, планируются отдельно)
 1. 🛒 Закупки (Supplier Orders) — **в разработке (feature/module-purchases)**.

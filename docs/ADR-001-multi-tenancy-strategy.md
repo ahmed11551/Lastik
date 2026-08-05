@@ -1,3 +1,13 @@
+---
+type: concept
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[ADR-001-multi-tenancy-strategy]"]
+tags: [adr,architecture,tenancy]
+aliases: ["ADR-001", "Мультитенантность"]
+title: "Adr 001 Multi Tenancy Strategy"
+---
+
 # ADR-001 — Multi-Tenancy Strategy
 
 ## Дата

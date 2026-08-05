@@ -1,3 +1,13 @@
+---
+type: concept
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[client-build-encoding]"]
+tags: [frontend,build]
+aliases: ["Сборка клиента", "Client Build"]
+title: "Client Build Encoding"
+---
+
 # AUTOMETRIA ERP — Encoded Client Dist (SourceGuardian / IonCube)
 
 Цель: клиентский дистрибутив получает `Autometria\` как бинарный bytecode, без открытых исходников сервисов/middleware/лицензирования.

@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[TZ-Customer-Portal-Module]"]
+tags: [tz,portal]
+aliases: ["ТЗ Клиентский портал", "Customer Portal TZ"]
+title: "Tz Customer Portal Module"
+---
+
 # ТЗ для Cursor — Трек 2.3: Клиентский Кабинет / PWA B2B
 
 **Контекст:** репозиторий /Users/ahmed/_PROJECTS/Lastik-main, ветка `feature/module-customer-portal`.

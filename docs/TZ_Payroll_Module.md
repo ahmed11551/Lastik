@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[TZ-Payroll-Module]"]
+tags: [tz,payroll]
+aliases: ["ТЗ Зарплаты", "Payroll TZ"]
+title: "Tz Payroll Module"
+---
+
 # ТЗ для Cursor — Трек 2.2: Модуль Зарплат (Payroll)
 
 **Контекст:** репозиторий /Users/ahmed/_PROJECTS/Lastik-main, ветка `feature/module-payroll`.

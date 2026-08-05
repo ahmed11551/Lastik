@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[acceptance-run]"]
+tags: [acceptance,qa]
+aliases: ["Прогон приёмки", "Acceptance Run"]
+title: "Acceptance Run"
+---
+
 # Acceptance Run Guide — LASTIK (п. 49.1–49.21)
 
 Пошаговый запуск приёмочного контура: Docker → Postgres/Redis → миграции → сидер → Pest → smoke UI.
@@ -92,6 +102,10 @@ docker compose exec postgres psql -U lastik -c "CREATE DATABASE lastik_test;"
 ### Команды по группам
 
 ```bash
+# Layer 1 (DB/RLS) + Layer 2 (locks) — smoke
+./run-acceptance-smoke.sh
+./vendor/bin/pest tests/Feature/AcceptanceCoreSecurityTest.php
+
 # Tenant / location / security
 ./vendor/bin/pest tests/Feature/AcceptanceTenantOrderTest.php tests/Feature/AcceptanceLocationIsolationTest.php tests/Feature/SecurityTest.php
 
@@ -106,6 +120,9 @@ docker compose exec postgres psql -U lastik -c "CREATE DATABASE lastik_test;"
 
 # Полный прогон
 ./vendor/bin/pest
+
+# PHPStan / Larastan (level 8 + baseline)
+composer analyse
 ```
 
 ## 4. Laravel API smoke

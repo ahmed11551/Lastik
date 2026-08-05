@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[production-deploy]"]
+tags: [deploy,production]
+aliases: ["Продакшн деплой", "Production Deploy"]
+title: "Production Deploy"
+---
+
 # AUTOMETRIA ERP — Production Deploy (Client)
 
 > **Полный runbook для заказчика:** [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md)  

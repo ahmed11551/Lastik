@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[TZ-Vector4-NestedBom-Wms]"]
+tags: [tz,wms,bom]
+aliases: ["ТЗ WMS", "Nested BOM TZ"]
+title: "Tz Vector4 Nestedbom Wms"
+---
+
 # ТЗ для Cursor — v1.1.0 Вектор 4: Углубление Производства (Nested BOM + WMS Light)
 
 **Контекст:** /Users/ahmed/_PROJECTS/Lastik-main, ветка `feature/v11-nested-bom-wms`.

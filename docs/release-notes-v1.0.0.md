@@ -1,3 +1,13 @@
+---
+type: source
+created: 2026-08-05
+updated: 2026-08-05
+sources: ["[[release-notes-v1.0.0]"]
+tags: [release,notes]
+aliases: ["Релиз v1.0.0", "Release Notes"]
+title: "Release Notes V1.0.0"
+---
+
 # LASTIK Release Notes v1.0.0 — Production Core
 
 LASTIK B2B SaaS Engine верифицирован для продакшен-развёртывания.  
