@@ -8,12 +8,13 @@ aliases: ["Демо-стенд деплой", "Demo Stand Deploy"]
 title: "Demo Stand Deploy (demo.lastik.ru)"
 ---
 
-# AUTOMETRIA ERP — Demo Stand Deploy (demo.lastik.ru)
+# AUTOMETRIA ERP — Demo Stand Deploy (autometrika.ai.studio / demo.lastik.ru)
 
 Runbook поднятия публичного демо-стенда продукта на выделенном VPS.
-Цель: инвесторы (Telderi) и клиенты открывают `https://demo.lastik.ru` и тестируют
-кассу, склад, аналитику — без установки. Лендинг (витрина) живёт отдельно на Vercel
-(`ahmed11551/auto`), кнопка «Открыть demo.lastik.ru» ведёт сюда.
+Цель: инвесторы (Teldery) и клиенты открывают `https://autometrika.ai.studio` (основной
+продуктовый домен) и/или `https://demo.lastik.ru` (демо-стенд) и тестируют кассу, склад,
+аналитику — без установки. Лендинг (витрина) живёт отдельно на Vercel (`ahmed11551/auto`),
+кнопки «Открыть платформу» / «Демо-стенд» ведут сюда.
 
 > ⚠️ Это НЕ код ядра. Ядро `v1.1.0-STABLE` запечатано. Здесь — только инфраструктура
 > демо-стенда поверх существующего `docker-compose.prod.yml`.
