@@ -12,6 +12,7 @@
     "clean": "rm -rf dist server.js public/build public/build-ds",
     "lint": "tsc --noEmit",
     "type-check": "tsc --noEmit",
+    "test:unit": "tsx tests/unit/gs1Parser.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:pos": "playwright test pos-offline-flow",
     "sync:figma": "node scripts/figma/sync-tokens.js"
