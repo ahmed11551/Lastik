@@ -199,7 +199,7 @@ return [
     'defaults' => [
         'supervisor-1' => [
             'connection' => 'redis',
-            'queue' => ['default', 'stock-reservations', 'marking-sync'],
+            'queue' => ['default', 'stock-reservations', 'marking-sync', 'inventory-reorder'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             'maxProcesses' => 1,
@@ -217,7 +217,7 @@ return [
         'production' => [
             'supervisor-1' => [
                 'connection' => 'redis',
-                'queue' => ['default', 'stock-reservations', 'marking-sync'],
+                'queue' => ['default', 'stock-reservations', 'marking-sync', 'inventory-reorder'],
                 'balance' => 'auto',
                 'autoScalingStrategy' => 'time',
                 'minProcesses' => 1,
@@ -232,7 +232,7 @@ return [
         'local' => [
             'supervisor-1' => [
                 'connection' => 'redis',
-                'queue' => ['default', 'stock-reservations', 'marking-sync'],
+                'queue' => ['default', 'stock-reservations', 'marking-sync', 'inventory-reorder'],
                 'balance' => 'simple',
                 'minProcesses' => 1,
                 'maxProcesses' => 3,
@@ -244,7 +244,7 @@ return [
         'testing' => [
             'supervisor-1' => [
                 'connection' => 'redis',
-                'queue' => ['default', 'stock-reservations', 'marking-sync'],
+                'queue' => ['default', 'stock-reservations', 'marking-sync', 'inventory-reorder'],
                 'maxProcesses' => 1,
                 'tries' => 1,
                 'timeout' => 30,
