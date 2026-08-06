@@ -54,6 +54,7 @@ use Autometria\Http\Controllers\StockBatchController;
 use Autometria\Http\Controllers\StockController;
 use Autometria\Http\Controllers\InventoryDocumentController;
 use Autometria\Http\Controllers\InventoryReorderController;
+use Autometria\Http\Controllers\PushSubscriptionController;
 use Autometria\Http\Controllers\StockTransferController;
 use Autometria\Http\Controllers\TaskController;
 use Autometria\Http\Controllers\TvBoardController;
@@ -120,6 +121,11 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
 
     Route::get('inventory/reorder-recommendations', [InventoryReorderController::class, 'index'])->middleware('ensure.permission:stock.view');
     Route::post('inventory/reorder-recommendations/recalculate', [InventoryReorderController::class, 'recalculate'])->middleware('ensure.permission:stock.transfer');
+
+    Route::get('push/vapid-public-key', [PushSubscriptionController::class, 'vapidPublicKey']);
+    Route::post('push-subscriptions', [PushSubscriptionController::class, 'store']);
+    Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy']);
+    Route::post('push-subscriptions/test', [PushSubscriptionController::class, 'test']);
 
     Route::get('audit-logs', [AuditLogController::class, 'index'])->middleware('ensure.permission:admin.dashboard');
     Route::get('kpi/summary', [KpiController::class, 'summary'])->middleware('ensure.permission:admin.dashboard');
