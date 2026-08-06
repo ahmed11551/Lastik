@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Autometria\Http\Controllers;
 
+use Autometria\Events\StockUpdatedEvent;
+use Autometria\Jobs\SyncMarkingJob;
 use Autometria\DTOs\CreateOrderDTO;
 use Autometria\Enums\OrderStatusEnum;
 use Autometria\Exceptions\Domain\InsufficientStockException;
@@ -305,6 +307,13 @@ class PosController extends Controller
                     if (($result['has_overdraft'] ?? $result['overdraft'] ?? false) === true) {
                         $anyOverdraft = true;
                     }
+                    event(new StockUpdatedEvent(
+                        tenantId: $tenantId,
+                        warehouseId: (int) $warehouseId,
+                        productId: (int) $item->product_id,
+                        writtenOff: (string) ($result['written_off'] ?? $item->qty),
+                        orderId: (int) $order->id,
+                    ));
                 }
 
                 if ($anyOverdraft && $isOffline) {
@@ -313,7 +322,7 @@ class PosController extends Controller
                     ])->save();
                 }
 
-                // Regulatory: mark CIS as SOLD (двойное выбытие guard).
+                // Regulatory: mark CIS as SOLD locally (sync); GIS HTTP → SyncMarkingJob after commit.
                 foreach ($order->orderItems as $item) {
                     $cis = trim((string) ($item->marking_code ?? ''));
                     if ($cis === '') {
@@ -324,6 +333,10 @@ class PosController extends Controller
                         null,
                         $item->product_id !== null ? (int) $item->product_id : null,
                     );
+                    $productId = $item->product_id !== null ? (int) $item->product_id : null;
+                    DB::afterCommit(function () use ($tenantId, $cis, $productId): void {
+                        SyncMarkingJob::dispatch($tenantId, $cis, $productId);
+                    });
                 }
 
                 return $order->fresh(['orderItems', 'payments']);

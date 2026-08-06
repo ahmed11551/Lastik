@@ -12,6 +12,7 @@ import DsLoadingBadge from '@/autometria/components/DsLoadingBadge.vue'
 import InventoryAdjustmentModal from '@/autometria/components/warehouse/InventoryAdjustmentModal.vue'
 import StockTransferModal from '@/autometria/components/warehouse/StockTransferModal.vue'
 import FifoLotsPanel from '@/autometria/components/warehouse/FifoLotsPanel.vue'
+import SmartPurchasesPanel from '@/autometria/components/warehouse/SmartPurchasesPanel.vue'
 
 type StockRow = {
   id: number
@@ -55,6 +56,7 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const inventoryOpen = ref(false)
 const inventoryRow = ref<StockRow | null>(null)
 const transferOpen = ref(false)
+const panel = ref<'stock' | 'smart'>('stock')
 
 const STATUS: Record<string, { variant: string; label: string }> = {
   ok: { variant: 'success', label: 'В наличии' },
@@ -292,11 +294,33 @@ onUnmounted(() => {
         </div>
         <h2 class="text-sm font-medium text-white sm:text-base">Склад и остатки</h2>
         <p class="mt-1 text-xs font-medium" style="color: #9ca3af">
-          Инвентаризация · перемещения · партии FIFO
+          Инвентаризация · перемещения · партии FIFO · умные закупки
         </p>
       </div>
 
       <div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+        <div class="flex border" style="border-color: #1e293b; border-radius: 4px; overflow: hidden">
+          <button
+            type="button"
+            class="px-3 py-1.5"
+            :style="panel === 'stock'
+              ? { background: '#1a3c8c', color: '#fff' }
+              : { background: '#090d16', color: '#9ca3af' }"
+            @click="panel = 'stock'"
+          >
+            Остатки
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1.5"
+            :style="panel === 'smart'
+              ? { background: '#1a3c8c', color: '#fff' }
+              : { background: '#090d16', color: '#9ca3af' }"
+            @click="panel = 'smart'"
+          >
+            Умные закупки
+          </button>
+        </div>
         <DsLoadingBadge v-if="loading || bulkPending || opPending" label="Fetching" />
         <DsBadge v-if="degraded" status="warning" label="Degraded" variant="warning" dot />
         <span class="border px-2 py-1.5" style="border-color: #1e293b; border-radius: 4px; color: #a8b3c7">SKU {{ stats.skus }}</span>
@@ -305,6 +329,9 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <SmartPurchasesPanel v-if="panel === 'smart'" :warehouses="warehouses" />
+
+    <template v-if="panel === 'stock'">
     <div
       class="sticky top-0 z-10 flex flex-col gap-2 border p-3 sm:flex-row sm:flex-wrap sm:items-center"
       style="background: #0f172a; border-color: #1e293b; border-radius: 4px"
@@ -545,6 +572,7 @@ onUnmounted(() => {
           </template>
         </DsTable>
       </div>
+    </template>
     </template>
 
     <InventoryAdjustmentModal

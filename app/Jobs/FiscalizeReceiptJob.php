@@ -126,6 +126,14 @@ class FiscalizeReceiptJob implements ShouldQueue
                 );
             });
 
+            event(new \Autometria\Events\ReceiptFiscalizedEvent(
+                tenantId: (int) $receipt->tenant_id,
+                fiscalReceiptId: (int) $receipt->id,
+                orderId: $receipt->order_id !== null ? (int) $receipt->order_id : null,
+                fdNumber: $result->fiscalDocumentNumber !== null ? (string) $result->fiscalDocumentNumber : null,
+                fnNumber: $result->fiscalStorageNumber !== null ? (string) $result->fiscalStorageNumber : null,
+            ));
+
             return;
         }
 
