@@ -39,6 +39,9 @@ declare(strict_types=1);
 namespace Autometria\Http\Controllers;
 
 use Autometria\Exceptions\Domain\InsufficientStockException;
+use Autometria\Models\ProductService;
+use Autometria\Models\Warehouse;
+use Autometria\Services\PushTriggerService;
 use Autometria\Services\StockTransferService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -47,6 +50,7 @@ class StockTransferController extends Controller
 {
     public function __construct(
         private readonly StockTransferService $transfers,
+        private readonly PushTriggerService $push,
     ) {}
 
     public function store(Request $request): JsonResponse
@@ -59,9 +63,11 @@ class StockTransferController extends Controller
             'reason' => ['required', 'string', 'min:3'],
         ]);
 
+        $tenantId = (int) $request->user()->tenant_id;
+
         try {
             $transfer = $this->transfers->transfer(
-                (int) $request->user()->tenant_id,
+                $tenantId,
                 (int) $validated['product_id'],
                 (int) $validated['from_warehouse_id'],
                 (int) $validated['to_warehouse_id'],
@@ -72,6 +78,18 @@ class StockTransferController extends Controller
         } catch (InsufficientStockException $e) {
             return response()->json(['message' => $e->getMessage(), 'error' => 'available_less_than_qty'], 409);
         }
+
+        $product = ProductService::query()->withoutGlobalScopes()->find((int) $validated['product_id']);
+        $from = Warehouse::query()->withoutGlobalScopes()->find((int) $validated['from_warehouse_id']);
+        $to = Warehouse::query()->withoutGlobalScopes()->find((int) $validated['to_warehouse_id']);
+
+        $this->push->stockTransferCreated(
+            tenantId: $tenantId,
+            productName: $product?->name ?? 'Товар #' . $validated['product_id'],
+            fromWarehouse: $from?->name ?? 'Склад #' . $validated['from_warehouse_id'],
+            toWarehouse: $to?->name ?? 'Склад #' . $validated['to_warehouse_id'],
+            qty: (float) $validated['qty'],
+        );
 
         return response()->json(['data' => $transfer], 201);
     }

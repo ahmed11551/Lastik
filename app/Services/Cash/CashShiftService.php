@@ -44,6 +44,7 @@ use Autometria\Exceptions\Domain\ShiftExpiredException;
 use Autometria\Models\CashMovement;
 use Autometria\Models\CashShift;
 use Autometria\Models\Payment;
+use Autometria\Services\PushTriggerService;
 use Autometria\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 
@@ -274,6 +275,13 @@ class CashShiftService
                 (int) $shift->id,
                 [],
                 ['totals' => $totals, 'shortage' => $shortage, 'overage' => $overage, 'z_report' => $zReport],
+            );
+
+            $cashier = $shift->user ?? null;
+            $zRef = 'Z-' . $shift->id . '-' . now()->format('Ymd');
+            \Autometria\Services\PushTriggerService::notifySafe(
+                fn () => app(\Autometria\Services\PushTriggerService::class)
+                    ->shiftClosed((int) $shift->tenant_id, $cashier?->name ?? ('#'. $shift->user_id), $zRef),
             );
 
             return $shift;

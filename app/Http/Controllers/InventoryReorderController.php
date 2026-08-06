@@ -12,6 +12,7 @@ namespace Autometria\Http\Controllers;
 
 use Autometria\Jobs\CalculateReorderPointJob;
 use Autometria\Models\InventoryReorderRecommendation;
+use Autometria\Services\PushTriggerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -85,10 +86,32 @@ class InventoryReorderController extends Controller
         if (! empty($data['sync'])) {
             $result = $job->handle(app(\Autometria\Services\Inventory\InventoryDemandPredictor::class));
 
+            $critical = InventoryReorderRecommendation::query()
+                ->where('severity', 'critical')
+                ->when(
+                    ! empty($data['warehouse_id']),
+                    fn ($q) => $q->where('warehouse_id', (int) $data['warehouse_id']),
+                )
+                ->with(['product:id,name'])
+                ->limit(5)
+                ->get();
+
+            if ($critical->isNotEmpty()) {
+                $push = app(PushTriggerService::class);
+                foreach ($critical as $rec) {
+                    $push->lowStock(
+                        tenantId: $tenantId,
+                        productName: $rec->product?->name ?? ('#'. $rec->product_id),
+                        available: (float) $rec->on_hand,
+                    );
+                }
+            }
+
             return response()->json([
                 'queued' => false,
                 'sync' => true,
                 'upserted' => $result['upserted'] ?? 0,
+                'critical_count' => $critical->count(),
             ]);
         }
 
