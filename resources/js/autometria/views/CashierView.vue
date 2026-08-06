@@ -465,8 +465,8 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="min-w-0 max-w-full space-y-3 overflow-x-hidden p-3 sm:space-y-4 sm:p-4 lg:p-6"
-    style="background: var(--autometria-bg, #0b0d10); min-height: 100%"
+    class="has-thumb-dock min-w-0 max-w-full space-y-3 overflow-x-hidden p-0 sm:space-y-4 sm:p-0 lg:p-0"
+    style="background: var(--autometria-bg, #090d16); min-height: 100%"
   >
     <div
       class="flex flex-col gap-3 border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
@@ -539,7 +539,7 @@ onUnmounted(() => {
           style="color: #f59e0b; border-color: #1f2937; border-radius: 4px; background: #11151a"
         >F2</kbd>
       </div>
-      <div class="flex gap-2">
+      <div class="hidden gap-2 sm:flex">
         <button
           type="button"
           class="h-11 flex-1 border px-3 font-mono text-[11px] sm:h-9 sm:flex-none"
@@ -577,7 +577,7 @@ onUnmounted(() => {
           <DsBadge status="open" label="POS Cart" variant="open" />
         </div>
 
-        <div class="space-y-2 md:hidden">
+        <div class="scroll-y-contain max-h-[min(42vh,360px)] space-y-2 md:hidden">
           <article
             v-for="row in cart"
             :key="row.id"
@@ -736,7 +736,7 @@ onUnmounted(() => {
 
           <button
             type="button"
-            class="mt-3 h-14 w-full border px-3 font-mono text-sm font-bold uppercase tracking-wide transition-colors disabled:opacity-50 sm:h-11 sm:text-xs"
+            class="mt-3 hidden h-14 w-full border px-3 font-mono text-sm font-bold uppercase tracking-wide transition-colors disabled:opacity-50 sm:block sm:h-11 sm:text-xs"
             style="background: #f59e0b; color: #0b0d10; border-color: #f59e0b; border-radius: 4px"
             :disabled="!shiftOpen || checkingOut || !cart.length"
             @click="requestPay"
@@ -800,6 +800,37 @@ onUnmounted(() => {
       </aside>
     </div>
 
+    <!-- Mobile thumb zone: Scan + Pay (375–430px) -->
+    <div class="thumb-dock p-3 sm:hidden" data-testid="cashier-thumb-dock">
+      <button
+        type="button"
+        class="thumb-dock__btn border"
+        style="border-color: #60A5FA; color: #60A5FA; background: #090d16"
+        :disabled="!shiftOpen"
+        @click="startScan()"
+      >
+        📷 Скан
+      </button>
+      <button
+        type="button"
+        class="thumb-dock__btn border"
+        style="border-color: #F59E0B; color: #F59E0B; background: #090d16"
+        :disabled="!shiftOpen"
+        @click="openCashOp('deposit')"
+      >
+        + Касса
+      </button>
+      <button
+        type="button"
+        class="thumb-dock__btn border"
+        style="background: #f59e0b; color: #090d16; border-color: #f59e0b"
+        :disabled="!shiftOpen || checkingOut || !cart.length"
+        @click="requestPay"
+      >
+        Оплата
+      </button>
+    </div>
+
     <ShiftOpenModal
       v-model:open="openModal"
       :pending="shiftMutating"
@@ -842,7 +873,7 @@ onUnmounted(() => {
     <!-- Barcode / DataMatrix camera scanner overlay (Sprint 2) -->
     <div
       v-if="scanOpen"
-      class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/85 p-4"
+      class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/85 p-4 safe-inset"
     >
       <div class="flex w-full max-w-md items-center justify-between">
         <span class="font-mono text-[11px] uppercase tracking-wide" style="color: #60A5FA">

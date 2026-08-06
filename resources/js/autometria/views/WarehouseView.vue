@@ -322,7 +322,8 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="min-w-0 max-w-full space-y-3 overflow-x-hidden p-3 sm:space-y-4 sm:p-4 lg:p-6"
+    class="min-w-0 max-w-full space-y-3 overflow-x-hidden p-0 sm:space-y-4"
+    :class="panel === 'stock' ? 'has-thumb-dock' : ''"
     style="background: var(--brand-desk, var(--autometria-bg, #090d16)); min-height: 100%"
   >
     <div
@@ -374,8 +375,8 @@ onUnmounted(() => {
 
     <template v-if="panel === 'stock'">
     <div
-      class="sticky top-0 z-10 flex flex-col gap-2 border p-3 sm:flex-row sm:flex-wrap sm:items-center"
-      style="background: #0f172a; border-color: #1e293b; border-radius: 4px"
+      class="sticky z-10 flex flex-col gap-2 border p-3 sm:flex-row sm:flex-wrap sm:items-center"
+      style="background: #0f172a; border-color: #1e293b; border-radius: 4px; top: calc(var(--offline-banner-h, 0px) + 0.25rem)"
     >
       <div class="relative w-full min-w-0 flex-1">
         <input
@@ -420,7 +421,7 @@ onUnmounted(() => {
         </option>
       </select>
 
-      <div class="flex w-full gap-2 sm:w-auto">
+      <div class="hidden w-full gap-2 sm:flex sm:w-auto">
         <button
           type="button"
           class="h-11 flex-1 border px-3 font-mono text-[11px] sm:h-9 sm:flex-none"
@@ -474,7 +475,7 @@ onUnmounted(() => {
 
     <template v-else>
       <!-- Mobile cards + FIFO -->
-      <div class="space-y-2 sm:hidden">
+      <div class="scroll-y-contain max-h-[min(58vh,520px)] space-y-2 sm:hidden">
         <article
           v-for="row in rows"
           :key="row.id"
@@ -624,6 +625,40 @@ onUnmounted(() => {
     </template>
     </template>
 
+    <!-- Mobile thumb zone: Scan + Inventory + Transfer -->
+    <div
+      v-if="panel === 'stock'"
+      class="thumb-dock p-3 sm:hidden"
+      data-testid="warehouse-thumb-dock"
+    >
+      <button
+        type="button"
+        class="thumb-dock__btn border"
+        style="border-color: #60A5FA; color: #60A5FA; background: #090d16"
+        @click="startWmsScan()"
+      >
+        📷 Скан
+      </button>
+      <button
+        type="button"
+        class="thumb-dock__btn border"
+        style="border-color: #f59e0b; color: #f59e0b; background: #090d16"
+        :disabled="!selectedKeys.length || opPending"
+        @click="openInventoryFromSelection"
+      >
+        Инвент.
+      </button>
+      <button
+        type="button"
+        class="thumb-dock__btn border"
+        style="border-color: #10B981; color: #10B981; background: #090d16"
+        :disabled="!selectedKeys.length || opPending"
+        @click="openTransfer"
+      >
+        Перемещ.
+      </button>
+    </div>
+
     <InventoryAdjustmentModal
       v-model:open="inventoryOpen"
       :row="inventoryRow"
@@ -642,7 +677,7 @@ onUnmounted(() => {
     <!-- WMS Barcode / DataMatrix scanner overlay (Sprint 2) -->
     <div
       v-if="wmsScanOpen"
-      class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/85 p-4"
+      class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/85 p-4 safe-inset"
     >
       <div class="flex w-full max-w-md items-center justify-between">
         <span class="font-mono text-[11px] uppercase tracking-wide" style="color: #60A5FA">

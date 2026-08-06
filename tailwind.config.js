@@ -75,6 +75,13 @@ export default {
         sidebar: "260px",
         "row-compact": "32px",
         "row-comfortable": "48px",
+        "safe-t": "var(--safe-top)",
+        "safe-b": "var(--safe-bottom)",
+        "safe-l": "var(--safe-left)",
+        "safe-r": "var(--safe-right)",
+      },
+      minHeight: {
+        thumb: "3.25rem",
       },
     },
   },

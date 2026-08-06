@@ -36,6 +36,7 @@ import PayslipView from '@/Pages/Payroll/PayslipView.vue'
 import PayrollRules from '@/Pages/Payroll/Rules.vue'
 import UsersManagement from '@/design-system/pages/UsersManagement.vue'
 import DsToastHost from '@/autometria/components/DsToastHost.vue'
+import OfflineBanner from '@/autometria/components/OfflineBanner.vue'
 import { getToken } from '@/autometria/api/client'
 import { useShiftStore } from '@/autometria/stores/cashierStore'
 
@@ -257,7 +258,9 @@ function onLoginSuccess(payload) {
 </script>
 
 <template>
-  <div>
+  <div class="scroll-lock-outer min-h-dvh">
+    <OfflineBanner />
+
     <LoginView
       v-if="view === 'login'"
       @success="onLoginSuccess"
