@@ -23,11 +23,12 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": false,
-    "types": ["vite/client"]
+    "types": ["vite/client", "vite-plugin-pwa/client"]
   },
   "include": [
     "resources/js/autometria/**/*.ts",
     "resources/js/autometria/**/*.vue",
+    "resources/js/autometria/**/*.js",
     "resources/js/design-system/**/*.ts",
     "resources/js/design-system/**/*.vue",
     "resources/js/Layouts/**/*.vue",
@@ -38,6 +39,7 @@
     "resources/js/Components/pos/**/*.vue",
     "resources/js/views/pos/**/*.vue",
     "resources/js/shims-vue.d.ts",
+    "resources/js/vite-env.d.ts",
     "vite.config.ts",
     "playwright.config.ts",
     "tests/e2e/**/*.ts"

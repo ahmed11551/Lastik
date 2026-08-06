@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { apiGet, apiPost } from '../api/client'
 import { toast } from '../api/toast'
+import { useOfflineStore } from '../../stores/useOfflineStore'
+import { getStoredUser } from '../api/client'
 
 export const useShiftStore = defineStore('shift', {
   state: () => ({
@@ -266,17 +268,21 @@ export const useCashierStore = defineStore('cashier', {
       const tendered = options.tendered ?? this.tendered ?? this.totalDue
       /** Snapshot for fiscal payload before cart clear */
       const cartSnapshot = this.cart.map((r) => ({ ...r }))
-      try {
-        const items = cartSnapshot.map((r) => ({
+      const buildItems = (rows) =>
+        rows.map((r) => ({
           product_id: r.product_id,
           qty: r.qty,
           discount: r.discount || 0,
           warehouse_id: r.warehouse_id || undefined,
           type: 'product',
           vat_rate: r.vat_rate || vatRate,
+          marking_code: r.marking_code || r.markingCode || undefined,
+          gtin: r.gtin || undefined,
+          serial_number: r.serial_number || undefined,
         }))
+      try {
         const payload = await apiPost('/pos/checkout', {
-          items,
+          items: buildItems(cartSnapshot),
           method,
           amount_tendered: tendered,
         })
@@ -294,6 +300,51 @@ export const useCashierStore = defineStore('cashier', {
           vat_rate: vatRate,
         }
       } catch (e) {
+        // Offline-first: queue the receipt locally if network is down or ERP unreachable.
+        const offline = useOfflineStore()
+        const user = getStoredUser() || {}
+        const isNetworkError =
+          !navigator.onLine ||
+          (e && (e.code === 'NETWORK_ERROR' || e.message?.includes('Network')))
+        if (isNetworkError || !navigator.onLine) {
+          const saved = await offline.saveLocalReceipt({
+            tenant_id: Number(user.tenant_id || 0),
+            shift_id: Number(this.shiftId || 0),
+            cashier_id: Number(user.id || 0),
+            items: buildItems(cartSnapshot).map((i) => ({
+              product_id: i.product_id,
+              qty: i.qty,
+              price: cartSnapshot.find((r) => r.product_id === i.product_id)?.price || 0,
+              discount: i.discount,
+              vat_rate: i.vat_rate,
+              warehouse_id: i.warehouse_id,
+              marking_code: i.marking_code || null,
+              gtin: i.gtin || null,
+              serial_number: i.serial_number || null,
+              is_marked: Boolean(i.marking_code),
+            })),
+            total_amount: Number(this.totalDue || 0),
+            amount_tendered: tendered,
+            payment_type: method === 'card' ? 'CARD' : method === 'mixed' ? 'MIXED' : 'CASH',
+            requires_fiscal_marking: cartSnapshot.some((r) => r.marking_code),
+            customer_id: this.selectedCustomer?.id || undefined,
+            bonus_spend: this.bonusSpend || undefined,
+          })
+          this.cart = []
+          this.lastOp = {
+            status: 'warning',
+            label: 'Офлайн — чек в очереди синхронизации',
+          }
+          toast.warning(this.lastOp.label, 'POS Offline')
+          await offline.refreshCounts()
+          return {
+            offline: true,
+            uuid: saved.uuid,
+            cart_snapshot: cartSnapshot,
+            vat_rate: vatRate,
+            total: Number(this.totalDue || 0),
+          }
+        }
         this.lastOp = {
           status: 'danger',
           label: e.response?.data?.message || 'Ошибка оплаты',

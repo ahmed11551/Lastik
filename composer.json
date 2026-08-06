@@ -8,6 +8,7 @@
         "ext-pdo_pgsql": "*",
         "ext-pgsql": "*",
         "guzzlehttp/guzzle": "^7.9",
+        "laravel-notification-channels/webpush": "^11.0",
         "laravel/framework": "^13.0",
         "laravel/horizon": "^5.48",
         "laravel/reverb": "^1.11",

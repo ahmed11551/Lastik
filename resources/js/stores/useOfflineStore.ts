@@ -11,6 +11,8 @@ import {
   type LocalReceiptItem,
   type LocalRefund,
   type LocalRefundItem,
+  type LocalStockOp,
+  type LocalStockOpType,
 } from '../services/offlineDb'
 
 export const useOfflineStore = defineStore('offline', {
@@ -19,6 +21,8 @@ export const useOfflineStore = defineStore('offline', {
     pendingCount: 0,
     failedCount: 0,
     pendingRefundCount: 0,
+    pendingStockCount: 0,
+    failedStockCount: 0,
     caching: false,
     lastCacheAt: null as string | null,
     syncing: false,
@@ -27,6 +31,8 @@ export const useOfflineStore = defineStore('offline', {
 
   getters: {
     hasPending: (s) => s.pendingCount > 0 || s.pendingRefundCount > 0,
+    queueTotal: (s) =>
+      s.pendingCount + s.pendingRefundCount + s.pendingStockCount + s.failedCount + s.failedStockCount,
   },
 
   actions: {
@@ -38,6 +44,12 @@ export const useOfflineStore = defineStore('offline', {
       this.pendingCount = await db.localReceipts.where('status').equals('PENDING_SYNC').count()
       this.failedCount = await db.localReceipts.where('status').equals('FAILED').count()
       this.pendingRefundCount = await db.localRefunds.where('status').equals('PENDING_SYNC').count()
+      try {
+        this.pendingStockCount = await db.localStockOps.where('status').equals('PENDING_SYNC').count()
+        this.failedStockCount = await db.localStockOps.where('status').equals('FAILED').count()
+      } catch {
+        /* stock queue may be absent until Sync Engine lands */
+      }
     },
 
     /**
@@ -264,6 +276,66 @@ export const useOfflineStore = defineStore('offline', {
     async clearCartDraft(cashierId = 0, shiftId = 0) {
       const key = `draft-${cashierId}-${shiftId}`
       await db.cartDrafts.where('key').equals(key).delete()
+    },
+
+    // --- WMS offline queue (Sprint 3) ---
+    async saveStockOp(input: {
+      tenant_id: number
+      op_type: LocalStockOpType
+      warehouse_id: number | null
+      to_warehouse_id?: number | null
+      cell_code?: string | null
+      batch_id?: number | null
+      product_id: number
+      qty: number
+      reason?: string | null
+    }): Promise<LocalStockOp> {
+      const row: LocalStockOp = {
+        uuid: createReceiptUuid(),
+        tenant_id: input.tenant_id,
+        op_type: input.op_type,
+        warehouse_id: input.warehouse_id,
+        to_warehouse_id: input.to_warehouse_id ?? null,
+        cell_code: input.cell_code ?? null,
+        batch_id: input.batch_id ?? null,
+        product_id: input.product_id,
+        qty: input.qty,
+        reason: input.reason ?? null,
+        status: 'PENDING_SYNC',
+        created_at: new Date().toISOString(),
+        synced_at: null,
+        last_error: null,
+      }
+      const id = await db.localStockOps.add(row)
+      row.id = id
+      await this.refreshStockCounts()
+      return row
+    },
+
+    async listPendingStockOps(): Promise<LocalStockOp[]> {
+      return db.localStockOps.where('status').equals('PENDING_SYNC').sortBy('created_at')
+    },
+
+    async markStockOpSynced(id: number) {
+      await db.localStockOps.update(id, {
+        status: 'SYNCED',
+        synced_at: new Date().toISOString(),
+        last_error: null,
+      })
+      await this.refreshStockCounts()
+    },
+
+    async markStockOpFailed(id: number, error: string) {
+      await db.localStockOps.update(id, { status: 'FAILED', last_error: error })
+      await this.refreshStockCounts()
+    },
+
+    async refreshStockCounts() {
+      this.pendingStockCount = await db.localStockOps
+        .where('status')
+        .equals('PENDING_SYNC')
+        .count()
+      this.failedStockCount = await db.localStockOps.where('status').equals('FAILED').count()
     },
   },
 })

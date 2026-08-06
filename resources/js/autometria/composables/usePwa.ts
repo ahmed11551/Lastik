@@ -1,8 +1,10 @@
 /**
  * AUTOMETRIA ERP — PWA composable
- * Registers Service Worker, tracks online/offline, persists POS cart drafts to IndexedDB.
+ * Registers Service Worker via vite-plugin-pwa, tracks online/offline,
+ * persists POS cart drafts to IndexedDB.
  */
 import { onMounted, onUnmounted, ref, type Ref } from 'vue'
+import { registerSW } from 'virtual:pwa-register'
 
 export type PwaStatus = {
   online: Ref<boolean>
@@ -70,24 +72,38 @@ export function usePwa(): PwaStatus {
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
       return null
     }
-    try {
-      registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      swReady.value = true
 
-      registration.addEventListener('updatefound', () => {
-        const worker = registration?.installing
-        if (!worker) return
-        worker.addEventListener('statechange', () => {
-          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-            updateAvailable.value = true
-          }
-        })
+    try {
+      registerSW({
+        immediate: true,
+        onNeedRefresh() {
+          updateAvailable.value = true
+        },
+        onOfflineReady() {
+          swReady.value = true
+        },
+        onRegisteredSW(_swUrl, reg) {
+          registration = reg ?? null
+          swReady.value = true
+        },
       })
+
+      registration = (await navigator.serviceWorker.getRegistration()) ?? null
+      if (registration) {
+        swReady.value = true
+      }
 
       return registration
     } catch (e) {
-      console.warn('[PWA] SW registration failed:', e)
-      return null
+      console.warn('[PWA] SW registration failed, falling back to /sw.legacy.js:', e)
+      try {
+        registration = await navigator.serviceWorker.register('/sw.legacy.js', { scope: '/' })
+        swReady.value = true
+        return registration
+      } catch (fallbackError) {
+        console.warn('[PWA] legacy SW registration failed:', fallbackError)
+        return null
+      }
     }
   }
 

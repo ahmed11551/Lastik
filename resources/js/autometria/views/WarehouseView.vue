@@ -13,6 +13,8 @@ import InventoryAdjustmentModal from '@/autometria/components/warehouse/Inventor
 import StockTransferModal from '@/autometria/components/warehouse/StockTransferModal.vue'
 import FifoLotsPanel from '@/autometria/components/warehouse/FifoLotsPanel.vue'
 import SmartPurchasesPanel from '@/autometria/components/warehouse/SmartPurchasesPanel.vue'
+import { useBarcodeScanner } from '@/autometria/composables/useBarcodeScanner'
+import { parseGs1 } from '@/autometria/utils/gs1Parser'
 
 type StockRow = {
   id: number
@@ -110,6 +112,45 @@ const defaultFromWarehouseId = computed(() => {
   const first = selectedRows.value[0]
   return first ? Number(first.warehouse_id) : warehouses.value[0]?.id ?? null
 })
+
+// --- WMS Barcode / DataMatrix scanner (Sprint 2): bin + lot ---
+const scanner = useBarcodeScanner()
+const wmsVideoRef = ref<HTMLVideoElement | null>(null)
+const wmsScanOpen = ref(false)
+const scannedCell = ref<string | null>(null)
+const scannedLot = ref<{ gtin: string | null; batch: string | null; serial: string | null } | null>(null)
+
+async function startWmsScan(): Promise<void> {
+  wmsScanOpen.value = true
+  await nextTick()
+  if (!wmsVideoRef.value) return
+  await scanner.start(wmsVideoRef.value, onWmsScan)
+  if (!scanner.supported.value && scanner.error.value) {
+    toast.warning(scanner.error.value, 'WMS Сканер')
+  }
+}
+
+function stopWmsScan(): void {
+  scanner.stop()
+  wmsScanOpen.value = false
+}
+
+function onWmsScan(raw: string): void {
+  const parsed = parseGs1(raw)
+  if (parsed.gtin || parsed.batch || parsed.serial) {
+    // DataMatrix партии товара (Честный Знак / GS1)
+    scannedLot.value = { gtin: parsed.gtin, batch: parsed.batch, serial: parsed.serial }
+    toast.info(
+      `Партия: GTIN ${parsed.gtin ?? '—'}, партия ${parsed.batch ?? '—'}, серия ${parsed.serial ?? '—'}`,
+      'WMS',
+    )
+  } else {
+    // Иначе считаем ячейкой (bin)
+    scannedCell.value = raw.trim()
+    toast.info(`Ячейка: ${raw.trim()}`, 'WMS')
+  }
+  stopWmsScan()
+}
 
 function money(n: number | string | null | undefined): string {
   return `₽${Number(n || 0).toLocaleString('ru-RU')}`
@@ -281,7 +322,8 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="min-w-0 max-w-full space-y-3 overflow-x-hidden p-3 sm:space-y-4 sm:p-4 lg:p-6"
+    class="min-w-0 max-w-full space-y-3 overflow-x-hidden p-0 sm:space-y-4"
+    :class="panel === 'stock' ? 'has-thumb-dock' : ''"
     style="background: var(--brand-desk, var(--autometria-bg, #090d16)); min-height: 100%"
   >
     <div
@@ -333,8 +375,8 @@ onUnmounted(() => {
 
     <template v-if="panel === 'stock'">
     <div
-      class="sticky top-0 z-10 flex flex-col gap-2 border p-3 sm:flex-row sm:flex-wrap sm:items-center"
-      style="background: #0f172a; border-color: #1e293b; border-radius: 4px"
+      class="sticky z-10 flex flex-col gap-2 border p-3 sm:flex-row sm:flex-wrap sm:items-center"
+      style="background: #0f172a; border-color: #1e293b; border-radius: 4px; top: calc(var(--offline-banner-h, 0px) + 0.25rem)"
     >
       <div class="relative w-full min-w-0 flex-1">
         <input
@@ -379,7 +421,7 @@ onUnmounted(() => {
         </option>
       </select>
 
-      <div class="flex w-full gap-2 sm:w-auto">
+      <div class="hidden w-full gap-2 sm:flex sm:w-auto">
         <button
           type="button"
           class="h-11 flex-1 border px-3 font-mono text-[11px] sm:h-9 sm:flex-none"
@@ -397,6 +439,14 @@ onUnmounted(() => {
           @click="openTransfer"
         >
           Перемещение
+        </button>
+        <button
+          type="button"
+          class="h-11 flex-1 border px-3 font-mono text-[11px] sm:h-9 sm:flex-none"
+          style="border-color: #60A5FA; color: #60A5FA; border-radius: 4px; background: #090d16"
+          @click="startWmsScan()"
+        >
+          📷 Сканировать
         </button>
       </div>
     </div>
@@ -425,7 +475,7 @@ onUnmounted(() => {
 
     <template v-else>
       <!-- Mobile cards + FIFO -->
-      <div class="space-y-2 sm:hidden">
+      <div class="scroll-y-contain max-h-[min(58vh,520px)] space-y-2 sm:hidden">
         <article
           v-for="row in rows"
           :key="row.id"
@@ -575,6 +625,40 @@ onUnmounted(() => {
     </template>
     </template>
 
+    <!-- Mobile thumb zone: Scan + Inventory + Transfer -->
+    <div
+      v-if="panel === 'stock'"
+      class="thumb-dock p-3 sm:hidden"
+      data-testid="warehouse-thumb-dock"
+    >
+      <button
+        type="button"
+        class="thumb-dock__btn border"
+        style="border-color: #60A5FA; color: #60A5FA; background: #090d16"
+        @click="startWmsScan()"
+      >
+        📷 Скан
+      </button>
+      <button
+        type="button"
+        class="thumb-dock__btn border"
+        style="border-color: #f59e0b; color: #f59e0b; background: #090d16"
+        :disabled="!selectedKeys.length || opPending"
+        @click="openInventoryFromSelection"
+      >
+        Инвент.
+      </button>
+      <button
+        type="button"
+        class="thumb-dock__btn border"
+        style="border-color: #10B981; color: #10B981; background: #090d16"
+        :disabled="!selectedKeys.length || opPending"
+        @click="openTransfer"
+      >
+        Перемещ.
+      </button>
+    </div>
+
     <InventoryAdjustmentModal
       v-model:open="inventoryOpen"
       :row="inventoryRow"
@@ -589,5 +673,41 @@ onUnmounted(() => {
       :pending="opPending"
       @confirm="confirmTransfer"
     />
+
+    <!-- WMS Barcode / DataMatrix scanner overlay (Sprint 2) -->
+    <div
+      v-if="wmsScanOpen"
+      class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/85 p-4 safe-inset"
+    >
+      <div class="flex w-full max-w-md items-center justify-between">
+        <span class="font-mono text-[11px] uppercase tracking-wide" style="color: #60A5FA">
+          WMS · ячейка или DataMatrix партии
+        </span>
+        <button
+          type="button"
+          class="border px-3 py-1.5 font-mono text-[11px]"
+          style="border-color: #1f2937; color: #9ca3af; border-radius: 4px; background: #0b0d10"
+          @click="stopWmsScan()"
+        >
+          Закрыть
+        </button>
+      </div>
+      <video
+        ref="wmsVideoRef"
+        playsinline
+        muted
+        class="aspect-square w-full max-w-md rounded border"
+        style="border-color: #f59e0b; background: #0b0d10"
+      />
+      <div v-if="scannedCell" class="font-mono text-[12px]" style="color: #10B981">
+        Ячейка: {{ scannedCell }}
+      </div>
+      <div v-if="scannedLot" class="font-mono text-[12px]" style="color: #F59E0B">
+        Партия: GTIN {{ scannedLot.gtin || '—' }} · {{ scannedLot.batch || '—' }} · {{ scannedLot.serial || '—' }}
+      </div>
+      <p v-if="scanner.error.value" class="font-mono text-[11px]" style="color: #F87171">
+        {{ scanner.error.value }}
+      </p>
+    </div>
   </div>
 </template>

@@ -58,6 +58,16 @@ final class DemoSeeder extends Seeder
                 ]
             );
 
+            $warehouseRole = Role::query()->withoutGlobalScopes()->updateOrCreate(
+                ['tenant_id' => $tenant->id, 'slug' => 'warehouse'],
+                [
+                    'tenant_id' => $tenant->id,
+                    'name' => 'Кладовщик',
+                    'slug' => 'warehouse',
+                    'permissions' => ['stock.view', 'stock.transfer', 'stock.import'],
+                ]
+            );
+
             $location = Location::query()->withoutGlobalScopes()->updateOrCreate(
                 ['tenant_id' => $tenant->id, 'name' => 'СТО Центр'],
                 [
