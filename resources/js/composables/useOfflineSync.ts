@@ -5,6 +5,7 @@ import { apiPost } from '../autometria/api/client'
 import { toast } from '../autometria/api/toast'
 import { useOfflineStore } from '../stores/useOfflineStore'
 import type { LocalReceipt } from '../services/offlineDb'
+import { classifySyncStatus, type SyncOutcome } from './syncStatus'
 
 let syncing = false
 let bound = false
@@ -142,6 +143,10 @@ export async function syncPendingReceipts(): Promise<{ synced: number; failed: n
     synced += refundResult.synced
     failed += refundResult.failed
 
+    const stockResult = await syncPendingStockOps()
+    synced += stockResult.synced
+    failed += stockResult.failed
+
     if (synced > 0) {
       toast.success(`Синхронизировано: ${synced}`, 'POS Sync')
     }
@@ -154,13 +159,74 @@ export async function syncPendingReceipts(): Promise<{ synced: number; failed: n
   return { synced, failed }
 }
 
-export async function syncPendingRefunds(): Promise<{ synced: number; failed: number }> {
+export async function syncPendingStockOps(): Promise<{ synced: number; failed: number }> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     return { synced: 0, failed: 0 }
   }
   const offline = useOfflineStore()
-  return syncPendingRefundsInternal(offline)
+  let synced = 0
+  let failed = 0
+  const pending = await offline.listPendingStockOps()
+  for (const op of pending) {
+    if (op.id == null) continue
+    try {
+      if (op.op_type === 'TRANSFER') {
+        await apiPost(
+          '/stock/transfers',
+          {
+            from_warehouse_id: op.warehouse_id,
+            to_warehouse_id: op.to_warehouse_id,
+            lines: [{ product_id: op.product_id, qty: op.qty }],
+            reason: op.reason || undefined,
+          },
+          { headers: { 'X-Idempotency-Key': op.uuid }, silent: true },
+        )
+      } else if (op.op_type === 'BATCH_MOVE') {
+        await apiPost(
+          '/wms/batch-move',
+          {
+            batch_id: op.batch_id,
+            to_cell: op.cell_code,
+            qty: op.qty,
+          },
+          { headers: { 'X-Idempotency-Key': op.uuid }, silent: true },
+        )
+      } else {
+        // WRITE_OFF
+        await apiPost(
+          '/stock/inventory-adjust',
+          {
+            warehouse_id: op.warehouse_id,
+            product_id: op.product_id,
+            qty: -Math.abs(op.qty),
+            reason: op.reason || 'offline write-off',
+          },
+          { headers: { 'X-Idempotency-Key': op.uuid }, silent: true },
+        )
+      }
+      await offline.markStockOpSynced(op.id)
+      synced += 1
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (status === 200 || status === 201 || status === 409) {
+        await offline.markStockOpSynced(op.id)
+        synced += 1
+        continue
+      }
+      const msg =
+        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data
+          ?.message || (err as { message?: string })?.message || 'stock op sync failed'
+      console.error('Stock op sync failed:', op.uuid, err)
+      offline.lastSyncError = msg
+      if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
+        await offline.markStockOpFailed(op.id, msg)
+        failed += 1
+      }
+    }
+  }
+  return { synced, failed }
 }
+
 
 /** Bind online/offline listeners once (call from PosView onMounted). */
 export function bindOfflineSyncListeners(): () => void {

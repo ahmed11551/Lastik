@@ -108,11 +108,34 @@ export interface CartDraft {
   updated_at: string
 }
 
+export type LocalStockOpStatus = 'PENDING_SYNC' | 'SYNCED' | 'FAILED'
+
+export type LocalStockOpType = 'WRITE_OFF' | 'TRANSFER' | 'BATCH_MOVE'
+
+export interface LocalStockOp {
+  id?: number
+  uuid: string
+  tenant_id: number
+  op_type: LocalStockOpType
+  warehouse_id: number | null
+  to_warehouse_id?: number | null
+  cell_code?: string | null
+  batch_id?: number | null
+  product_id: number
+  qty: number
+  reason?: string | null
+  status: LocalStockOpStatus
+  created_at: string
+  synced_at?: string | null
+  last_error?: string | null
+}
+
 export class PosDatabase extends Dexie {
   localReceipts!: Table<LocalReceipt, number>
   cachedProducts!: Table<CachedProduct, number>
   localRefunds!: Table<LocalRefund, number>
   cartDrafts!: Table<CartDraft, number>
+  localStockOps!: Table<LocalStockOp, number>
 
   constructor() {
     super('PosDatabase')
@@ -137,6 +160,14 @@ export class PosDatabase extends Dexie {
       cachedProducts: 'id, product_id, sku, barcode, title',
       localRefunds: '++id, uuid, order_id, status, created_at',
       cartDrafts: '++id, key, updated_at, shift_id',
+    })
+    // v5: Sprint 3 — WMS offline queue (write-off / transfer / batch-move)
+    this.version(5).stores({
+      localReceipts: '++id, uuid, status, created_at, shift_id',
+      cachedProducts: 'id, product_id, sku, barcode, title',
+      localRefunds: '++id, uuid, order_id, status, created_at',
+      cartDrafts: '++id, key, updated_at, shift_id',
+      localStockOps: '++id, uuid, op_type, status, created_at, warehouse_id',
     })
   }
 }
