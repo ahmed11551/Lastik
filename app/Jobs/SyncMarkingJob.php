@@ -10,8 +10,10 @@ declare(strict_types=1);
 
 namespace Autometria\Jobs;
 
+use Autometria\Exceptions\Domain\InvalidMarkingCodeException;
 use Autometria\Jobs\Concerns\SetsTenantContext;
 use Autometria\Services\Marking\ChestnyZnakClient;
+use Autometria\Services\Marking\DataMatrixParserService;
 use Autometria\Services\Marking\MarkingValidationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -55,13 +57,28 @@ class SyncMarkingJob implements ShouldQueue
     public function handle(
         ChestnyZnakClient $chestny,
         MarkingValidationService $marking,
+        DataMatrixParserService $parser,
     ): ?array {
         $this->bindTenantContext($this->tenantId);
 
         try {
             $parsed = $this->parsed;
             if ($parsed === null || ! isset($parsed['gtin'], $parsed['serial'], $parsed['raw'])) {
-                $parsed = $marking->validateDataMatrix($this->markingCode, $this->productId);
+                if ($this->registerSold) {
+                    // Pre-sale path: local registry must still be APPLIED.
+                    $parsed = $marking->validateDataMatrix($this->markingCode, $this->productId);
+                } else {
+                    // Post-sale GIS sync: CIS is already SOLD locally — parse only,
+                    // do not re-run double-exit guard (would throw MARKING_ALREADY_SOLD).
+                    try {
+                        $parsed = $marking->validateDataMatrix($this->markingCode, $this->productId);
+                    } catch (InvalidMarkingCodeException $e) {
+                        if ($e->errorCode !== 'MARKING_ALREADY_SOLD') {
+                            throw $e;
+                        }
+                        $parsed = $parser->parse($this->markingCode);
+                    }
+                }
             }
 
             /** @var array{gtin: string, serial: string, crypto_tail?: string|null, raw: string} $forClient */

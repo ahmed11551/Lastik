@@ -159,9 +159,9 @@ it('invalid datamatrix is rejected by chestny znak mock', function (): void {
 it('accepts valid mock datamatrix on checkout and stores CIS fields', function (): void {
     $product = seedMarkedProduct($this->fx, 'MARK-OK', 1500.0);
 
-    // Avoid HTML-sensitive serial chars (`&`, `<`) — strip_tags-safe CIS for HTTP path.
-    // Parser still covers special GS1 charset in the dedicated parser test above.
-    $valid = '010460043900001421SNTEST01X91800092dGVzdA==';
+    // Unique serial per run — avoid cross-test CIS collisions under shared DB quirks.
+    $serial = 'SN'.strtoupper(substr(uniqid(), -8));
+    $valid = '010460043900001421'.$serial.'91800092dGVzdA==';
     $ok = postJson('/api/v1/pos/checkout', [
         'method' => 'cash',
         'amount_tendered' => 2000,
@@ -189,5 +189,5 @@ it('accepts valid mock datamatrix on checkout and stores CIS fields', function (
     expect($item)->not->toBeNull();
     expect($item->marking_code)->toBe($valid);
     expect($item->gtin)->toBe('04600439000014');
-    expect($item->serial_number)->toBe('SNTEST01X');
+    expect($item->serial_number)->toBe($serial);
 });
