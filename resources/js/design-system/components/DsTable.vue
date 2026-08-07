@@ -54,6 +54,11 @@ const props = defineProps({
     type: Array,
     default: undefined,
   },
+  /** Optional per-row class: (row, index) => string | string[] | Record */
+  rowClass: {
+    type: Function,
+    default: null,
+  },
 })
 
 const emit = defineEmits(['update:selectedKeys', 'selection-change', 'bulk-action'])
@@ -258,7 +263,10 @@ defineExpose({ clearSelection, selectedCount })
             v-for="(row, index) in rows"
             :key="rowKeyOf(row, index)"
             class="ds-table__row group"
-            :class="{ 'ds-table__row--selected': selectable && isSelected(row, index) }"
+            :class="[
+              { 'ds-table__row--selected': selectable && isSelected(row, index) },
+              rowClass ? rowClass(row, index) : null,
+            ]"
           >
             <td
               v-if="selectable"

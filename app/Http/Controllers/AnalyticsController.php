@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Autometria\Http\Controllers;
 
+use Autometria\Jobs\CalculateAbcXyzJob;
+use Autometria\Models\ProductClassification;
 use Autometria\Services\Analytics\AnalyticsCacheService;
 use Autometria\Services\Analytics\AnalyticsReportService;
 use Illuminate\Http\Request;
@@ -77,15 +79,73 @@ final class AnalyticsController
 
     public function abcXyz(Request $request): \Illuminate\Http\JsonResponse
     {
-        [$from, $to, $warehouseId] = $this->periodFilters($request);
-        $data = $this->cache->getAbcXyzAnalysis(
-            $this->tenantId(),
-            $from,
-            $to,
-            $warehouseId,
-        );
+        $tenantId = $this->tenantId();
+        $class = strtoupper((string) $request->query('class', ''));
+        $perPage = max(1, min(200, (int) ($request->query('per_page') ?? 50)));
+        $page = max(1, (int) ($request->query('page') ?? 1));
 
-        return response()->json($data);
+        $query = ProductClassification::query()
+            ->withoutGlobalScopes()
+            ->where('tenant_id', $tenantId);
+
+        if (preg_match('/^[ABC]$/', $class)) {
+            $query->where('abc_class', $class);
+        } elseif (preg_match('/^[XYZ]$/', $class)) {
+            $query->where('xyz_class', $class);
+        } elseif (preg_match('/^[ABC][XYZ]$/', $class)) {
+            $query->where('abc_class', $class[0])->where('xyz_class', $class[1]);
+        }
+
+        $total = $query->count();
+        $items = $query
+            ->orderByDesc('revenue_share')
+            ->forPage($page, $perPage)
+            ->get()
+            ->map(function (ProductClassification $c): array {
+                return [
+                    'product_id' => $c->product_id,
+                    'abc_class' => $c->abc_class,
+                    'xyz_class' => $c->xyz_class,
+                    'revenue_share' => $c->revenue_share,
+                    'variation_coefficient' => $c->variation_coefficient,
+                    'calculated_at' => $c->calculated_at?->toIso8601String(),
+                ];
+            });
+
+        return response()->json([
+            'data' => $items,
+            'meta' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+            ],
+        ]);
+    }
+
+    /**
+     * POST /api/v1/analytics/abc-xyz/recalculate — manual async recompute.
+     */
+    public function recalculate(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $periodDays = max(1, min(365, (int) ($request->input('period_days') ?? 90)));
+        CalculateAbcXyzJob::dispatch($this->tenantId(), $periodDays);
+
+        return response()->json([
+            'data' => ['queued' => true, 'period_days' => $periodDays],
+        ], 202);
+    }
+
+    /**
+     * POST /api/v1/analytics/abc-xyz/recalculate — manual async recompute (Horizon).
+     */
+    public function recalculateAbcXyz(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $periodDays = max(1, min(365, (int) ($request->input('period_days') ?? 90)));
+        CalculateAbcXyzJob::dispatch($this->tenantId(), $periodDays);
+
+        return response()->json([
+            'data' => ['queued' => true, 'period_days' => $periodDays],
+        ], 202);
     }
 
     public function turnover(Request $request): \Illuminate\Http\JsonResponse
@@ -119,9 +179,9 @@ final class AnalyticsController
      */
     private function periodFilters(Request $request): array
     {
-        $from = $request->query('from') ?? $request->query('date_from');
-        $to = $request->query('to') ?? $request->query('date_to');
-        $warehouseId = $request->query('warehouse_id');
+        $from = $request->input('from') ?? $request->query('from') ?? $request->input('date_from') ?? $request->query('date_from');
+        $to = $request->input('to') ?? $request->query('to') ?? $request->input('date_to') ?? $request->query('date_to');
+        $warehouseId = $request->input('warehouse_id') ?? $request->query('warehouse_id');
 
         return [
             $from !== null && $from !== '' ? (string) $from : null,

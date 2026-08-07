@@ -10,6 +10,7 @@ import {
   DsShiftWidget,
   useTheme,
 } from '@/design-system'
+import NlpSearchBar from '@/autometria/components/ai/NlpSearchBar.vue'
 
 const props = defineProps({
   title: { type: String, default: 'Дашборд' },
@@ -28,8 +29,7 @@ const { set: setTheme, toggle: toggleTheme } = useTheme()
 const paletteOpen = ref(false)
 const mobileNav = ref(false)
 const themeLabel = ref('Dark')
-const quickSearch = ref('')
-const quickSearchRef = ref(null)
+const nlpSearchRef = ref(null)
 
 onMounted(() => {
   document.documentElement.setAttribute('data-theme', 'dark')
@@ -56,9 +56,17 @@ const sections = [
     title: 'Обзор',
     items: [
       { id: 'dashboard', label: 'Дашборд' },
-      { id: 'analytics', label: 'Аналитика' },
       { id: 'tasks', label: 'Задачи' },
       { id: 'kpi', label: 'Выработка & KPI' },
+    ],
+  },
+  {
+    id: 'analytics-ai',
+    title: 'Аналитика & AI',
+    items: [
+      { id: 'analytics', label: 'Финансовый дашборд' },
+      { id: 'abc_xyz', label: 'ABC/XYZ матрица', highlight: true },
+      { id: 'demand_forecast', label: 'Прогноз спроса', highlight: true },
     ],
   },
   {
@@ -83,6 +91,7 @@ const sections = [
       { id: 'inventory', label: 'Инвентаризация' },
       { id: 'warehouse_prices', label: 'Цены по складам' },
       { id: 'purchases', label: 'Закупки' },
+      { id: 'auto_orders', label: 'Авто-заказы', highlight: true },
       { id: 'replenishment', label: 'План пополнения' },
       { id: 'production', label: 'Производство / BOM' },
       { id: 'nested_bom', label: 'Nested BOM' },
@@ -167,11 +176,8 @@ function openQuickSearch() {
   paletteOpen.value = true
 }
 
-function onQuickSearchKeydown(e) {
-  if (e.key === 'Enter' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
-    e.preventDefault()
-    paletteOpen.value = true
-  }
+function onNlpNavigate(item) {
+  go(typeof item === 'string' ? { id: item } : item)
 }
 </script>
 
@@ -241,28 +247,12 @@ function onQuickSearchKeydown(e) {
           <slot name="header-meta" />
         </div>
 
-        <div class="flex shrink-0 items-center gap-2">
-          <div class="relative hidden min-w-[160px] sm:block md:min-w-[220px]">
-            <input
-              ref="quickSearchRef"
-              v-model="quickSearch"
-              type="search"
-              class="ds-input h-8 py-1 pl-8 pr-10 text-[13px] font-normal text-[#9CA3AF] placeholder:text-[#9CA3AF]"
-              placeholder="Быстрый поиск…"
-              aria-label="Быстрый поиск"
-              @focus="openQuickSearch"
-              @keydown="onQuickSearchKeydown"
-              @click="openQuickSearch"
-            >
-            <span
-              class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[13px] text-[#9CA3AF]"
-              aria-hidden="true"
-            >⌕</span>
-            <kbd
-              class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border px-1 font-mono text-[10px] text-[#9CA3AF] md:inline"
-              style="border-color: var(--color-border)"
-            >⌘K</kbd>
-          </div>
+        <div class="flex min-w-0 flex-1 items-center justify-end gap-2">
+          <NlpSearchBar
+            ref="nlpSearchRef"
+            class="max-w-xl"
+            @navigate="onNlpNavigate"
+          />
           <DsShiftWidget
             :open="currentShiftOpen"
             :started-at="shiftStartedAt"
@@ -272,7 +262,7 @@ function onQuickSearchKeydown(e) {
           />
           <button
             type="button"
-            class="ds-btn ds-btn-ghost ds-btn-sm text-[13px] font-normal"
+            class="ds-btn ds-btn-ghost ds-btn-sm hidden text-[13px] font-normal sm:inline-flex"
             :title="`Тема: ${themeLabel}`"
             @click="onToggleTheme"
           >
@@ -280,9 +270,9 @@ function onQuickSearchKeydown(e) {
           </button>
           <button
             type="button"
-            class="ds-btn ds-btn-primary ds-btn-sm font-mono sm:hidden"
+            class="ds-btn ds-btn-primary ds-btn-sm font-mono"
             title="Command palette (⌘K)"
-            @click="paletteOpen = true"
+            @click="openQuickSearch"
           >
             ⌘K
           </button>

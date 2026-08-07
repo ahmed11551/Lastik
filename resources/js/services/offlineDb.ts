@@ -110,7 +110,7 @@ export interface CartDraft {
 
 export type LocalStockOpStatus = 'PENDING_SYNC' | 'SYNCED' | 'FAILED'
 
-export type LocalStockOpType = 'WRITE_OFF' | 'TRANSFER' | 'BATCH_MOVE'
+export type LocalStockOpType = 'WRITE_OFF' | 'RECEIPT' | 'TRANSFER' | 'BATCH_MOVE'
 
 export interface LocalStockOp {
   id?: number
@@ -122,7 +122,12 @@ export interface LocalStockOp {
   cell_code?: string | null
   batch_id?: number | null
   product_id: number
-  qty: number
+  /** Exact decimal string (GS1 / BCMath-safe) — never rely on binary float */
+  qty: string
+  /** Book on-hand at queue time (string) — used to derive actual_qty for adjust API */
+  book_qty?: string | null
+  /** Explicit factual qty for inventory-adjust (preferred when known) */
+  actual_qty?: string | null
   reason?: string | null
   status: LocalStockOpStatus
   created_at: string

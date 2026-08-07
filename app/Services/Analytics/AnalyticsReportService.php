@@ -236,25 +236,67 @@ final class AnalyticsReportService
             $abc[$r['product_id']] = ['abc' => $abcClass, 'gross_profit' => $r['gross_profit']];
         }
 
-        $xyz = $this->xyzByMonthlyDemand($tenantId, $dateFrom, $dateTo, $warehouseId);
+        $xyzMeta = $this->xyzByMonthlyDemand($tenantId, $dateFrom, $dateTo, $warehouseId);
 
         $matrix = [];
+        $rows = [];
         foreach ($cogsRows as $r) {
             $pid = $r['product_id'];
             $a = $abc[$pid]['abc'] ?? 'C';
-            $z = $xyz[$pid] ?? 'Z';
+            $meta = $xyzMeta[$pid] ?? ['xyz' => 'Z', 'cv' => null];
+            $z = $meta['xyz'] ?? 'Z';
             $segment = $a.$z;
-            $matrix[$segment][] = [
+            $sharePct = $totalProfit > 0
+                ? round(($r['gross_profit'] / $totalProfit) * 100, 2)
+                : 0.0;
+
+            $item = [
                 'product_id' => $pid,
                 'product_name' => $r['product_name'],
                 'gross_profit' => $r['gross_profit'],
+                'revenue' => $r['revenue'] ?? $r['gross_profit'],
+                'share_pct' => $sharePct,
+                'cv' => $meta['cv'],
+                'abc' => $a,
+                'xyz' => $z,
+                'segment' => $segment,
             ];
+            $matrix[$segment][] = $item;
+            $rows[] = $item;
+        }
+
+        $cells = [];
+        foreach (['A', 'B', 'C'] as $abcClass) {
+            foreach (['X', 'Y', 'Z'] as $xyzClass) {
+                $key = $abcClass.$xyzClass;
+                $items = $matrix[$key] ?? [];
+                $cellProfit = 0.0;
+                foreach ($items as $it) {
+                    $cellProfit += (float) $it['gross_profit'];
+                }
+                $cells[$key] = [
+                    'segment' => $key,
+                    'abc' => $abcClass,
+                    'xyz' => $xyzClass,
+                    'count' => count($items),
+                    'gross_profit' => round($cellProfit, 2),
+                    'share_pct' => $totalProfit > 0 ? round(($cellProfit / $totalProfit) * 100, 2) : 0.0,
+                ];
+            }
+        }
+
+        $xyz = [];
+        foreach ($xyzMeta as $pid => $meta) {
+            $xyz[$pid] = $meta['xyz'] ?? 'Z';
         }
 
         return [
             'abc' => $abc,
             'xyz' => $xyz,
             'matrix' => $matrix,
+            'cells' => $cells,
+            'rows' => $rows,
+            'total_gross_profit' => round($totalProfit, 2),
         ];
     }
 
@@ -634,6 +676,8 @@ final class AnalyticsReportService
 
     /**
      * XYZ: коэффициент вариации спроса по месяцам внутри диапазона.
+     *
+     * @return array<int, array{xyz: string, cv: float|null}>
      */
     private function xyzByMonthlyDemand(
         int $tenantId,
@@ -666,7 +710,7 @@ final class AnalyticsReportService
         foreach ($byProduct as $pid => $demands) {
             $n = count($demands);
             if ($n < 2) {
-                $result[$pid] = 'Z';
+                $result[$pid] = ['xyz' => 'Z', 'cv' => null];
                 continue;
             }
             $mean = array_sum($demands) / $n;
@@ -675,15 +719,17 @@ final class AnalyticsReportService
                 $variance += ($d - $mean) ** 2;
             }
             $std = sqrt($variance / $n);
-            $cv = $mean > 0 ? ($std / $mean) * 100 : 0;
+            $cv = $mean > 0 ? ($std / $mean) * 100 : 0.0;
 
             if ($cv < 10) {
-                $result[$pid] = 'X';
+                $xyz = 'X';
             } elseif ($cv <= 25) {
-                $result[$pid] = 'Y';
+                $xyz = 'Y';
             } else {
-                $result[$pid] = 'Z';
+                $xyz = 'Z';
             }
+
+            $result[$pid] = ['xyz' => $xyz, 'cv' => round($cv, 2)];
         }
 
         return $result;

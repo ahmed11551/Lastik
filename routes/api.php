@@ -39,6 +39,8 @@ use Autometria\Http\Controllers\Portal\AuthController as PortalAuthController;
 use Autometria\Http\Controllers\Portal\PortalController;
 use Autometria\Http\Controllers\ProductController;
 use Autometria\Http\Controllers\ProductionController;
+use Autometria\Http\Controllers\Procurement\ProcurementController;
+use Autometria\Http\Controllers\Ai\AiController;
 use Autometria\Http\Controllers\Purchasing\SupplierController;
 use Autometria\Http\Controllers\Purchasing\SupplierOrderController;
 use Autometria\Http\Controllers\Wms\WmsController;
@@ -109,6 +111,7 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
     Route::get('analytics/dashboard-summary', [AnalyticsController::class, 'dashboardSummary'])->middleware('ensure.permission:admin.dashboard');
     Route::get('analytics/cogs-breakdown', [AnalyticsController::class, 'cogsBreakdown'])->middleware('ensure.permission:admin.dashboard');
     Route::get('analytics/abc-xyz', [AnalyticsController::class, 'abcXyz'])->middleware('ensure.permission:admin.dashboard');
+    Route::post('analytics/abc-xyz/recalculate', [AnalyticsController::class, 'recalculateAbcXyz'])->middleware('ensure.permission:admin.dashboard');
     Route::get('analytics/turnover', [AnalyticsController::class, 'turnover'])->middleware('ensure.permission:admin.dashboard');
     Route::get('analytics/sales-series', [AnalyticsController::class, 'salesSeries'])->middleware('ensure.permission:admin.dashboard');
     Route::get('stock/batches', [StockBatchController::class, 'index'])->middleware('ensure.permission:stock.view');
@@ -236,6 +239,12 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
     Route::post('supplier-orders/{id}/receive', [SupplierOrderController::class, 'receive'])->middleware('ensure.permission:stock.transfer');
     Route::get('purchases/replenishment-plan', [SupplierOrderController::class, 'replenishmentPlan'])->middleware('ensure.permission:stock.view');
 
+    Route::post('procurement/generate-drafts', [ProcurementController::class, 'generateDrafts'])->middleware('ensure.permission:stock.transfer');
+    Route::get('procurement/drafts', [ProcurementController::class, 'index'])->middleware('ensure.permission:stock.view');
+    Route::post('procurement/drafts/{id}/approve', [ProcurementController::class, 'approve'])->middleware('ensure.permission:stock.transfer');
+    Route::post('procurement/drafts/{id}/send', [ProcurementController::class, 'send'])->middleware('ensure.permission:stock.transfer');
+    Route::get('procurement/drafts/{id}/export.csv', [ProcurementController::class, 'exportCsv'])->middleware('ensure.permission:stock.view');
+
     Route::get('payroll-periods', [PayrollPeriodController::class, 'index'])->middleware('ensure.permission:payroll.view');
     Route::post('payroll-periods', [PayrollPeriodController::class, 'store'])->middleware('ensure.permission:payroll.manage');
     Route::post('payroll-periods/{id}/calculate', [PayrollPeriodController::class, 'calculate'])->middleware('ensure.permission:payroll.manage');
@@ -259,4 +268,7 @@ Route::middleware(['auth:sanctum', EnsureTenant::class, EnforceLocationAccess::c
 
     Route::get('search', SearchController::class)->middleware('ensure.permission:orders.view');
     Route::get('tv/board', TvBoardController::class)->middleware('ensure.permission:orders.view');
+
+    Route::post('ai/nlp-search', [AiController::class, 'nlpSearch'])->middleware('ensure.permission:admin.dashboard');
+    Route::get('ai/daily-summary', [AiController::class, 'dailySummary'])->middleware('ensure.permission:admin.dashboard');
 });

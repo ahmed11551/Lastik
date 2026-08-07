@@ -8,15 +8,16 @@
  *   11  Production date (YYMMDD)
  *   17  Expiration date (YYMMDD)
  *   21  Serial number
- *   37  Count / quantity (variable, may be fractional)
+ *   37  Count / quantity (variable, may be fractional — string / BCMath-safe)
  *
  * Precision note: numeric quantities (AI 37) are returned as strings, never
- * floats, so downstream BCMath math stays exact. Dates are normalised to ISO
- * (YYYY-MM-DD) using GS1 YYMMDD rules (YY <= 49 -> 20YY, else 19YY).
+ * floats, so downstream BCMath / decimalString math stays exact. Dates are
+ * normalised to ISO (YYYY-MM-DD) using GS1 YYMMDD rules (YY <= 49 -> 20YY, else 19YY).
  *
  * Input may use either parenthesis-grouped form  "(01)046...(21)AB12"
  * or FNC1-delimited form with a separator char (default GS \x1d).
  */
+import { normalizeQuantityString } from './decimalString'
 
 export interface Gs1Field {
   ai: string
@@ -28,6 +29,7 @@ export interface ParsedGs1 {
   gtin: string | null
   batch: string | null
   serial: string | null
+  /** Exact decimal string (AI 37) — never a JS number/float */
   quantity: string | null
   productionDate: string | null // ISO YYYY-MM-DD
   expirationDate: string | null // ISO YYYY-MM-DD
@@ -45,7 +47,7 @@ const AI_META: Record<string, { label: string; fixed?: number }> = {
 }
 
 /** GS (FNC1) separator char. */
-const GS = ''
+const GS = '\u001d'
 
 function normalizeDate(yymmdd: string): string | null {
   if (!/^\d{6}$/.test(yymmdd)) return null
@@ -68,8 +70,8 @@ function normalizeDate(yymmdd: string): string | null {
  * Strip FNC1 / GS separators and convert to parenthesis-grouped form so the
  * parser has a single canonical shape to walk.
  */
-function toGroupedForm(raw: string, separator: string): string {
-  const cleaned = raw.replace(/[]/g, '|')
+function toGroupedForm(raw: string, _separator: string): string {
+  const cleaned = raw.replace(/[\u001d]/g, '|')
   // Already parenthesis-grouped.
   if (cleaned.includes('(')) return cleaned
   // FNC1/GS-delimited: parts alternate as AI, value, AI, value...
@@ -83,6 +85,18 @@ function toGroupedForm(raw: string, separator: string): string {
     else out.push(parts[i])
   }
   return out.join('')
+}
+
+function coerceFieldValue(ai: string, rawValue: string): string {
+  let value = rawValue.replace(/[|]+$/g, '')
+  const meta = AI_META[ai]
+  if (meta?.fixed && value.length > meta.fixed) {
+    value = value.slice(0, meta.fixed)
+  }
+  if (ai === '37') {
+    return normalizeQuantityString(value) ?? value
+  }
+  return value
 }
 
 export function parseGs1(input: string, separator: string = GS): ParsedGs1 {
@@ -108,7 +122,7 @@ export function parseGs1(input: string, separator: string = GS): ParsedGs1 {
   let match: RegExpExecArray | null
   while ((match = re.exec(grouped)) !== null) {
     const ai = match[1]
-    let value = match[2].replace(/[|]+$/g, '')
+    const value = coerceFieldValue(ai, match[2])
     const meta = AI_META[ai]
     if (!meta) {
       fields.push({ ai, label: `AI-${ai}`, value })
@@ -141,3 +155,5 @@ export function extractGtin(input: string, separator: string = GS): string | nul
 export function extractQuantity(input: string, separator: string = GS): string | null {
   return parseGs1(input, separator).quantity
 }
+
+export { normalizeQuantityString }

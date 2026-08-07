@@ -42,4 +42,14 @@ return [
         ],
     ],
 
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'purchase_chat_id' => env('TELEGRAM_PURCHASE_CHAT_ID'),
+        'ai_chat_id' => env('TELEGRAM_AI_CHAT_ID', env('TELEGRAM_PURCHASE_CHAT_ID')),
+    ],
+
+    'airllm' => [
+        'base_url' => env('AIRLLM_BASE_URL', 'http://127.0.0.1:8100'),
+    ],
+
 ];

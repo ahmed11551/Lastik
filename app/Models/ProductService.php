@@ -40,6 +40,7 @@ namespace Autometria\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ProductService extends TenantModel
 {
@@ -107,5 +108,10 @@ class ProductService extends TenantModel
     public function stockLotDeductions(): HasMany
     {
         return $this->hasMany(StockLotDeduction::class, 'product_id');
+    }
+
+    public function classification(): HasOne
+    {
+        return $this->hasOne(ProductClassification::class, 'product_id');
     }
 }
