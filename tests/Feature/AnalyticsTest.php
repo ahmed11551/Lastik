@@ -170,8 +170,10 @@ it('classifies abc xyz correctly', function (): void {
     expect($classes)->toContain('C');
 
     // Матрица содержит хотя бы один сегмент с товаром A.
-    $aSegment = 'A' . ($result['xyz'][$products['A']->id] ?? 'Z');
+    $aSegment = 'A'.($result['xyz'][$products['A']->id] ?? 'Z');
     expect(array_keys($result['matrix']))->toContain($aSegment);
+    expect($result['cells'])->toHaveKey($aSegment);
+    expect($result['rows'])->not->toBeEmpty();
 });
 
 /**

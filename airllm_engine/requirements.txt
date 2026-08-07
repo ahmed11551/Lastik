@@ -1,0 +1,9 @@
+# AUTOMETRIA ERP — Local Enterprise AI Pack (AirLLM Engine)
+# Локальный автономный микросервис генерации текста без облачных API.
+# AirLLM обеспечивает послойную подкачку (layer-offload) — модель
+# работает на обычном RAM/SSD без обязательного VRAM.
+
+airllm>=2.0.0
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.6.0

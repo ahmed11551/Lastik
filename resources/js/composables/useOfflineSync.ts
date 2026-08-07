@@ -1,11 +1,12 @@
 /**
- * AUTOMETRIA ERP — Offline receipt + refund sync worker (idempotent)
+ * AUTOMETRIA ERP — Offline receipt + refund + WMS stock sync (idempotent)
  */
 import { apiPost } from '../autometria/api/client'
 import { toast } from '../autometria/api/toast'
 import { useOfflineStore } from '../stores/useOfflineStore'
-import type { LocalReceipt } from '../services/offlineDb'
-import { classifySyncStatus, type SyncOutcome } from './syncStatus'
+import type { LocalReceipt, LocalStockOp } from '../services/offlineDb'
+import { classifySyncStatus } from './syncStatus'
+import { decimalAbs, decimalAdd, decimalSub, normalizeQuantityString } from '../autometria/utils/decimalString'
 
 let syncing = false
 let bound = false
@@ -14,6 +15,39 @@ function mapMethod(receipt: LocalReceipt): string {
   if (receipt.payment_type === 'CARD') return 'card'
   if (receipt.payment_type === 'MIXED') return 'cash'
   return 'cash'
+}
+
+function httpStatus(err: unknown): number | undefined {
+  return (err as { response?: { status?: number } })?.response?.status
+}
+
+function httpErrorCode(err: unknown): string | undefined {
+  return (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+}
+
+function httpMessage(err: unknown, fallback: string): string {
+  return (
+    (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data
+      ?.message ||
+    (err as { message?: string })?.message ||
+    fallback
+  )
+}
+
+/**
+ * Resolve factual on-hand for inventory-adjust from queued op fields.
+ * qty / book_qty / actual_qty stay as decimal strings (no float).
+ */
+function resolveActualQty(op: LocalStockOp): string {
+  const explicit = normalizeQuantityString(op.actual_qty ?? null)
+  if (explicit != null) return explicit
+
+  const book = normalizeQuantityString(op.book_qty ?? null) || '0'
+  const delta = decimalAbs(normalizeQuantityString(op.qty) || '0')
+
+  if (op.op_type === 'RECEIPT') return decimalAdd(book, delta)
+  // WRITE_OFF
+  return decimalSub(book, delta)
 }
 
 async function syncPendingRefundsInternal(
@@ -44,20 +78,16 @@ async function syncPendingRefundsInternal(
       await offline.markRefundSynced(refund.id)
       synced += 1
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status
-      if (status === 200 || status === 201 || status === 409) {
+      const outcome = classifySyncStatus(httpStatus(err))
+      if (outcome === 'synced') {
         await offline.markRefundSynced(refund.id)
         synced += 1
         continue
       }
-      const msg =
-        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data
-          ?.message ||
-        (err as { message?: string })?.message ||
-        'refund sync failed'
+      const msg = httpMessage(err, 'refund sync failed')
       console.error('Refund sync failed:', refund.uuid, err)
       offline.lastSyncError = msg
-      if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
+      if (outcome === 'failed') {
         await offline.markRefundFailed(refund.id, msg)
         failed += 1
       }
@@ -67,7 +97,7 @@ async function syncPendingRefundsInternal(
 }
 
 /**
- * Flush PENDING_SYNC receipts (+ refunds) to ERP with X-Idempotency-Key = uuid.
+ * Flush PENDING_SYNC receipts (+ refunds + stock) to ERP with X-Idempotency-Key = uuid.
  */
 export async function syncPendingReceipts(): Promise<{ synced: number; failed: number }> {
   if (syncing) return { synced: 0, failed: 0 }
@@ -119,20 +149,16 @@ export async function syncPendingReceipts(): Promise<{ synced: number; failed: n
         await offline.markSynced(receipt.id)
         synced += 1
       } catch (err: unknown) {
-        const status = (err as { response?: { status?: number } })?.response?.status
-        if (status === 200 || status === 201 || status === 409) {
+        const outcome = classifySyncStatus(httpStatus(err))
+        if (outcome === 'synced') {
           await offline.markSynced(receipt.id)
           synced += 1
           continue
         }
-        const msg =
-          (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data
-            ?.message ||
-          (err as { message?: string })?.message ||
-          'sync failed'
+        const msg = httpMessage(err, 'sync failed')
         console.error('Sync failed for receipt:', receipt.uuid, err)
         offline.lastSyncError = msg
-        if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
+        if (outcome === 'failed') {
           await offline.markFailed(receipt.id, msg)
           failed += 1
         }
@@ -174,10 +200,11 @@ export async function syncPendingStockOps(): Promise<{ synced: number; failed: n
         await apiPost(
           '/stock/transfers',
           {
+            product_id: op.product_id,
             from_warehouse_id: op.warehouse_id,
             to_warehouse_id: op.to_warehouse_id,
-            lines: [{ product_id: op.product_id, qty: op.qty }],
-            reason: op.reason || undefined,
+            qty: normalizeQuantityString(op.qty) || '0',
+            reason: op.reason || 'offline transfer',
           },
           { headers: { 'X-Idempotency-Key': op.uuid }, silent: true },
         )
@@ -187,19 +214,21 @@ export async function syncPendingStockOps(): Promise<{ synced: number; failed: n
           {
             batch_id: op.batch_id,
             to_cell: op.cell_code,
-            qty: op.qty,
+            qty: normalizeQuantityString(op.qty) || '0',
           },
           { headers: { 'X-Idempotency-Key': op.uuid }, silent: true },
         )
       } else {
-        // WRITE_OFF
+        // WRITE_OFF | RECEIPT → inventory-adjust with factual actual_qty (string)
         await apiPost(
           '/stock/inventory-adjust',
           {
             warehouse_id: op.warehouse_id,
             product_id: op.product_id,
-            qty: -Math.abs(op.qty),
-            reason: op.reason || 'offline write-off',
+            actual_qty: resolveActualQty(op),
+            reason:
+              op.reason ||
+              (op.op_type === 'RECEIPT' ? 'offline receipt' : 'offline write-off'),
           },
           { headers: { 'X-Idempotency-Key': op.uuid }, silent: true },
         )
@@ -207,18 +236,26 @@ export async function syncPendingStockOps(): Promise<{ synced: number; failed: n
       await offline.markStockOpSynced(op.id)
       synced += 1
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status
-      if (status === 200 || status === 201 || status === 409) {
+      const status = httpStatus(err)
+      const code = httpErrorCode(err)
+      // Business 409 (insufficient stock) ≠ idempotent replay — mark failed.
+      if (status === 409 && code === 'available_less_than_qty') {
+        const msg = httpMessage(err, 'insufficient stock')
+        offline.lastSyncError = msg
+        await offline.markStockOpFailed(op.id, msg)
+        failed += 1
+        continue
+      }
+      const outcome = classifySyncStatus(status)
+      if (outcome === 'synced') {
         await offline.markStockOpSynced(op.id)
         synced += 1
         continue
       }
-      const msg =
-        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data
-          ?.message || (err as { message?: string })?.message || 'stock op sync failed'
+      const msg = httpMessage(err, 'stock op sync failed')
       console.error('Stock op sync failed:', op.uuid, err)
       offline.lastSyncError = msg
-      if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
+      if (outcome === 'failed') {
         await offline.markStockOpFailed(op.id, msg)
         failed += 1
       }
@@ -226,7 +263,6 @@ export async function syncPendingStockOps(): Promise<{ synced: number; failed: n
   }
   return { synced, failed }
 }
-
 
 /** Bind online/offline listeners once (call from PosView onMounted). */
 export function bindOfflineSyncListeners(): () => void {

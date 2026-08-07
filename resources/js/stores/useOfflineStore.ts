@@ -287,9 +287,15 @@ export const useOfflineStore = defineStore('offline', {
       cell_code?: string | null
       batch_id?: number | null
       product_id: number
-      qty: number
+      qty: string | number
+      book_qty?: string | number | null
+      actual_qty?: string | number | null
       reason?: string | null
     }): Promise<LocalStockOp> {
+      const toQty = (v: string | number | null | undefined): string | null => {
+        if (v == null || v === '') return null
+        return String(v).replace(',', '.')
+      }
       const row: LocalStockOp = {
         uuid: createReceiptUuid(),
         tenant_id: input.tenant_id,
@@ -299,7 +305,9 @@ export const useOfflineStore = defineStore('offline', {
         cell_code: input.cell_code ?? null,
         batch_id: input.batch_id ?? null,
         product_id: input.product_id,
-        qty: input.qty,
+        qty: toQty(input.qty) || '0',
+        book_qty: toQty(input.book_qty ?? null),
+        actual_qty: toQty(input.actual_qty ?? null),
         reason: input.reason ?? null,
         status: 'PENDING_SYNC',
         created_at: new Date().toISOString(),

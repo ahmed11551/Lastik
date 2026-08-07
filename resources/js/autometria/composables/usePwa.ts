@@ -5,6 +5,10 @@
  */
 import { onMounted, onUnmounted, ref, type Ref } from 'vue'
 import { registerSW } from 'virtual:pwa-register'
+import { getStoredUser } from '@/autometria/api/client'
+import { useShiftStore } from '@/autometria/stores/cashierStore'
+import { useOfflineStore } from '@/stores/useOfflineStore'
+import { usePosStore } from '@/stores/usePosStore'
 
 export type PwaStatus = {
   online: Ref<boolean>
@@ -16,10 +20,6 @@ export type PwaStatus = {
 
 async function persistCartDraft(): Promise<void> {
   try {
-    const { usePosStore } = await import('@/stores/usePosStore')
-    const { useOfflineStore } = await import('@/stores/useOfflineStore')
-    const { getStoredUser } = await import('@/autometria/api/client')
-
     const pos = usePosStore()
     const offline = useOfflineStore()
     if (!pos.cart?.length) return
@@ -30,7 +30,6 @@ async function persistCartDraft(): Promise<void> {
 
     let shiftId = 0
     try {
-      const { useShiftStore } = await import('@/autometria/stores/cashierStore')
       shiftId = Number(useShiftStore().shiftId || 0)
     } catch {
       shiftId = 0
@@ -109,26 +108,19 @@ export function usePwa(): PwaStatus {
 
   function onOnline() {
     online.value = true
-    void import('@/stores/useOfflineStore')
-      .then(async ({ useOfflineStore }) => {
-        useOfflineStore().setOnline(true)
-        try {
-          const { usePosStore } = await import('@/stores/usePosStore')
-          const { getStoredUser } = await import('@/autometria/api/client')
-          const user = getStoredUser() as { id?: number } | null
-          let shiftId = 0
-          try {
-            const { useShiftStore } = await import('@/autometria/stores/cashierStore')
-            shiftId = Number(useShiftStore().shiftId || 0)
-          } catch {
-            shiftId = 0
-          }
-          await usePosStore().restoreCartDraft(Number(user?.id || 0), shiftId)
-        } catch {
-          /* restore is best-effort on reconnect */
-        }
-      })
-      .catch(() => undefined)
+    try {
+      useOfflineStore().setOnline(true)
+      const user = getStoredUser() as { id?: number } | null
+      let shiftId = 0
+      try {
+        shiftId = Number(useShiftStore().shiftId || 0)
+      } catch {
+        shiftId = 0
+      }
+      void usePosStore().restoreCartDraft(Number(user?.id || 0), shiftId)
+    } catch {
+      /* restore is best-effort on reconnect */
+    }
   }
 
   function onOffline() {

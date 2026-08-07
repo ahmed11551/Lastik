@@ -5,7 +5,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import AutometriaLayout from '@/Layouts/AutometriaLayout.vue'
-import OperationalDashboard from '@/autometria/views/OperationalDashboard.vue'
+import ExecutiveDashboardView from '@/autometria/views/ExecutiveDashboardView.vue'
 import BusinessPartnerCrm from '@/autometria/views/BusinessPartnerCrm.vue'
 import KpiView from '@/autometria/views/KpiView.vue'
 import WarehouseView from '@/autometria/views/WarehouseView.vue'
@@ -28,6 +28,9 @@ import NestedBomTree from '@/Pages/Production/NestedBomTree.vue'
 import StorageCells from '@/Pages/Wms/StorageCells.vue'
 import SerialNumbers from '@/Pages/Wms/SerialNumbers.vue'
 import AnalyticsDashboard from '@/Pages/Dashboard.vue'
+import AnalyticsAbcXyzView from '@/autometria/views/AnalyticsAbcXyzView.vue'
+import DemandForecastView from '@/autometria/views/DemandForecastView.vue'
+import AutoOrdersView from '@/autometria/views/AutoOrdersView.vue'
 import PurchasesIndex from '@/Pages/Purchases/Index.vue'
 import SupplierOrderForm from '@/Pages/Purchases/SupplierOrderForm.vue'
 import ReplenishmentPlan from '@/Pages/Purchases/ReplenishmentPlan.vue'
@@ -44,6 +47,9 @@ const VIEW_TITLES = {
   login: 'Вход',
   dashboard: 'Дашборд',
   analytics: 'Аналитика',
+  abc_xyz: 'ABC/XYZ анализ',
+  demand_forecast: 'Прогноз спроса',
+  auto_orders: 'Авто-заказы',
   crm: 'Business Partner CRM',
   orders: 'Заказы и продажи',
   new_order: 'Создать заказ',
@@ -89,7 +95,16 @@ function normalizeView(raw) {
   if (raw === '1c' || raw === 'onec') return 'integrations'
   if (String(raw).startsWith('purchase_form')) return 'purchase_form'
   if (String(raw).startsWith('payslip:')) return 'payslip'
+  // Nested hash aliases (v1.4.0 Sprint 2–3)
+  if (raw === 'analytics/demand_forecast' || raw === 'demand_forecast') return 'demand_forecast'
+  if (raw === 'procurement/auto_orders' || raw === 'auto_orders') return 'auto_orders'
   return VIEW_TITLES[raw] ? raw : 'dashboard'
+}
+
+/** Prefer nested paths in the address bar for Analytics / Procurement. */
+const VIEW_HASH = {
+  demand_forecast: 'analytics/demand_forecast',
+  auto_orders: 'procurement/auto_orders',
 }
 
 function readHash() {
@@ -165,6 +180,15 @@ const breadcrumbs = computed(() => {
   if (view.value === 'crm') {
     return [{ label: 'Dashboard' }, { label: 'Data' }, { label: 'Business Partner CRM' }]
   }
+  if (view.value === 'abc_xyz') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Аналитика & AI' }, { label: 'ABC/XYZ' }]
+  }
+  if (view.value === 'demand_forecast') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Аналитика & AI' }, { label: 'Прогноз спроса' }]
+  }
+  if (view.value === 'auto_orders') {
+    return [{ label: 'AUTOMETRIA' }, { label: 'Закупки' }, { label: 'Авто-заказы' }]
+  }
   return [{ label: 'AUTOMETRIA ERP' }, { label: title.value }]
 })
 
@@ -179,7 +203,8 @@ watch(view, (v) => {
     if (location.hash !== next) location.hash = next
     return
   }
-  const next = `#/${v}`
+  const path = VIEW_HASH[v] || v
+  const next = `#/${path}`
   if (v !== 'purchase_form' && location.hash !== next) location.hash = next
   if (v === 'purchase_form' && !purchaseOrderId.value && location.hash !== next) {
     location.hash = next
@@ -227,7 +252,7 @@ function onNavigate(item) {
   }
   if (VIEW_TITLES[id]) {
     view.value = id
-    location.hash = `#/${id}`
+    location.hash = `#/${VIEW_HASH[id] || id}`
   }
 }
 
@@ -294,6 +319,14 @@ function onLoginSuccess(payload) {
           class="ds-badge ds-badge--warning"
         >Audit</span>
         <span
+          v-else-if="view === 'analytics' || view === 'abc_xyz' || view === 'demand_forecast'"
+          class="ds-badge ds-badge--warning"
+        >Analytics</span>
+        <span
+          v-else-if="view === 'auto_orders' || view === 'purchases' || view === 'replenishment'"
+          class="ds-badge ds-badge--warning"
+        >Procurement</span>
+        <span
           v-else-if="view === 'warehouse'"
           class="ds-badge ds-badge--warning"
         >Warehouse</span>
@@ -327,7 +360,7 @@ function onLoginSuccess(payload) {
         >Industrial Amber</span>
       </template>
 
-      <OperationalDashboard
+      <ExecutiveDashboardView
         v-if="view === 'dashboard'"
         :shift-open="shiftOpen"
         :shift-revenue="shiftRevenue"
@@ -338,6 +371,19 @@ function onLoginSuccess(payload) {
       <AnalyticsDashboard
         v-else-if="view === 'analytics'"
         embedded
+      />
+
+      <AnalyticsAbcXyzView v-else-if="view === 'abc_xyz'" />
+
+      <DemandForecastView
+        v-else-if="view === 'demand_forecast'"
+        @navigate="onNavigate"
+        @open-drafts="onNavigate({ id: 'auto_orders' })"
+      />
+
+      <AutoOrdersView
+        v-else-if="view === 'auto_orders'"
+        @navigate="onNavigate"
       />
 
       <WarehouseView v-else-if="view === 'warehouse'" />
