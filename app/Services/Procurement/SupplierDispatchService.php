@@ -92,11 +92,9 @@ final class SupplierDispatchService
         $csv = $this->exportToCsv($draftId);
         $filename = 'purchase_order_'.$draft->id.'.csv';
 
-        Mail::to($supplier->email)->send(function ($message) use ($html, $csv, $filename): void {
-            $message->subject('Заказ поставщику (черновик)')
-                ->html($html)
-                ->attachData($csv, $filename, ['mime' => 'text/csv']);
-        });
+        Mail::to($supplier->email)->send(
+            new \Autometria\Mail\PurchaseOrderDraftMail($html, $csv, $filename)
+        );
 
         $draft->update(['status' => 'sent']);
 

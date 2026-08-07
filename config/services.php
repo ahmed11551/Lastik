@@ -52,4 +52,11 @@ return [
         'base_url' => env('AIRLLM_BASE_URL', 'http://127.0.0.1:8100'),
     ],
 
+    'marking' => [
+        // true = mock Честный Знак (CI / local); false = live GIS MT
+        'mock_mode' => filter_var(env('MARKING_MOCK_MODE', true), FILTER_VALIDATE_BOOLEAN),
+        'api_url' => env('CHESTNY_ZNAK_API_URL', 'https://trueapi.ruba.ru/api/v3'),
+        'token' => env('CHESTNY_ZNAK_API_TOKEN'),
+    ],
+
 ];

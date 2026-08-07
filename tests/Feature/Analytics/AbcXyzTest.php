@@ -134,7 +134,7 @@ it('classifies products into XYZ by demand variation coefficient', function (): 
         'product_id' => $stable->id,
         'warehouse_id' => $this->warehouse->id,
         'quantity' => 2000.0,
-        'unit_cost' => 10.0,
+        'cost_price' => 10.0,
         'received_at' => now()->subMonths(4),
     ]);
     $months = [now()->subMonths(3), now()->subMonths(2), now()->subMonths(1), now()];

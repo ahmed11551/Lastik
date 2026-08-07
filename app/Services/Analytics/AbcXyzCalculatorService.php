@@ -41,8 +41,27 @@ final class AbcXyzCalculatorService
         $from = now()->subDays($periodDays)->startOfDay();
         $to = now();
 
-        // --- ABC: revenue share per product (from existing COGS breakdown) ---
-        $cogs = $this->reports->getCogsBreakdown($tenantId, $from->toDateString(), $to->toDateString(), null);
+        // --- ABC: revenue share per product (direct aggregation from orders) ---
+        // Считаем выручку напрямую из order_items (цена × количество) за период,
+        // чтобы не зависеть от скрытых фильтров getCogsBreakdown.
+        $rows = DB::table('order_items')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.tenant_id', $tenantId)
+            ->where('orders.payment_status', \Autometria\Enums\PaymentStatusEnum::PAID->value)
+            ->where('orders.status', \Autometria\Enums\OrderStatusEnum::COMPLETED->value)
+            ->where('orders.created_at', '>=', $from)
+            ->where('orders.created_at', '<=', $to)
+            ->selectRaw('order_items.product_id AS pid, SUM(order_items.price * order_items.qty) AS revenue')
+            ->groupBy('order_items.product_id')
+            ->get();
+
+        $cogs = [];
+        foreach ($rows as $r) {
+            $cogs[] = [
+                'product_id' => $r->pid,
+                'gross_profit' => (float) $r->revenue,
+            ];
+        }
         $totalRevenue = (float) array_sum(array_column($cogs, 'gross_profit'));
 
         $abcMap = [];
@@ -52,10 +71,13 @@ final class AbcXyzCalculatorService
         usort($sorted, fn ($a, $b) => $b['gross_profit'] <=> $a['gross_profit']);
         foreach ($sorted as $r) {
             $gp = (float) $r['gross_profit'];
-            $cum += $gp;
-            $share = $totalRevenue > 0 ? ($cum / $totalRevenue) * 100 : 0;
+            // Товар относится к группе по НАКОПЛЕННОЙ ДОЛЕ (% от выручки) ДО его добавления:
+            // A — пока накопление < 80%, B — пока < 95%, иначе C.
+            $cumPct = $totalRevenue > 0 ? ($cum / $totalRevenue) * 100 : 0;
+            $abc = $cumPct < 80 ? 'A' : ($cumPct < 95 ? 'B' : 'C');
+            $abcMap[$r['product_id']] = $abc;
             $revenueShare[$r['product_id']] = $totalRevenue > 0 ? ($gp / $totalRevenue) * 100 : 0;
-            $abcMap[$r['product_id']] = $share <= 80 ? 'A' : ($share <= 95 ? 'B' : 'C');
+            $cum += $gp;
         }
 
         // --- XYZ: coefficient of variation of monthly demand ---

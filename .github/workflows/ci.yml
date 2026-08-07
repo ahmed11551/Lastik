@@ -81,6 +81,7 @@ jobs:
           DB_DATABASE: lastik_test
           DB_USERNAME: lastik
           DB_PASSWORD: secret
+          MARKING_MOCK_MODE: 'true'
         run: php artisan test --stop-on-failure
 
       - name: Setup Node

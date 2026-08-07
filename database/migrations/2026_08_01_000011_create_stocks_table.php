@@ -21,9 +21,9 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('warehouse_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained('products_services')->cascadeOnDelete();
-            $table->unsignedInteger('actual')->default(0);
-            $table->unsignedInteger('reserved')->default(0);
-            $table->unsignedInteger('available')->default(0);
+            $table->decimal('actual', 14, 3)->default(0);
+            $table->decimal('reserved', 14, 3)->default(0);
+            $table->decimal('available', 14, 3)->default(0);
             $table->timestampsTz();
             $table->unique(['tenant_id', 'warehouse_id', 'product_id']);
             $table->index('tenant_id');

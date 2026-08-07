@@ -39,6 +39,7 @@ return new class extends Migration
             $table->decimal('approved_qty', 12, 3)->default(0);
             $table->decimal('unit_cost', 14, 2)->default(0);
             $table->decimal('subtotal', 14, 2)->default(0);
+            $table->timestamps();
 
             $table->index(['tenant_id', 'purchase_order_draft_id']);
             $table->foreign('purchase_order_draft_id')->references('id')->on('purchase_order_drafts')->onDelete('cascade');

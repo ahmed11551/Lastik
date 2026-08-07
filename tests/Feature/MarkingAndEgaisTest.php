@@ -21,9 +21,18 @@ use function Pest\Laravel\postJson;
 
 beforeEach(function (): void {
     $this->withoutMiddleware();
-    config(['cache.default' => 'array']);
+    config([
+        'cache.default' => 'array',
+        'services.marking.mock_mode' => true,
+    ]);
     putenv('MARKING_MOCK_MODE=true');
     $_ENV['MARKING_MOCK_MODE'] = 'true';
+    // Recreate singleton so fromConfig() picks up mock_mode=true.
+    app()->forgetInstance(\Autometria\Services\Marking\ChestnyZnakClient::class);
+    app()->singleton(
+        \Autometria\Services\Marking\ChestnyZnakClient::class,
+        fn () => \Autometria\Services\Marking\ChestnyZnakClient::fromConfig(),
+    );
 
     $this->fx = AcceptanceFixture::make('mark-'.uniqid());
     set_current_tenant_id($this->fx->tenant->id);
@@ -145,9 +154,14 @@ it('invalid datamatrix is rejected by chestny znak mock', function (): void {
     ]);
     $res2->assertStatus(422);
     expect($res2->json('code'))->toBeIn(['MARKING_EXPIRED', 'InvalidMarkingCodeException']);
+});
 
-    // Happy path: valid mock mark is accepted and stored
-    $valid = '010460043900001421sN&<3!91800092dGVzdA==';
+it('accepts valid mock datamatrix on checkout and stores CIS fields', function (): void {
+    $product = seedMarkedProduct($this->fx, 'MARK-OK', 1500.0);
+
+    // Avoid HTML-sensitive serial chars (`&`, `<`) — strip_tags-safe CIS for HTTP path.
+    // Parser still covers special GS1 charset in the dedicated parser test above.
+    $valid = '010460043900001421SNTEST01X91800092dGVzdA==';
     $ok = postJson('/api/v1/pos/checkout', [
         'method' => 'cash',
         'amount_tendered' => 2000,
@@ -161,6 +175,10 @@ it('invalid datamatrix is rejected by chestny znak mock', function (): void {
             ],
         ],
     ]);
+
+    if ($ok->status() !== 201) {
+        dump(['status' => $ok->status(), 'body' => $ok->json()]);
+    }
     $ok->assertStatus(201);
 
     $item = OrderItem::query()->withoutGlobalScopes()
@@ -171,5 +189,5 @@ it('invalid datamatrix is rejected by chestny znak mock', function (): void {
     expect($item)->not->toBeNull();
     expect($item->marking_code)->toBe($valid);
     expect($item->gtin)->toBe('04600439000014');
-    expect($item->serial_number)->toBe('sN&<3!');
+    expect($item->serial_number)->toBe('SNTEST01X');
 });

@@ -26,7 +26,7 @@ class ChestnyZnakClient
 
     public static function fromConfig(): self
     {
-        $mock = filter_var(env('MARKING_MOCK_MODE', true), FILTER_VALIDATE_BOOLEAN);
+        $mock = (bool) config('services.marking.mock_mode', true);
 
         return new self($mock);
     }
